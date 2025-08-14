@@ -1,0 +1,25 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: git
+    include: secret
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/backend20250319/hermes-config.git
+          default-label: main
+          search-paths: .
+          clone-on-start: true
+          force-pull: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
