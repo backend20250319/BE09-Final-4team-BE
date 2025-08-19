@@ -25,7 +25,7 @@ public class EmployeeAssignment {
     private Organization organization;
 
     @Column(nullable = false)
-    private Boolean isMainAssignment = false;  // 메인 부서 여부
+    private Boolean isPrimary = false;  // 메인부서 여부
 
     @Column(nullable = false)
     private Boolean isLeader = false;  // 해당 부서에서의 조직장 여부
