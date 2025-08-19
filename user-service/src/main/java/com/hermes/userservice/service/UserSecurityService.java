@@ -29,7 +29,7 @@ public class UserSecurityService {
 // 계정 상태 검증
 
     public void validateAccountStatus(User user) {
-        if (!user.getIsActive()) {
+        if (user.getIsLocked()) {
             throw new InvalidCredentialsException("비활성화된 계정입니다.");
         }
 
@@ -95,7 +95,7 @@ public class UserSecurityService {
 
     @Transactional
     public void toggleAccountStatus(User user, boolean isActive) {
-        user.setActive(isActive);
+        user.setIsLocked(!isActive);
         userRepository.save(user);
         log.info("Account status changed for user: {} - Active: {}", user.getEmail(), isActive);
     }
