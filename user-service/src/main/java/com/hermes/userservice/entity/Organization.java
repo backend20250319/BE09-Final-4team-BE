@@ -23,14 +23,6 @@ public class Organization  {
     @JoinColumn(name = "parent_id")
     private Organization parent;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-
-    @JoinColumn(name = "leader_id")
-    private User leader;
-
-    // private String description;
-
     @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EmployeeAssignment> assignments = new ArrayList<>();
+    private List<EmployeeAssignment> assignments = new ArrayList<>();  // 소속 인원 목록
 }
-

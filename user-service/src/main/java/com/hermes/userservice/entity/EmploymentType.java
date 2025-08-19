@@ -14,8 +14,12 @@ public class EmploymentType {
     private Long id;
 
     @Column(nullable = false, unique = true, length = 50)
-    private String name;  // 예: 정규직, 계약직
+    private String name;
 
-    private String description;
+    @Column(length = 255)
+    private String description; 
+
+    @Column
+    private Integer sortOrder;
 }
 
