@@ -43,14 +43,14 @@ public class User {
     @Column
     private Boolean needsPasswordReset = false;  // Password reset required flag
     
-    @Column(nullable = false)
-    private Boolean isLocked = false;  // Account locked flag
+//    @Column(nullable = false)
+//    private Boolean isLocked = false;  // Account locked flag
     
-    @Column(nullable = false)
-    private Integer loginAttempts = 0;  // Login attempt count
+//    @Column(nullable = false)
+//    private Integer loginAttempts = 0;  // Login attempt count
     
-    @Column
-    private LocalDateTime lockedAt;  // Account locked time
+//    @Column
+//    private LocalDateTime lockedAt;  // Account locked time
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employment_type_wid")
@@ -121,27 +121,27 @@ public class User {
         this.lastLoginAt = LocalDateTime.now();
     }
     
-    public void incrementLoginAttempts() {
-        this.loginAttempts++;
-    }
+//    public void incrementLoginAttempts() {
+//        this.loginAttempts++;
+//    }
     
-    public void resetLoginAttempts() {
-        this.loginAttempts = 0;
-    }
+//    public void resetLoginAttempts() {
+//        this.loginAttempts = 0;
+//    }
     
-    public void lockAccount() {
-        this.isLocked = true; 
-        this.lockedAt = LocalDateTime.now();
-    }
+//    public void lockAccount() {
+//        this.isLocked = true;
+//        this.lockedAt = LocalDateTime.now();
+//    }
     
-    public void unlockAccount() {
-        this.isLocked = false;
-        this.lockedAt = null;
-        this.loginAttempts = 0;
-    }
+//    public void unlockAccount() {
+//        this.isLocked = false;
+//        this.lockedAt = null;
+//        this.loginAttempts = 0;
+//    }
     
-    public boolean isAccountLocked() {
-        return this.isLocked;
-    }
+//    public boolean isAccountLocked() {
+//        return this.isLocked;
+//    }
     
 }
