@@ -5,6 +5,8 @@ import com.hermes.attendanceservice.dto.AttendanceResponse;
 import com.hermes.attendanceservice.dto.WeeklyWorkSummary;
 import com.hermes.attendanceservice.dto.WeeklyWorkDetail;
 import com.hermes.attendanceservice.dto.WeeklyWorkStats;
+import com.hermes.attendanceservice.dto.CheckInRequest;
+import com.hermes.attendanceservice.dto.CheckOutRequest;
 import com.hermes.attendanceservice.entity.WorkStatus;
 import com.hermes.attendanceservice.service.AttendanceService;
 import lombok.RequiredArgsConstructor;
@@ -25,12 +27,9 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
 
     @PostMapping("/check-in")
-    public ApiResponse<AttendanceResponse> checkIn(@RequestParam Long userId,
-                                      @RequestParam(required = false)
-                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-                                      LocalDateTime checkInTime) {
+    public ApiResponse<AttendanceResponse> checkIn(@RequestBody CheckInRequest request) {
         try {
-            AttendanceResponse response = attendanceService.checkIn(userId, checkInTime);
+            AttendanceResponse response = attendanceService.checkIn(request.getUserId(), request.getCheckIn());
             return ApiResponse.success("출근 기록이 성공적으로 등록되었습니다.", response);
         } catch (Exception e) {
             return ApiResponse.failure("출근 기록 등록에 실패했습니다: " + e.getMessage());
@@ -38,12 +37,9 @@ public class AttendanceController {
     }
 
     @PostMapping("/check-out")
-    public ApiResponse<AttendanceResponse> checkOut(@RequestParam Long userId,
-                                       @RequestParam(required = false)
-                                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-                                       LocalDateTime checkOutTime) {
+    public ApiResponse<AttendanceResponse> checkOut(@RequestBody CheckOutRequest request) {
         try {
-            AttendanceResponse response = attendanceService.checkOut(userId, checkOutTime);
+            AttendanceResponse response = attendanceService.checkOut(request.getUserId(), request.getCheckOut());
             return ApiResponse.success("퇴근 기록이 성공적으로 등록되었습니다.", response);
         } catch (Exception e) {
             return ApiResponse.failure("퇴근 기록 등록에 실패했습니다: " + e.getMessage());
