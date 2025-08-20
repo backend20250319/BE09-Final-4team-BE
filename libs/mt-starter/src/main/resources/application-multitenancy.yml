@@ -1,0 +1,68 @@
+# Hermes Multi-tenancy Configuration
+hermes:
+  multitenancy:
+    enabled: true
+    default-tenant-id: default
+    default-schema-name: public
+    
+    # 엔티티 및 리포지토리 패키지 설정
+    entity-packages:
+      - com.hermes.multitenancy.entity
+      - com.hermes.*.entity
+    
+    repository-packages:
+      - com.hermes.multitenancy.repository
+      - com.hermes.*.repository
+    
+    # 캐시 설정
+    cache:
+      enabled: true
+      ttl-minutes: 60
+      max-size: 1000
+    
+    # 데이터 소스 설정
+    data-source:
+      max-pool-size: 10
+      min-idle-size: 2
+      connection-timeout-ms: 30000
+      idle-timeout-ms: 600000
+      max-lifetime-ms: 1800000
+    
+    # JWT 설정
+    jwt:
+      tenant-claim-name: tenantId
+      alternative-claim-names:
+        - tenant
+        - org
+        - organization
+      use-email-domain: true
+    
+    # 스키마 설정
+    schema:
+      auto-create: true
+      validate-on-startup: true
+      schema-prefix: tenant_
+      allow-drop: false
+
+# Spring Data JPA 설정
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.SnakeCasePhysicalNamingStrategy
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: false
+        format_sql: true
+        
+# 로깅 설정
+logging:
+  level:
+    com.hermes.multitenancy: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level [%X{tenantId:-default}] %logger{36} - %msg%n"
