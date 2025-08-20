@@ -1,0 +1,113 @@
+# Spring Boot Configuration
+server:
+  port: 8083
+  servlet:
+    context-path: /tenant-api
+
+# Application Configuration
+spring:
+  application:
+    name: tenant-service
+  
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/hermes_db
+    username: ${DB_USERNAME:hermes_user}
+    password: ${DB_PASSWORD:hermes_password}
+    driver-class-name: org.postgresql.Driver
+    
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.SnakeCasePhysicalNamingStrategy
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: false
+        format_sql: true
+        jdbc:
+          time_zone: Asia/Seoul
+
+# Multi-tenancy Configuration
+hermes:
+  multitenancy:
+    enabled: true
+    schema:
+      auto-create: true
+      validate-on-startup: true
+    cache:
+      enabled: true
+      ttl-minutes: 60
+    rabbitmq:
+      enabled: true
+      tenant-exchange: tenant.events
+      tenant-created-routing-key: tenant.created
+      tenant-deleted-routing-key: tenant.deleted
+      tenant-updated-routing-key: tenant.updated
+      tenant-status-changed-routing-key: tenant.status.changed
+      max-retry-count: 3
+      retry-delay: 5000
+
+# RabbitMQ Configuration
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+    connection-timeout: 60000
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+      retry:
+        enabled: true
+        initial-interval: 1000
+        max-attempts: 3
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+# Management & Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    com.hermes.tenantservice: INFO
+    com.hermes.multitenancy: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level [%X{tenantId:-system}] %logger{36} - %msg%n"
+
+# OpenAPI Documentation
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    groups-order: DESC
