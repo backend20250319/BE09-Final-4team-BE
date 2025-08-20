@@ -17,70 +17,85 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId;   // 유저 아이디 (PK)
+    private Long id;   // User ID (PK)
 
     @Column(nullable = false, length = 100)
-    private String name;  // 이름
+    private String name;  // Name
 
     @Column(nullable = false, unique = true, length = 100)
-    private String email;  // 이메일
+    private String email;  // Email
 
     @Column(nullable = false, length = 255)
-    private String password; // 패스워드(해시)
+    private String password; // Password (hashed)
 
     @Column(nullable = false, length = 100)
-    private String phone; // 휴대폰 번호
+    private String phone; // Phone number
 
     @Column(nullable = false, length = 100)
-    private String address; // 거주지
+    private String address; // Address
 
     @Column(nullable = false)
-    private LocalDate hireDate; // 입사일
+    private LocalDate joinDate = LocalDate.now(); // Join date
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
-    private AuthorityLevel authorityLevel; // 권한 수준 (ex: ADMIN, USER 등)
+    @Column (nullable = false)
+    private Boolean isAdmin = false;  // Admin flag
+    
+    @Column
+    private Boolean needsPasswordReset = false;  // Password reset required flag
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employment_type_wid")
-    private EmploymentType employmentType;  // 고용형태
+    private EmploymentType employmentType;  // Employment type
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rank_id")
-    private Rank rank;  // 직급
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "level_id")
-    private Level level;  // 직레벨
+    private Rank rank;  // Rank
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_id")
-    private Position position;  // 직위
+    private Position position;  // Position
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "duty_id")
-    private Duty duty;  // 직책
+    @JoinColumn(name = "job_id")
+    private Job job;  // Job
+
+    @Column(length = 100)
+    private String role;  // Role (direct input)
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EmployeeAssignment> assignments = new ArrayList<>();  // 부서 배치 이력
+    private List<EmployeeAssignment> assignments = new ArrayList<>();  // Department assignment list
+    
+    @Column
+    private LocalDateTime lastLoginAt;  // Last login time
+    
+    @Column
+    private LocalDateTime createdAt;  // Created time
+    
+    @Column
+    private LocalDateTime updatedAt;  // Updated time
+    
+    @Column(length = 500)
+    private String profileImage;  // Profile image URL
+    
 
-    @Column(nullable = false)
-    private Boolean isActive = true;  // 계정 활성 상태
     
-    @Column(nullable = false)
-    private Integer loginAttempts = 0;  // 로그인 시도 횟수
+    // @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private WorkHourPolicy workHourPolicy;  // 근무 정책
     
-    @Column
-    private LocalDateTime lastLoginAt;  // 마지막 로그인 시간
+    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private List<LeaveRecord> leaveRecords = new ArrayList<>();  // 휴가 이력
     
-    @Column
-    private LocalDateTime lockedAt;  // 계정 잠금 시간
+    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private List<WorkSchedule> workSchedules = new ArrayList<>();  // 근무 일정
     
-    @Column
-    private LocalDateTime createdAt;  // 생성 시간
+    // @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private DefaultWorkSchedule defaultWorkSchedule;  // 기본 근무 일정
     
-    @Column
-    private LocalDateTime updatedAt;  // 수정 시간
+    // @ManyToMany(mappedBy = "recipients", fetch = FetchType.LAZY)
+    // private List<Notification> notifications = new ArrayList<>();  // 알림 목록
+    
+    @Column(columnDefinition = "TEXT")
+    private String selfIntroduction;  // Self introduction
     
     @PrePersist
     protected void onCreate() {
@@ -93,34 +108,8 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 
-    public void incrementLoginAttempts() {
-        this.loginAttempts++;
-    }
-    
-    public void resetLoginAttempts() {
-        this.loginAttempts = 0;
-    }
-    
-    public void lockAccount() {
-        this.isActive = false;
-        this.lockedAt = LocalDateTime.now();
-    }
-    
-    public void unlockAccount() {
-        this.isActive = true;
-        this.lockedAt = null;
-        this.loginAttempts = 0;
-    }
-    
     public void updateLastLogin() {
         this.lastLoginAt = LocalDateTime.now();
     }
     
-    public boolean isAccountLocked() {
-        return this.lockedAt != null;
-    }
-    
-    public void setActive(boolean active) {
-        this.isActive = active;
-    }
 }

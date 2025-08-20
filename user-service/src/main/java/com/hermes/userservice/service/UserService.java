@@ -47,13 +47,13 @@ public class UserService {
         }
 
         //  토큰 생성
-        String accessToken = jwtTokenProvider.createToken(user.getEmail(), user.getUserId(), user.getAuthorityLevel().name());
+        String accessToken = jwtTokenProvider.createToken(user.getEmail(), user.getId(), user.getIsAdmin() ? "ADMIN" : "USER");
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
 
         //  RefreshToken 저장
         refreshTokenRepository.save(
                 RefreshToken.builder()
-                        .userId(user.getUserId())
+                        .userId(user.getId())
                         .token(refreshToken)
                         .expiration(LocalDateTime.now().plusSeconds(jwtTokenProvider.getRefreshExpiration() / 1000))
                         .build()

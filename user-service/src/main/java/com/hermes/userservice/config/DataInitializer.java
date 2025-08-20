@@ -1,6 +1,5 @@
 package com.hermes.userservice.config;
 
-import com.hermes.userservice.entity.AuthorityLevel;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -44,8 +43,8 @@ public class DataInitializer {
         admin.setPassword(passwordEncoder.encode("admin123"));
         admin.setPhone("010-1234-5678");
         admin.setAddress("서울시 강남구");
-        admin.setHireDate(LocalDate.of(2020, 1, 1));
-        admin.setAuthorityLevel(AuthorityLevel.ADMIN);
+        admin.setJoinDate(LocalDate.of(2020, 1, 1));
+        admin.setIsAdmin(true);
         userRepository.save(admin);
 
 
@@ -55,8 +54,8 @@ public class DataInitializer {
         user.setPassword(passwordEncoder.encode("user123"));
         user.setPhone("010-9876-5432");
         user.setAddress("서울시 서초구");
-        user.setHireDate(LocalDate.of(2021, 3, 15));
-        user.setAuthorityLevel(AuthorityLevel.EMPLOYEE);
+        user.setJoinDate(LocalDate.of(2021, 3, 15));
+        user.setIsAdmin(false);
         userRepository.save(user);
 
         log.info("테스트 사용자 생성 완료: admin@hermes.com, user@hermes.com");

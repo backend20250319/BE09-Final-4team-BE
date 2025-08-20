@@ -17,9 +17,7 @@ repositories {
 	mavenCentral()
 }
 
-ext {
-	set('springCloudVersion', "2025.0.0")
-}
+
 
 dependencies {
 	// WebFlux (Gateway는 WebFlux 기반)
@@ -38,23 +36,19 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
 	// 공통 JWT 모듈
-	implementation project(":jwt-common")
+	implementation project(":libs:jwt-common")
 	
 
 
-	// Lombok
-	compileOnly 'org.projectlombok:lombok:1.18.38'
-	annotationProcessor 'org.projectlombok:lombok:1.18.38'
-	testCompileOnly 'org.projectlombok:lombok:1.18.38'
-	testAnnotationProcessor 'org.projectlombok:lombok:1.18.38'
-
 	// 테스트
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'io.projectreactor:reactor-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	implementation 'com.github.ben-manes.caffeine:caffeine'
 }
+
+
+
+
 
 dependencyManagement {
 	imports {
