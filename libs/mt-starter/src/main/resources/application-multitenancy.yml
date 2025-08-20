@@ -49,8 +49,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.SnakeCasePhysicalNamingStrategy
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect

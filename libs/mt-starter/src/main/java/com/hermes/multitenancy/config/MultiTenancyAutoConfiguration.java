@@ -19,7 +19,7 @@ import org.springframework.context.annotation.ComponentScan;
  */
 @Slf4j
 @AutoConfiguration
-@EnableConfigurationProperties({MultiTenancyProperties.class, RabbitMQProperties.class})
+@EnableConfigurationProperties(MultiTenancyProperties.class)
 @ConditionalOnProperty(name = "hermes.multitenancy.enabled", havingValue = "true", matchIfMissing = true)
 @ComponentScan(basePackages = "com.hermes.multitenancy")
 public class MultiTenancyAutoConfiguration {

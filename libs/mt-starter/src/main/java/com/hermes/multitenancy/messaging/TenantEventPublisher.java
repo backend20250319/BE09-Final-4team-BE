@@ -5,17 +5,11 @@ import com.hermes.multitenancy.event.TenantEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 
 /**
  * 테넌트 이벤트를 RabbitMQ로 발행하는 Publisher
  */
 @Slf4j
-@Component
-@ConditionalOnClass(RabbitTemplate.class)
-@ConditionalOnProperty(prefix = "hermes.multitenancy.rabbitmq", name = "enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class TenantEventPublisher {
 

@@ -2,7 +2,6 @@ package com.hermes.multitenancy.jwt;
 
 import com.hermes.jwt.JwtTokenProvider;
 import com.hermes.multitenancy.dto.TenantInfo;
-import com.hermes.multitenancy.service.TenantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Component;
 public class TenantJwtExtractor {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final TenantService tenantService;
 
     /**
      * JWT 토큰에서 테넌트 정보 추출
@@ -33,17 +31,20 @@ public class TenantJwtExtractor {
             String tenantId = extractTenantId(token);
             
             if (tenantId != null && !tenantId.isEmpty()) {
-                // 테넌트 서비스에서 테넌트 정보 조회
-                TenantInfo tenantInfo = tenantService.getTenantInfo(tenantId);
-                if (tenantInfo != null) {
-                    return tenantInfo;
-                }
+                // JWT에서 추출한 테넌트 ID로 직접 TenantInfo 생성
+                String schemaName = generateSchemaName(tenantId);
+                return new TenantInfo(tenantId, tenantId, schemaName, "ACTIVE");
             }
             
-            // 테넌트 ID가 없거나 찾을 수 없으면 사용자 이메일로 테넌트 추론
+            // 테넌트 ID가 없으면 사용자 이메일에서 테넌트 추론
             String email = jwtTokenProvider.getEmailFromToken(token);
-            if (email != null) {
-                return tenantService.getTenantInfoByUserEmail(email);
+            if (email != null && email.contains("@")) {
+                String inferredTenantId = convertDomainToTenantId(email.substring(email.indexOf("@") + 1));
+                if (inferredTenantId != null) {
+                    String schemaName = generateSchemaName(inferredTenantId);
+                    log.debug("Inferred tenant from email domain: {} -> {}", email, inferredTenantId);
+                    return new TenantInfo(inferredTenantId, inferredTenantId, schemaName, "ACTIVE");
+                }
             }
             
             log.warn("No tenant information found in JWT token");
@@ -112,6 +113,16 @@ public class TenantJwtExtractor {
         }
         
         return tenantId.toLowerCase();
+    }
+
+    /**
+     * 테넌트 ID로부터 스키마명 생성
+     */
+    private String generateSchemaName(String tenantId) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return "public"; // 기본 스키마
+        }
+        return "tenant_" + tenantId.toLowerCase().replaceAll("[^a-z0-9]", "_");
     }
 
     /**

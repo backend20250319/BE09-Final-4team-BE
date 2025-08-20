@@ -1,17 +1,21 @@
 package com.hermes.multitenancy.config;
 
 import com.hermes.multitenancy.messaging.DefaultTenantEventListener;
+import com.hermes.multitenancy.messaging.TenantEventPublisher;
 import com.hermes.multitenancy.util.SchemaUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.DependsOn;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * 테넌트 이벤트 처리를 위한 완전 자동 구성
@@ -21,6 +25,7 @@ import org.springframework.context.annotation.DependsOn;
 @AutoConfiguration
 @ConditionalOnClass(RabbitTemplate.class)
 @ConditionalOnProperty(prefix = "hermes.multitenancy.rabbitmq", name = "enabled", havingValue = "true", matchIfMissing = true)
+@EnableConfigurationProperties(RabbitMQProperties.class)
 public class TenantEventAutoConfiguration {
 
     @Value("${spring.application.name:unknown-service}")
@@ -61,11 +66,61 @@ public class TenantEventAutoConfiguration {
     }
 
     /**
+     * 테넌트 이벤트 Exchange (Topic Exchange) - Auto Configuration용
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "tenantEventExchange")
+    public TopicExchange tenantEventExchange(RabbitMQProperties properties) {
+        log.info("Auto-creating tenant event exchange: {}", properties.getTenantExchange());
+        return ExchangeBuilder
+                .topicExchange(properties.getTenantExchange())
+                .durable(true)
+                .build();
+    }
+
+    /**
+     * Dead Letter Exchange - Auto Configuration용
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "deadLetterExchange")
+    public DirectExchange deadLetterExchange(RabbitMQProperties properties) {
+        log.info("Auto-creating dead letter exchange: {}", properties.getDeadLetterExchange());
+        return ExchangeBuilder
+                .directExchange(properties.getDeadLetterExchange())
+                .durable(true)
+                .build();
+    }
+
+    /**
+     * JSON 메시지 컨버터 - Auto Configuration용
+     */
+    @Bean
+    @ConditionalOnMissingBean(Jackson2JsonMessageConverter.class)
+    public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
+        log.info("Auto-creating Jackson2JsonMessageConverter");
+        return new Jackson2JsonMessageConverter();
+    }
+
+    /**
+     * RabbitTemplate - Auto Configuration용
+     */
+    @Bean
+    @ConditionalOnMissingBean(RabbitTemplate.class)
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, 
+                                       Jackson2JsonMessageConverter messageConverter) {
+        log.info("Auto-creating RabbitTemplate");
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+        rabbitTemplate.setMessageConverter(messageConverter);
+        return rabbitTemplate;
+    }
+
+    /**
      * 테넌트 이벤트 Queue와 Exchange 바인딩 자동 생성
      */
     @Bean
-    @DependsOn({"tenantEventQueue", "tenantEventExchange"})
-    public Binding tenantEventBinding(Queue tenantEventQueue, TopicExchange tenantEventExchange) {
+    public Binding tenantEventBinding(
+            @Qualifier("tenantEventQueue") Queue tenantEventQueue, 
+            @Qualifier("tenantEventExchange") TopicExchange tenantEventExchange) {
         Binding binding = BindingBuilder
                 .bind(tenantEventQueue)
                 .to(tenantEventExchange)
@@ -80,8 +135,9 @@ public class TenantEventAutoConfiguration {
      * Dead Letter Queue와 Dead Letter Exchange 바인딩 자동 생성
      */
     @Bean
-    @DependsOn({"tenantEventDeadLetterQueue", "deadLetterExchange"})
-    public Binding tenantEventDeadLetterBinding(Queue tenantEventDeadLetterQueue, DirectExchange deadLetterExchange) {
+    public Binding tenantEventDeadLetterBinding(
+            @Qualifier("tenantEventDeadLetterQueue") Queue tenantEventDeadLetterQueue, 
+            @Qualifier("deadLetterExchange") DirectExchange deadLetterExchange) {
         Binding binding = BindingBuilder
                 .bind(tenantEventDeadLetterQueue)
                 .to(deadLetterExchange)
@@ -95,12 +151,24 @@ public class TenantEventAutoConfiguration {
     /**
      * 기본 테넌트 이벤트 리스너 자동 등록
      * 사용자가 별도의 리스너를 구현하지 않은 경우에만 등록됩니다.
+     * 멀티테넌시가 활성화된 경우에만 등록됩니다 (SchemaUtils가 필요하므로).
      */
     @Bean
     @ConditionalOnMissingBean(name = "tenantEventListener")
+    @ConditionalOnProperty(name = "hermes.multitenancy.enabled", havingValue = "true")
     public DefaultTenantEventListener defaultTenantEventListener(RabbitMQProperties properties, SchemaUtils schemaUtils) {
         log.info("Auto-registering default tenant event listener for service '{}'", serviceName);
         return new DefaultTenantEventListener(properties, schemaUtils, serviceName);
+    }
+
+    /**
+     * TenantEventPublisher 빈 자동 등록
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public TenantEventPublisher tenantEventPublisher(RabbitTemplate rabbitTemplate, RabbitMQProperties properties) {
+        log.info("Auto-registering TenantEventPublisher for service '{}'", serviceName);
+        return new TenantEventPublisher(rabbitTemplate, properties);
     }
 
     /**
@@ -111,7 +179,8 @@ public class TenantEventAutoConfiguration {
         log.info("Tenant Event Auto Configuration for service '{}' completed:", serviceName);
         log.info("  - Queue: tenant.events.{}", serviceName);
         log.info("  - Dead Letter Queue: tenant.events.dlq.{}", serviceName);
-        log.info("  - Default event listener: {}", "Auto-registered");
+        log.info("  - TenantEventPublisher: Auto-registered");
+        log.info("  - Default event listener: {}", "Auto-registered (if no custom listener)");
         return new Object();
     }
 }

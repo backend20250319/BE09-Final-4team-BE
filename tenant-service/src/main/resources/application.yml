@@ -6,22 +6,10 @@ server:
 
 # Application Configuration
 spring:
-  application:
-    name: tenant-service
-  
-  # Database Configuration
-  datasource:
-    url: jdbc:postgresql://localhost:5432/hermes_db
-    username: ${DB_USERNAME:hermes_user}
-    password: ${DB_PASSWORD:hermes_password}
-    driver-class-name: org.postgresql.Driver
-    
   # JPA Configuration
   jpa:
     hibernate:
       ddl-auto: update
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.SnakeCasePhysicalNamingStrategy
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -30,28 +18,7 @@ spring:
         jdbc:
           time_zone: Asia/Seoul
 
-# Multi-tenancy Configuration
-hermes:
-  multitenancy:
-    enabled: true
-    schema:
-      auto-create: true
-      validate-on-startup: true
-    cache:
-      enabled: true
-      ttl-minutes: 60
-    rabbitmq:
-      enabled: true
-      tenant-exchange: tenant.events
-      tenant-created-routing-key: tenant.created
-      tenant-deleted-routing-key: tenant.deleted
-      tenant-updated-routing-key: tenant.updated
-      tenant-status-changed-routing-key: tenant.status.changed
-      max-retry-count: 3
-      retry-delay: 5000
-
 # RabbitMQ Configuration
-spring:
   rabbitmq:
     host: localhost
     port: 5672
@@ -67,6 +34,26 @@ spring:
         enabled: true
         initial-interval: 1000
         max-attempts: 3
+
+# JWT Configuration (RabbitMQ 메시지 처리용)
+jwt:
+  secret: ${JWT_SECRET:dGVzdC1zZWNyZXQta2V5LWZvci10ZW5hbnQtc2VydmljZS1oZXJtZXMtcHJvamVjdA==}
+  expiration-time: 86400000    # 24시간
+  refresh-expiration: 604800000 # 7일
+
+# Multi-tenancy Configuration
+hermes:
+  multitenancy:
+    enabled: false  # 🔥 Tenant Service는 멀티테넌시 비활성화 (단일 DB 사용)
+    rabbitmq:
+      enabled: true   # RabbitMQ는 활성화 (이벤트 발행용)
+      tenant-exchange: tenant.events
+      tenant-created-routing-key: tenant.created
+      tenant-deleted-routing-key: tenant.deleted
+      tenant-updated-routing-key: tenant.updated
+      tenant-status-changed-routing-key: tenant.status.changed
+      max-retry-count: 3
+      retry-delay: 5000
 
 # Eureka Client Configuration
 eureka:
@@ -87,9 +74,9 @@ management:
   endpoint:
     health:
       show-details: always
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true
 
 # Logging Configuration
