@@ -23,7 +23,6 @@ allprojects {
 subprojects {
 	apply plugin: 'java'
 	apply plugin: 'io.spring.dependency-management'
-	apply plugin: 'org.springframework.boot'
 
 	java {
 		toolchain {
@@ -31,29 +30,25 @@ subprojects {
 		}
 	}
 
-	dependencies {
-		// 공통 의존성
-		implementation 'org.springframework.boot:spring-boot-starter'
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+        }
+    }
 
-		// Lombok - 버전 변수 사용
-		compileOnly "org.projectlombok:lombok:1.18.38"
-		annotationProcessor "org.projectlombok:lombok:1.18.38"
-		testCompileOnly "org.projectlombok:lombok:1.18.38"
-		testAnnotationProcessor "org.projectlombok:lombok:1.18.38"
+    dependencies {
+        // Lombok
+        compileOnly "org.projectlombok:lombok:1.18.38"
+        annotationProcessor "org.projectlombok:lombok:1.18.38"
+        testCompileOnly "org.projectlombok:lombok:1.18.38"
+        testAnnotationProcessor "org.projectlombok:lombok:1.18.38"
 
-		// 테스트 의존성
-		testImplementation 'org.springframework.boot:spring-boot-starter-test'
-		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	}
+        // 테스트 의존성
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
 
-	test {
-		useJUnitPlatform()
-	}
+    test {
+        useJUnitPlatform()
+    }
 }
-
-dependencyManagement {
-	imports {
-		mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.0.0"
-	}
-}
-
