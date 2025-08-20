@@ -2,6 +2,7 @@ package com.hermes.attendanceservice.service;
 
 import com.hermes.attendanceservice.dto.AttendanceResponse;
 import com.hermes.attendanceservice.dto.WeeklyWorkSummary;
+import com.hermes.attendanceservice.dto.DailyWorkSummary;
 import com.hermes.attendanceservice.entity.Attendance;
 import com.hermes.attendanceservice.entity.WorkStatus;
 import com.hermes.attendanceservice.repository.AttendanceRepository;
@@ -205,7 +206,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .build();
     }
 
-    private List<WeeklyWorkSummary.DailyWorkSummary> createDailySummaries(List<Attendance> records, Map<LocalDate, Long> daily) {
+    private List<DailyWorkSummary> createDailySummaries(List<Attendance> records, Map<LocalDate, Long> daily) {
         return daily.entrySet().stream()
                 .map(entry -> {
                     LocalDate date = entry.getKey();
@@ -216,7 +217,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                             .findFirst()
                             .orElse(null);
                     
-                    return WeeklyWorkSummary.DailyWorkSummary.builder()
+                    return DailyWorkSummary.builder()
                             .date(date)
                             .status(record != null ? record.getStatus().name() : "NO_RECORD")
                             .workMinutes(minutes.doubleValue())
