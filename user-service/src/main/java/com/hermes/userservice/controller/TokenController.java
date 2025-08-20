@@ -3,10 +3,10 @@ package com.hermes.userservice.controller;
 import com.hermes.jwt.JwtTokenProvider;
 import com.hermes.jwt.JwtPayload;
 import com.hermes.jwt.dto.TokenValidationResponse;
-import com.hermes.userservice.dto.ApiResponse;
-import com.hermes.userservice.jwt.dto.RefreshRequest;
-import com.hermes.userservice.jwt.dto.TokenRequest;
-import com.hermes.userservice.jwt.dto.TokenResponse;
+import com.hermes.jwt.dto.ApiResponse;
+import com.hermes.jwt.dto.RefreshRequest;
+import com.hermes.jwt.dto.TokenRequest;
+import com.hermes.jwt.dto.TokenResponse;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.repository.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
-import com.hermes.userservice.service.TokenBlacklistService;
+import com.hermes.jwt.service.TokenBlacklistService;
 
 @Slf4j
 @RestController
@@ -37,13 +37,13 @@ public class TokenController {
     @PostMapping("/generate")
     public ResponseEntity<ApiResponse<TokenResponse>> generateToken(@RequestBody TokenRequest request) {
         String accessToken = jwtTokenProvider.createToken(request.getEmail(), request.getUserId(), "USER");
-        String refreshToken = jwtTokenProvider.createRefreshToken(request.getEmail());
+        String refreshToken = jwtTokenProvider.createRefreshToken(String.valueOf(request.getUserId()), request.getEmail());
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expiration = now.plusSeconds(jwtTokenProvider.getRefreshExpiration() / 1000);
-        
+
         log.info("토큰 생성: 현재시간={}, 만료시간={}, userId={}", now, expiration, request.getUserId());
-        
+
         refreshTokenRepository.save(
                 RefreshToken.builder()
                         .userId(request.getUserId())
@@ -59,8 +59,8 @@ public class TokenController {
     public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader,
             @RequestBody RefreshRequest request) {
-    
-        log.info("�� [Token Controller] 토큰 갱신 요청 받음");
+
+        log.info(" [Token Controller] 토큰 갱신 요청 받음");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new IllegalArgumentException("Authorization 헤더가 없거나 형식이 잘못되었습니다.");
@@ -68,17 +68,18 @@ public class TokenController {
 
         String token = authHeader.substring(7); // "Bearer " 제거
         log.info(" [Token Controller] JWT 토큰: {}", token.substring(0, Math.min(20, token.length())) + "...");
-    
+
         if (!jwtTokenProvider.isValidToken(token)) {
             throw new RuntimeException("유효하지 않은 토큰입니다.");
         }
 
         Long userId = Long.valueOf(jwtTokenProvider.getClaimFromToken(token, "userId"));
-        log.info(" [Token Controller] JWT에서 userId 추출: {}", userId);
+        String email = jwtTokenProvider.getEmailFromToken(token); // access token에서 email 추출
+        log.info(" [Token Controller] JWT에서 userId 추출: {}, email: {}", userId, email);
 
         RefreshToken saved = refreshTokenRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("RefreshToken not found"));
-    
+
         if (!saved.getToken().equals(request.getRefreshToken())) {
             throw new RuntimeException("유효하지 않은 RefreshToken입니다.");
         }
@@ -90,14 +91,14 @@ public class TokenController {
 
         Instant now = Instant.now();
         Instant expiration = saved.getExpiration().atZone(ZoneId.systemDefault()).toInstant();
-        
+
         if (expiration.isBefore(now)) {
             log.warn("RefreshToken 만료: 현재시간={}, 만료시간={}, userId={}", now, expiration, userId);
             throw new RuntimeException("만료된 RefreshToken입니다.");
         }
 
-        String newAccessToken = jwtTokenProvider.createToken(request.getEmail(), userId, "USER");
-    
+        String newAccessToken = jwtTokenProvider.createToken(email, userId, "USER");
+
         log.info(" [Token Controller] 토큰 갱신 성공: userId={}", userId);
         return ResponseEntity.ok(ApiResponse.success("토큰이 성공적으로 갱신되었습니다.", new TokenResponse(newAccessToken, saved.getToken())));
     }
@@ -136,8 +137,8 @@ public class TokenController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Map<String, String>>> logout(@RequestHeader("X-User-Id") String userId,
-                                                             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader,
-                                                             @RequestBody(required = false) Map<String, String> requestBody) {
+                                                                   @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader,
+                                                                   @RequestBody(required = false) Map<String, String> requestBody) {
         log.info(" [Token Controller] /logout 요청 - userId: {}", userId);
 
         String accessToken = null;
@@ -172,7 +173,7 @@ public class TokenController {
 
             tokenBlacklistService.recordUserLogout(Long.valueOf(userId), System.currentTimeMillis());
             log.info(" [Token Controller] 사용자 로그아웃 시간 기록 완료 - userId: {}", userId);
-            
+
         } catch (Exception e) {
             log.error(" [Token Controller] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage(), e);
             throw new RuntimeException("로그아웃 처리 중 오류가 발생했습니다.", e);
@@ -194,7 +195,7 @@ public class TokenController {
     @PostMapping("/check-blacklist")
     public ResponseEntity<ApiResponse<Map<String, Object>>> checkBlacklist(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         log.info(" [Token Controller] 블랙리스트 검증 요청 받음");
-        
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new IllegalArgumentException("Authorization 헤더가 없거나 형식이 잘못되었습니다.");
         }
@@ -203,11 +204,11 @@ public class TokenController {
         log.info(" [Token Controller] JWT 토큰: {}", token.substring(0, Math.min(20, token.length())) + "...");
 
         boolean isBlacklisted = tokenBlacklistService.isBlacklisted(token);
-        
+
         Map<String, Object> result = new HashMap<>();
         result.put("isBlacklisted", isBlacklisted);
         result.put("message", isBlacklisted ? "토큰이 블랙리스트에 있습니다." : "토큰이 유효합니다.");
-        
+
         log.info(" [Token Controller] 블랙리스트 검증 완료: isBlacklisted={}", isBlacklisted);
         return ResponseEntity.ok(ApiResponse.success("블랙리스트 검증이 완료되었습니다.", result));
     }

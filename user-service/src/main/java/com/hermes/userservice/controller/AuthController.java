@@ -1,8 +1,8 @@
 package com.hermes.userservice.controller;
 
-import com.hermes.userservice.dto.ApiResponse;
+import com.hermes.jwt.dto.ApiResponse;
 import com.hermes.userservice.dto.LoginRequestDto;
-import com.hermes.userservice.jwt.dto.TokenResponse;
+import com.hermes.jwt.dto.TokenResponse;
 import com.hermes.userservice.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

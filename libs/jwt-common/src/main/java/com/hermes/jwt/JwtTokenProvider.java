@@ -39,12 +39,13 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String createRefreshToken(String subject) {
+    public String createRefreshToken(String subject,  String email) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + refreshExpiration);
 
         return Jwts.builder()
                 .subject(subject)
+                .claim("email", email)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey, Jwts.SIG.HS256)

@@ -1,11 +1,12 @@
 package com.hermes.userservice.service;
 
 import com.hermes.jwt.JwtTokenProvider;
+import com.hermes.jwt.service.TokenBlacklistService; // libs/jwt-common에서 import
 import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.InvalidCredentialsException;
 import com.hermes.userservice.exception.UserNotFoundException;
-import com.hermes.userservice.jwt.dto.TokenResponse;
+import com.hermes.jwt.dto.TokenResponse;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;
@@ -38,7 +39,7 @@ public class UserService {
             if (!loginDto.getPassword().equals(user.getPassword())) {
                 throw new InvalidCredentialsException("비밀번호가 일치하지 않습니다.");
             }
-            
+
             // 평문 비밀번호를 BCrypt로 암호화하여 업데이트
             String encodedPassword = passwordEncoder.encode(loginDto.getPassword());
             user.setPassword(encodedPassword);
@@ -47,7 +48,7 @@ public class UserService {
 
         //  토큰 생성
         String accessToken = jwtTokenProvider.createToken(user.getEmail(), user.getId(), user.getIsAdmin() ? "ADMIN" : "USER");
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
+        String refreshToken = jwtTokenProvider.createRefreshToken(String.valueOf(user.getId()), user.getEmail());
 
         //  RefreshToken 저장
         refreshTokenRepository.save(
@@ -64,28 +65,28 @@ public class UserService {
     // 로그아웃 메서드 개선 - Access Token과 Refresh Token 모두 블랙리스트에 추가
     public void logout(Long userId, String accessToken, String refreshToken) {
         log.info(" [User Service] 로그아웃 처리 시작 - userId: {}", userId);
-        
+
         try {
             // 1. RefreshToken 삭제
             refreshTokenRepository.deleteById(userId);
             log.info("[User Service] RefreshToken 삭제 완료 - userId: {}", userId);
-            
+
             // 2. Access Token을 블랙리스트에 추가
             if (accessToken != null && !accessToken.isEmpty()) {
                 tokenBlacklistService.blacklistToken(accessToken, jwtTokenProvider.getExpirationTime());
                 log.info(" [User Service] Access Token 블랙리스트 추가 완료 - userId: {}", userId);
             }
-            
+
             // 3. Refresh Token을 블랙리스트에 추가
             if (refreshToken != null && !refreshToken.isEmpty()) {
                 tokenBlacklistService.blacklistRefreshToken(refreshToken, jwtTokenProvider.getRefreshExpiration());
                 log.info(" [User Service] Refresh Token 블랙리스트 추가 완료 - userId: {}", userId);
             }
-            
+
             // 4. 사용자 로그아웃 시간 기록
             tokenBlacklistService.recordUserLogout(userId, System.currentTimeMillis());
             log.info(" [User Service] 사용자 로그아웃 시간 기록 완료 - userId: {}", userId);
-            
+
         } catch (Exception e) {
             log.error("❌[User Service] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage(), e);
             throw new RuntimeException("로그아웃 처리 중 오류가 발생했습니다.", e);
