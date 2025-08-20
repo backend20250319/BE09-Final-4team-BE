@@ -1,0 +1,8 @@
+rootProject.name = 'hermes'
+
+include 'config-server'
+include 'discovery-server'
+include 'libs:jwt-common'
+include 'gateway-server'
+include 'user-service'
+include 'news-crawler-service'
