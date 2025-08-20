@@ -4,9 +4,9 @@ spring:
 
   # PostgreSQL Database Configuration
   datasource:
-    url: jdbc:postgresql://dev.macacolabs.site:5432/attendancedb
-    username: hermes
-    password: hajter-Winbos-xafse9
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/attendancedb}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
 
   # JPA Configuration
