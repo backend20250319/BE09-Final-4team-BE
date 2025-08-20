@@ -1,4 +1,4 @@
-package com.hermes.userservice.jwt.entity;
+package com.hermes.userservice.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

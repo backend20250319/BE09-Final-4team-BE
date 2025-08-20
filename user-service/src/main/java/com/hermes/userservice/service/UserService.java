@@ -1,14 +1,13 @@
 package com.hermes.userservice.service;
 
 import com.hermes.jwt.JwtTokenProvider;
-import com.hermes.userservice.service.TokenBlacklistService;
 import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.InvalidCredentialsException;
 import com.hermes.userservice.exception.UserNotFoundException;
 import com.hermes.userservice.jwt.dto.TokenResponse;
-import com.hermes.userservice.jwt.entity.RefreshToken;
-import com.hermes.userservice.jwt.repository.RefreshTokenRepository;
+import com.hermes.userservice.entity.RefreshToken;
+import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
