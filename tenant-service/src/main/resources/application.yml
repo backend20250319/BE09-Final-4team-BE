@@ -9,7 +9,7 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: update  # tenant-service는 단일 DB이므로 JPA 자동 관리
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -17,6 +17,10 @@ spring:
         format_sql: true
         jdbc:
           time_zone: Asia/Seoul
+  
+  # Flyway 비활성화 (tenant-service는 메타데이터만 관리)
+  flyway:
+    enabled: false
 
 # RabbitMQ Configuration
   rabbitmq:

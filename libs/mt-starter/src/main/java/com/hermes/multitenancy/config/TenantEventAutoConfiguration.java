@@ -1,6 +1,8 @@
 package com.hermes.multitenancy.config;
 
+import com.hermes.multitenancy.flyway.FlywayTenantInitializer;
 import com.hermes.multitenancy.messaging.DefaultTenantEventListener;
+import com.hermes.multitenancy.messaging.FlywayTenantEventListener;
 import com.hermes.multitenancy.messaging.TenantEventPublisher;
 import com.hermes.multitenancy.util.SchemaUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +27,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @AutoConfiguration
 @ConditionalOnClass(RabbitTemplate.class)
 @ConditionalOnProperty(prefix = "hermes.multitenancy.rabbitmq", name = "enabled", havingValue = "true", matchIfMissing = true)
-@EnableConfigurationProperties(RabbitMQProperties.class)
+@EnableConfigurationProperties({RabbitMQProperties.class, FlywayProperties.class})
 public class TenantEventAutoConfiguration {
 
     @Value("${spring.application.name:unknown-service}")
@@ -149,15 +151,31 @@ public class TenantEventAutoConfiguration {
     }
 
     /**
-     * 기본 테넌트 이벤트 리스너 자동 등록
-     * 사용자가 별도의 리스너를 구현하지 않은 경우에만 등록됩니다.
-     * 멀티테넌시가 활성화된 경우에만 등록됩니다 (SchemaUtils가 필요하므로).
+     * Flyway 기반 테넌트 이벤트 리스너 자동 등록 (우선순위)
+     * Flyway가 활성화되고 멀티테넌시가 활성화된 경우 등록됩니다.
      */
     @Bean
     @ConditionalOnMissingBean(name = "tenantEventListener")
     @ConditionalOnProperty(name = "hermes.multitenancy.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "hermes.multitenancy.flyway.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnClass(name = "org.flywaydb.core.Flyway")
+    public FlywayTenantEventListener flywayTenantEventListener(
+            RabbitMQProperties rabbitMQProperties, 
+            FlywayTenantInitializer flywayTenantInitializer) {
+        log.info("Auto-registering Flyway tenant event listener for service '{}'", serviceName);
+        return new FlywayTenantEventListener(rabbitMQProperties, flywayTenantInitializer, serviceName);
+    }
+
+    /**
+     * 기본 테넌트 이벤트 리스너 자동 등록 (fallback)
+     * Flyway가 비활성화된 경우에만 등록됩니다.
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "tenantEventListener")
+    @ConditionalOnProperty(name = "hermes.multitenancy.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "hermes.multitenancy.flyway.enabled", havingValue = "false")
     public DefaultTenantEventListener defaultTenantEventListener(RabbitMQProperties properties, SchemaUtils schemaUtils) {
-        log.info("Auto-registering default tenant event listener for service '{}'", serviceName);
+        log.info("Auto-registering default (non-Flyway) tenant event listener for service '{}'", serviceName);
         return new DefaultTenantEventListener(properties, schemaUtils, serviceName);
     }
 

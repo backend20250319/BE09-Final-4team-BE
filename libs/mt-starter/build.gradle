@@ -21,6 +21,10 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
     api 'org.springframework.boot:spring-boot-starter-amqp'
     
+    // Flyway for database migration
+    api 'org.flywaydb:flyway-core'
+    compileOnly 'org.flywaydb:flyway-database-postgresql'
+    
     // Optional dependencies that using services can include
     compileOnly 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.postgresql:postgresql'
