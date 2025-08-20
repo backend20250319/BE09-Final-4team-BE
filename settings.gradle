@@ -2,7 +2,7 @@ rootProject.name = 'hermes'
 
 include 'config-server'
 include 'discovery-server'
-include 'jwt-common'
+include 'libs:jwt-common'
 include 'gateway-server'
 include 'user-service'
 include 'org-service'

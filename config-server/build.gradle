@@ -15,13 +15,11 @@ java {
 
 repositories {
     mavenCentral()
-    maven { url "https://repo.spring.io/release" }
-    maven { url "https://repo1.maven.org/maven2" }
+    maven { url = "https://repo.spring.io/release" }
+    maven { url = "https://repo1.maven.org/maven2" }
 }
 
-ext {
-    set('springCloudVersion', "2025.0.0")
-}
+
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -34,13 +32,14 @@ dependencies {
     implementation 'com.sun.jersey:jersey-servlet:1.19.4'
     implementation 'com.sun.jersey.contribs:jersey-apache-client4:1.19.4'
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
 
     implementation 'com.github.ben-manes.caffeine:caffeine'
 }
+
+
+
+
 
 dependencyManagement {
     imports {
