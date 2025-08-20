@@ -19,6 +19,7 @@ dependencies {
     // Spring Boot - API only for library
     api 'org.springframework.boot:spring-boot-autoconfigure'
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    api 'org.springframework.boot:spring-boot-starter-amqp'
     
     // Optional dependencies that using services can include
     compileOnly 'org.springframework.boot:spring-boot-starter-web'
