@@ -17,12 +17,6 @@ public class SecurityConfig {
 
     private static final String[] WHITELIST = {
             "/api/auth/login",
-            "/api/token/validate",
-            "/token/validate",
-            "/api/token/generate", 
-            "/api/token/refresh",
-            "/api/token/logout",
-            "/api/token/check-blacklist"
     };
 
     @Bean

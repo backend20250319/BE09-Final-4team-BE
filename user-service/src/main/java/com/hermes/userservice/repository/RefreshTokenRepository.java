@@ -1,6 +1,6 @@
-package com.hermes.userservice.jwt.repository;
+package com.hermes.userservice.repository;
 
-import com.hermes.userservice.jwt.entity.RefreshToken;
+import com.hermes.userservice.entity.RefreshToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

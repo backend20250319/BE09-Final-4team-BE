@@ -30,7 +30,7 @@ dependencies {
 
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
 
-    implementation project(":jwt-common")
+    implementation project(":libs:jwt-common")
 
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
