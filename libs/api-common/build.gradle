@@ -1,0 +1,11 @@
+plugins {
+    id 'java-library'
+    id 'io.spring.dependency-management'
+}
+
+group = 'com.hermes'
+version = '0.0.1-SNAPSHOT'
+
+dependencies {
+    api 'org.springframework:spring-web'
+} 
