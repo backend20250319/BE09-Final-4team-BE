@@ -1,4 +1,4 @@
-package com.hermes.userservice.entity;
+package com.hermes.orgservice.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,24 +10,32 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class EmployeeAssignment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long assignmentId;
 
-    @ManyToOne
-    @JoinColumn(name = "employee_id", nullable = false)
-    private User employee;
+    @Column(name = "employee_id", nullable = false)
+    private Long employeeId;
 
     @ManyToOne
     @JoinColumn(name = "organization_id", nullable = false)
     private Organization organization;
 
     @Column(nullable = false)
-    private Boolean isPrimary = false;  // 메인부서 여부
+    private Boolean isPrimary = false;
 
     @Column(nullable = false)
-    private Boolean isLeader = false;  // 해당 부서에서의 조직장 여부
-}
+    private Boolean isLeader = false;
 
+    @Column(name = "assigned_at")
+    private LocalDateTime assignedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        assignedAt = LocalDateTime.now();
+    }
+}
