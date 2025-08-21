@@ -32,7 +32,7 @@ public class EmployeeAssignmentService {
         Organization organization = organizationRepository.findById(request.getOrganizationId())
                 .orElseThrow(() -> new OrganizationNotFoundException(request.getOrganizationId()));
         
-        if (employeeAssignmentRepository.existsByEmployeeIdAndOrganizationId(
+        if (employeeAssignmentRepository.existsByEmployeeIdAndOrganizationOrganizationId(
                 request.getEmployeeId(), request.getOrganizationId())) {
             throw new RuntimeException("Employee is already assigned to this organization.");
         }
@@ -77,7 +77,7 @@ public class EmployeeAssignmentService {
 
     @Transactional(readOnly = true)
     public List<EmployeeAssignmentDto> getAssignmentsByOrganizationId(Long organizationId) {
-        List<EmployeeAssignment> assignments = employeeAssignmentRepository.findByOrganizationId(organizationId);
+        List<EmployeeAssignment> assignments = employeeAssignmentRepository.findByOrganizationOrganizationId(organizationId);
         return assignments.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -93,7 +93,7 @@ public class EmployeeAssignmentService {
 
     @Transactional(readOnly = true)
     public List<EmployeeAssignmentDto> getLeadersByOrganizationId(Long organizationId) {
-        List<EmployeeAssignment> assignments = employeeAssignmentRepository.findByOrganizationIdAndIsLeaderTrue(organizationId);
+        List<EmployeeAssignment> assignments = employeeAssignmentRepository.findByOrganizationOrganizationIdAndIsLeaderTrue(organizationId);
         return assignments.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());

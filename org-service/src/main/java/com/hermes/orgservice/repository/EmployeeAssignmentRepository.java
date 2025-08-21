@@ -14,23 +14,23 @@ public interface EmployeeAssignmentRepository extends JpaRepository<EmployeeAssi
 
     List<EmployeeAssignment> findByEmployeeId(Long employeeId);
     
-    List<EmployeeAssignment> findByOrganizationId(Long organizationId);
+    List<EmployeeAssignment> findByOrganizationOrganizationId(Long organizationId);
     
-    Optional<EmployeeAssignment> findByEmployeeIdAndOrganizationId(Long employeeId, Long organizationId);
+    Optional<EmployeeAssignment> findByEmployeeIdAndOrganizationOrganizationId(Long employeeId, Long organizationId);
     
     List<EmployeeAssignment> findByEmployeeIdAndIsPrimaryTrue(Long employeeId);
     
-    List<EmployeeAssignment> findByOrganizationIdAndIsLeaderTrue(Long organizationId);
+    List<EmployeeAssignment> findByOrganizationOrganizationIdAndIsLeaderTrue(Long organizationId);
     
     @Query("SELECT ea FROM EmployeeAssignment ea WHERE ea.employeeId = :employeeId AND ea.isPrimary = true")
     List<EmployeeAssignment> findPrimaryAssignmentsByEmployeeId(@Param("employeeId") Long employeeId);
     
-    @Query("SELECT ea FROM EmployeeAssignment ea WHERE ea.organizationId = :organizationId AND ea.isLeader = true")
+    @Query("SELECT ea FROM EmployeeAssignment ea WHERE ea.organization.organizationId = :organizationId AND ea.isLeader = true")
     List<EmployeeAssignment> findLeadersByOrganizationId(@Param("organizationId") Long organizationId);
     
-    boolean existsByEmployeeIdAndOrganizationId(Long employeeId, Long organizationId);
+    boolean existsByEmployeeIdAndOrganizationOrganizationId(Long employeeId, Long organizationId);
     
-    long countByOrganizationId(Long organizationId);
+    long countByOrganizationOrganizationId(Long organizationId);
     
-    long countByOrganizationIdAndIsLeaderTrue(Long organizationId);
+    long countByOrganizationOrganizationIdAndIsLeaderTrue(Long organizationId);
 }
