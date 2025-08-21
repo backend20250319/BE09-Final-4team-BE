@@ -1,5 +1,6 @@
 package com.hermes.jwt;
 
+import com.hermes.jwt.context.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -37,6 +38,11 @@ public class JwtTokenProvider {
                 .expiration(expiryDate)
                 .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
+    }
+    
+    public String createToken(String email, Long userId, Role role) {
+        String roleString = role != null ? role.name() : Role.USER.name();
+        return createToken(email, userId, roleString);
     }
 
     public String createRefreshToken(String subject,  String email) {
@@ -80,6 +86,14 @@ public class JwtTokenProvider {
         String role = roleObj != null ? roleObj.toString() : null;
 
         return new JwtPayload(userId, email, role);
+    }
+    
+    /**
+     * 토큰에서 Role enum을 추출합니다.
+     */
+    public Role getRoleFromToken(String token) {
+        String roleString = getClaimFromToken(token, "role");
+        return Role.fromString(roleString, Role.USER);
     }
 
     public String getClaimFromToken(String token, String claimName) {

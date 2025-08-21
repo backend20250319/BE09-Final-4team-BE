@@ -8,6 +8,7 @@ import com.hermes.userservice.service.UserService;
 import com.hermes.jwt.JwtTokenProvider;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.repository.RefreshTokenRepository;
+import com.hermes.userservice.repository.UserRepository;
 import com.hermes.jwt.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class AuthController {
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final UserRepository userRepository;
     private final TokenBlacklistService tokenBlacklistService;
 
     @PostMapping("/login")
@@ -106,7 +108,12 @@ public class AuthController {
             throw new RuntimeException("만료된 RefreshToken입니다.");
         }
 
-        String newAccessToken = jwtTokenProvider.createToken(email, userId, "USER");
+        // 사용자 정보를 조회하여 실제 권한을 확인
+        com.hermes.userservice.entity.User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        
+        String userRole = user.getIsAdmin() ? "ADMIN" : "USER";
+        String newAccessToken = jwtTokenProvider.createToken(email, userId, userRole);
 
         log.info(" [Auth Controller] 토큰 갱신 성공: userId={}", userId);
         return ResponseEntity.ok(ApiResponse.success("토큰이 성공적으로 갱신되었습니다.",

@@ -35,7 +35,7 @@ public class AuthContext {
     
     /**
      * 현재 스레드의 사용자 ID를 반환합니다.
-     * 
+     *
      * @return 현재 사용자 ID, 인증되지 않은 경우 null
      */
     public static Long getCurrentUserId() {
@@ -58,7 +58,7 @@ public class AuthContext {
      * 
      * @return 현재 사용자 역할, 인증되지 않은 경우 null
      */
-    public static String getCurrentUserRole() {
+    public static Role getCurrentUserRole() {
         UserInfo userInfo = getCurrentUser();
         return userInfo != null ? userInfo.getRole() : null;
     }

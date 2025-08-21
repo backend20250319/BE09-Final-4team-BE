@@ -1,6 +1,7 @@
 package com.hermes.jwt.service;
 
 import com.hermes.jwt.JwtTokenProvider;
+import com.hermes.jwt.context.Role;
 import com.hermes.jwt.dto.RefreshRequest;
 import com.hermes.jwt.dto.TokenResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,21 @@ public class JwtService {
      * @return TokenResponse (accessToken, refreshToken)
      */
     public TokenResponse createTokens(String email, Long userId, String role) {
+        String accessToken = jwtTokenProvider.createToken(email, userId, role);
+        String refreshToken = jwtTokenProvider.createRefreshToken(String.valueOf(userId), email);
+        
+        return new TokenResponse(accessToken, refreshToken);
+    }
+    
+    /**
+     * Access Token과 Refresh Token을 생성합니다. (Role enum 사용)
+     * 
+     * @param email 사용자 이메일
+     * @param userId 사용자 ID
+     * @param role 사용자 역할 (Role enum)
+     * @return TokenResponse (accessToken, refreshToken)
+     */
+    public TokenResponse createTokens(String email, Long userId, Role role) {
         String accessToken = jwtTokenProvider.createToken(email, userId, role);
         String refreshToken = jwtTokenProvider.createRefreshToken(String.valueOf(userId), email);
         
@@ -101,13 +117,23 @@ String newAccessToken = jwtTokenProvider.createToken(finalEmail, finalUserId, ro
     }
 
     /**
-     * 토큰에서 역할을 추출합니다.
+     * 토큰에서 역할을 추출합니다. (문자열)
      * 
      * @param token JWT 토큰
-     * @return 역할
+     * @return 역할 문자열
      */
     public String getRoleFromToken(String token) {
         return jwtTokenProvider.getClaimFromToken(token, "role");
+    }
+    
+    /**
+     * 토큰에서 역할을 추출합니다. (Role enum)
+     * 
+     * @param token JWT 토큰
+     * @return 역할 enum
+     */
+    public Role getRoleEnumFromToken(String token) {
+        return jwtTokenProvider.getRoleFromToken(token);
     }
 
     /**

@@ -176,12 +176,13 @@ void testAdminFunction() {
 }
 
 @Test  
-void testEmployeeFunction() {
-    // Set up employee user
-    AuthTestUtils.setEmployeeUser(100L);
+void testUserFunction() {
+    // Set up regular user
+    AuthTestUtils.setUserUser(100L);
     
-    // Test employee functionality
+    // Test user functionality
     assertFalse(AuthContext.isCurrentUserAdmin());
+    assertTrue(AuthContext.getCurrentUser().isUser());
 }
 
 @AfterEach
@@ -203,20 +204,42 @@ String userRole = AuthContext.getCurrentUserRole();
 
 // Automatic permission checking
 AuthContext.requireAdmin(); // Throws exception if not admin
-AuthContext.requirePermission("MANAGER"); // Throws if insufficient permission
+AuthContext.requirePermission(Role.USER); // Throws if insufficient permission
+
+// Type-safe role checking
+Role currentRole = AuthContext.getCurrentUser().getRole();
+boolean hasPermission = currentRole.hasPermission(Role.ADMIN);
 ```
 
 **Key Components:**
 - **AuthContext**: ThreadLocal-based user information storage
 - **AuthContextFilter**: Extracts user info from Gateway headers → AuthContext
-- **AuthContext**: Static methods for current user access and authentication
 - **UserInfo**: User data model (userId, email, role, tenantId)
+- **Role**: Enum for type-safe role management (ADMIN, USER)
 
 **Benefits:**
 - No repetitive `@RequestHeader` in every controller method
 - Automatic header validation and user context setup
 - Clean service layer without user ID parameters
+- Type-safe role management with enum
 - Consistent error handling for authentication/authorization
+
+### Role System
+Hermes uses a simple 2-level role hierarchy:
+- **ADMIN**: Full system access, can perform all operations
+- **USER**: Standard user access, limited to user-level operations
+
+The Role enum provides type safety and eliminates string-based role errors:
+```java
+// In entities - determined by isAdmin flag
+boolean isAdmin = user.getIsAdmin();
+Role userRole = isAdmin ? Role.ADMIN : Role.USER;
+
+// In services - type-safe permission checking
+if (!currentUser.getRole().hasPermission(Role.ADMIN)) {
+    throw new InsufficientPermissionException("Admin access required");
+}
+```
 
 ### JWT Implementation
 - Token generation/validation in jwt-common
@@ -283,17 +306,5 @@ Standard Spring Boot Actuator endpoints available on all services.
 - Schema operations require elevated database privileges
 
 ## Commit Guidelines
-
-### Commit Message Language
-- **All commit messages must be written in Korean**
-- Use clear, descriptive Korean phrases for commit messages
-- Follow conventional commit format when applicable
-
-Example:
-```bash
-git commit -m "feat: 결재 시스템 기본 구조 구현
-
-- 결재 문서 엔티티 및 레포지토리 추가
-- 결재 워크플로우 서비스 로직 구현
-- REST API 컨트롤러 및 DTO 작성"
-```
+- All commit messages must be written in Korean
+- Never commit without explicit user instruction

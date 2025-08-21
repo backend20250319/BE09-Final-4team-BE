@@ -16,65 +16,43 @@ public class UserInfo {
     
     private Long userId;
     private String email;
-    private String role;
+    private Role role;
     private String tenantId;
     
     /**
      * 현재 사용자가 관리자인지 확인
      */
     public boolean isAdmin() {
-        return "ADMIN".equals(role);
+        return role != null && role.isAdmin();
     }
     
     /**
-     * 현재 사용자가 매니저인지 확인
+     * 현재 사용자가 일반 사용자인지 확인
      */
-    public boolean isManager() {
-        return "MANAGER".equals(role);
-    }
-    
-    /**
-     * 현재 사용자가 직원인지 확인
-     */
-    public boolean isEmployee() {
-        return "EMPLOYEE".equals(role);
+    public boolean isUser() {
+        return role != null && role.isUser();
     }
     
     /**
      * 특정 권한을 가지고 있는지 확인
      */
-    public boolean hasPermission(String requiredRole) {
-        if (role == null || requiredRole == null) {
-            return false;
-        }
-        
-        // ADMIN은 모든 권한을 가짐
-        if (isAdmin()) {
-            return true;
-        }
-        
-        // MANAGER는 MANAGER와 EMPLOYEE 권한을 가짐
-        if (isManager()) {
-            return "MANAGER".equals(requiredRole) || "EMPLOYEE".equals(requiredRole);
-        }
-        
-        // EMPLOYEE는 EMPLOYEE 권한만 가짐
-        return isEmployee() && "EMPLOYEE".equals(requiredRole);
+    public boolean hasPermission(Role requiredRole) {
+        return role != null && role.hasPermission(requiredRole);
     }
     
     /**
-     * 권한 레벨을 숫자로 반환 (높을수록 권한이 높음)
+     * 문자열 권한과 비교 (하위 호환성을 위해 유지)
      */
-    public int getRoleLevel() {
-        switch (role != null ? role : "") {
-            case "ADMIN":
-                return 3;
-            case "MANAGER":
-                return 2;
-            case "EMPLOYEE":
-                return 1;
-            default:
-                return 0;
-        }
+    public boolean hasPermission(String requiredRoleString) {
+        Role requiredRole = Role.fromString(requiredRoleString);
+        return hasPermission(requiredRole);
+    }
+    
+    
+    /**
+     * 권한을 문자열로 반환 (JWT 토큰 등에서 사용)
+     */
+    public String getRoleString() {
+        return role != null ? role.name() : null;
     }
 }

@@ -2,6 +2,7 @@ package com.hermes.jwt.filter;
 
 import com.hermes.jwt.context.AuthContext;
 import com.hermes.jwt.context.UserInfo;
+import com.hermes.jwt.context.Role;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -57,17 +58,19 @@ public class AuthContextFilter implements Filter {
         // 사용자 ID가 있는 경우에만 AuthContext 설정
         if (StringUtils.hasText(userId)) {
             try {
+                Role userRole = Role.fromString(role, Role.USER); // 기본값은 USER
+                
                 UserInfo userInfo = UserInfo.builder()
                         .userId(Long.valueOf(userId))
                         .email(email)
-                        .role(role)
+                        .role(userRole)
                         .tenantId(tenantId)
                         .build();
                 
                 AuthContext.setCurrentUser(userInfo);
                 
                 log.debug("AuthContext set successfully: userId={}, email={}, role={}", 
-                         userInfo.getUserId(), userInfo.getEmail(), userInfo.getRole());
+                         userInfo.getUserId(), userInfo.getEmail(), userInfo.getRoleString());
                 
             } catch (NumberFormatException e) {
                 log.warn("Invalid user ID format in header: {}", userId);

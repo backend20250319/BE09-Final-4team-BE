@@ -2,6 +2,7 @@ package com.hermes.jwt.test;
 
 import com.hermes.jwt.context.AuthContext;
 import com.hermes.jwt.context.UserInfo;
+import com.hermes.jwt.context.Role;
 
 /**
  * 테스트 환경에서 AuthContext를 쉽게 설정할 수 있는 유틸리티 클래스
@@ -13,13 +14,14 @@ public class AuthTestUtils {
      * 
      * @param userId 사용자 ID
      * @param email 사용자 이메일
-     * @param role 사용자 역할 (ADMIN, MANAGER, EMPLOYEE)
+     * @param role 사용자 역할 (ADMIN, USER)
      */
     public static void setCurrentUser(Long userId, String email, String role) {
+        Role userRole = Role.fromString(role, Role.USER);
         UserInfo userInfo = UserInfo.builder()
                 .userId(userId)
                 .email(email)
-                .role(role)
+                .role(userRole)
                 .tenantId("test-tenant")
                 .build();
         
@@ -35,10 +37,11 @@ public class AuthTestUtils {
      * @param tenantId 테넌트 ID
      */
     public static void setCurrentUser(Long userId, String email, String role, String tenantId) {
+        Role userRole = Role.fromString(role, Role.USER);
         UserInfo userInfo = UserInfo.builder()
                 .userId(userId)
                 .email(email)
-                .role(role)
+                .role(userRole)
                 .tenantId(tenantId)
                 .build();
         
@@ -71,35 +74,19 @@ public class AuthTestUtils {
     }
     
     /**
-     * 매니저 사용자로 설정합니다.
+     * 일반 사용자로 설정합니다.
      * 
      * @param userId 사용자 ID (기본값: 2L)
      */
-    public static void setManagerUser(Long userId) {
-        setCurrentUser(userId, "manager@test.com", "MANAGER");
+    public static void setUserUser(Long userId) {
+        setCurrentUser(userId, "user@test.com", "USER");
     }
     
     /**
-     * 매니저 사용자로 설정합니다. (기본 ID: 2L)
+     * 일반 사용자로 설정합니다. (기본 ID: 2L)
      */
-    public static void setManagerUser() {
-        setManagerUser(2L);
-    }
-    
-    /**
-     * 일반 직원 사용자로 설정합니다.
-     * 
-     * @param userId 사용자 ID (기본값: 3L)
-     */
-    public static void setEmployeeUser(Long userId) {
-        setCurrentUser(userId, "employee@test.com", "EMPLOYEE");
-    }
-    
-    /**
-     * 일반 직원 사용자로 설정합니다. (기본 ID: 3L)
-     */
-    public static void setEmployeeUser() {
-        setEmployeeUser(3L);
+    public static void setUserUser() {
+        setUserUser(2L);
     }
     
     /**
