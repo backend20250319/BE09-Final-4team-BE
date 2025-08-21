@@ -1,4 +1,4 @@
-package com.hermes.userservice.entity;
+package com.hermes.orgservice.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,7 +10,10 @@ import java.util.List;
 @Table(name = "organization")
 @Getter
 @Setter
-public class Organization  {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Organization {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,6 +26,9 @@ public class Organization  {
     @JoinColumn(name = "parent_id")
     private Organization parent;
 
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Organization> children = new ArrayList<>();
+
     @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EmployeeAssignment> assignments = new ArrayList<>();  // 소속 인원 목록
+    private List<EmployeeAssignment> assignments = new ArrayList<>();
 }
