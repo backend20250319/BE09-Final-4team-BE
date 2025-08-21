@@ -6,7 +6,7 @@ import com.hermes.approvalservice.dto.request.UpdateTemplateRequest;
 import com.hermes.approvalservice.dto.response.TemplateResponse;
 import com.hermes.approvalservice.dto.response.TemplatesByCategoryResponse;
 import com.hermes.approvalservice.service.DocumentTemplateService;
-import com.hermes.jwt.util.AuthUtils;
+import com.hermes.jwt.context.AuthContext;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,9 +27,9 @@ public class DocumentTemplateController {
         List<TemplateResponse> templates;
         
         if (categoryId != null) {
-            templates = templateService.getTemplatesByCategory(categoryId, AuthUtils.isAdmin());
+            templates = templateService.getTemplatesByCategory(categoryId, AuthContext.isCurrentUserAdmin());
         } else {
-            templates = templateService.getAllTemplates(AuthUtils.isAdmin());
+            templates = templateService.getAllTemplates(AuthContext.isCurrentUserAdmin());
         }
         
         return ResponseEntity.ok(ApiResponse.success("템플릿 목록을 조회했습니다.", templates));
@@ -37,7 +37,7 @@ public class DocumentTemplateController {
 
     @GetMapping("/by-category")
     public ResponseEntity<ApiResponse<List<TemplatesByCategoryResponse>>> getTemplatesByCategory() {
-        List<TemplatesByCategoryResponse> templates = templateService.getTemplatesByCategory(AuthUtils.isAdmin());
+        List<TemplatesByCategoryResponse> templates = templateService.getTemplatesByCategory(AuthContext.isCurrentUserAdmin());
         return ResponseEntity.ok(ApiResponse.success("카테고리별 템플릿 목록을 조회했습니다.", templates));
     }
 
@@ -49,7 +49,7 @@ public class DocumentTemplateController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<TemplateResponse>> createTemplate(@Valid @RequestBody CreateTemplateRequest request) {
-        if (!AuthUtils.isAdmin()) {
+        if (!AuthContext.isCurrentUserAdmin()) {
             return ResponseEntity.status(403).body(ApiResponse.rejected("관리자만 템플릿을 생성할 수 있습니다."));
         }
         
@@ -61,7 +61,7 @@ public class DocumentTemplateController {
     public ResponseEntity<ApiResponse<TemplateResponse>> updateTemplate(
             @PathVariable Long id,
             @Valid @RequestBody UpdateTemplateRequest request) {
-        if (!AuthUtils.isAdmin()) {
+        if (!AuthContext.isCurrentUserAdmin()) {
             return ResponseEntity.status(403).body(ApiResponse.rejected("관리자만 템플릿을 수정할 수 있습니다."));
         }
         
@@ -73,7 +73,7 @@ public class DocumentTemplateController {
     public ResponseEntity<ApiResponse<Void>> updateTemplateVisibility(
             @PathVariable Long id,
             @RequestParam boolean isHidden) {
-        if (!AuthUtils.isAdmin()) {
+        if (!AuthContext.isCurrentUserAdmin()) {
             return ResponseEntity.status(403).body(ApiResponse.rejected("관리자만 템플릿 숨김 처리를 할 수 있습니다."));
         }
         
@@ -84,7 +84,7 @@ public class DocumentTemplateController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteTemplate(@PathVariable Long id) {
-        if (!AuthUtils.isAdmin()) {
+        if (!AuthContext.isCurrentUserAdmin()) {
             return ResponseEntity.status(403).body(ApiResponse.rejected("관리자만 템플릿을 삭제할 수 있습니다."));
         }
         

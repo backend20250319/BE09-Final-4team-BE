@@ -2,7 +2,7 @@ package com.hermes.approvalservice.service;
 
 import com.hermes.approvalservice.entity.ApprovalDocument;
 import com.hermes.approvalservice.entity.DocumentApprovalTarget;
-import com.hermes.jwt.util.AuthUtils;
+import com.hermes.jwt.context.AuthContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +17,7 @@ public class DocumentPermissionService {
         }
 
         // 관리자는 항상 조회 가능
-        if (AuthUtils.isAdmin()) {
+        if (AuthContext.isCurrentUserAdmin()) {
             return true;
         }
 

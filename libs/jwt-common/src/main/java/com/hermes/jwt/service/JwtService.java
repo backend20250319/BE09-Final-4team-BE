@@ -63,7 +63,7 @@ public class JwtService {
         String finalEmail = extractedEmail;
 
         // 새로운 토큰 생성
-        String newAccessToken = jwtTokenProvider.createToken(finalEmail, finalUserId, role);
+String newAccessToken = jwtTokenProvider.createToken(finalEmail, finalUserId, role);
         String newRefreshToken = jwtTokenProvider.createRefreshToken(String.valueOf(finalUserId), finalEmail);
 
         return new TokenResponse(newAccessToken, newRefreshToken);

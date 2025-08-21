@@ -5,7 +5,7 @@ import com.hermes.approvalservice.dto.request.CreateCategoryRequest;
 import com.hermes.approvalservice.dto.request.UpdateCategoryRequest;
 import com.hermes.approvalservice.dto.response.CategoryResponse;
 import com.hermes.approvalservice.service.TemplateCategoryService;
-import com.hermes.jwt.util.AuthUtils;
+import com.hermes.jwt.context.AuthContext;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +24,7 @@ public class TemplateCategoryController {
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategories() {
         List<CategoryResponse> categories;
         
-        if (AuthUtils.isAdmin()) {
+        if (AuthContext.isCurrentUserAdmin()) {
             categories = categoryService.getAllCategories();
         } else {
             categories = categoryService.getCategoriesWithVisibleTemplates();
@@ -41,7 +41,7 @@ public class TemplateCategoryController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Valid @RequestBody CreateCategoryRequest request) {
-        if (!AuthUtils.isAdmin()) {
+        if (!AuthContext.isCurrentUserAdmin()) {
             return ResponseEntity.status(403).body(ApiResponse.rejected("관리자만 카테고리를 생성할 수 있습니다."));
         }
         
@@ -53,7 +53,7 @@ public class TemplateCategoryController {
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
             @PathVariable Long id, 
             @Valid @RequestBody UpdateCategoryRequest request) {
-        if (!AuthUtils.isAdmin()) {
+        if (!AuthContext.isCurrentUserAdmin()) {
             return ResponseEntity.status(403).body(ApiResponse.rejected("관리자만 카테고리를 수정할 수 있습니다."));
         }
         
@@ -63,7 +63,7 @@ public class TemplateCategoryController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Long id) {
-        if (!AuthUtils.isAdmin()) {
+        if (!AuthContext.isCurrentUserAdmin()) {
             return ResponseEntity.status(403).body(ApiResponse.rejected("관리자만 카테고리를 삭제할 수 있습니다."));
         }
         

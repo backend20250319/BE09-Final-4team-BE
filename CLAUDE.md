@@ -161,13 +161,68 @@ public interface UserRepository extends JpaRepository<User, Long> {
 ### Test Databases
 Use separate test configurations for isolated testing environments.
 
+### Authentication Testing
+Use AuthTestUtils for easy test authentication setup:
+
+```java
+@Test
+void testAdminFunction() {
+    // Set up admin user for test
+    AuthTestUtils.setAdminUser(1L);
+    
+    // Test admin functionality
+    assertTrue(AuthContext.isCurrentUserAdmin());
+    assertEquals(1L, AuthContext.getCurrentUserId());
+}
+
+@Test  
+void testEmployeeFunction() {
+    // Set up employee user
+    AuthTestUtils.setEmployeeUser(100L);
+    
+    // Test employee functionality
+    assertFalse(AuthContext.isCurrentUserAdmin());
+}
+
+@AfterEach
+void cleanUp() {
+    AuthTestUtils.clearAuthContext(); // Clean up after each test
+}
+```
+
 ## Security
+
+### AuthContext System (Recommended)
+Hermes uses a ThreadLocal-based authentication context for clean, consistent user access:
+
+```java
+// In controllers - no @RequestHeader needed
+Long currentUserId = AuthContext.getCurrentUserId();
+boolean isAdmin = AuthContext.isCurrentUserAdmin();
+String userRole = AuthContext.getCurrentUserRole();
+
+// Automatic permission checking
+AuthContext.requireAdmin(); // Throws exception if not admin
+AuthContext.requirePermission("MANAGER"); // Throws if insufficient permission
+```
+
+**Key Components:**
+- **AuthContext**: ThreadLocal-based user information storage
+- **AuthContextFilter**: Extracts user info from Gateway headers → AuthContext
+- **AuthContext**: Static methods for current user access and authentication
+- **UserInfo**: User data model (userId, email, role, tenantId)
+
+**Benefits:**
+- No repetitive `@RequestHeader` in every controller method
+- Automatic header validation and user context setup
+- Clean service layer without user ID parameters
+- Consistent error handling for authentication/authorization
 
 ### JWT Implementation
 - Token generation/validation in jwt-common
 - Multi-tenant JWT payload support
 - Token blacklist service for logout
-- Permission-based authorization with @RequirePermission
+- Gateway validates JWT → injects headers → AuthContext processes
 
 ### Authentication Flow
 1. Login via user-service `/api/auth/login`
@@ -226,3 +281,19 @@ Standard Spring Boot Actuator endpoints available on all services.
 - Each service requires its own PostgreSQL database
 - Connection strings must match service-specific database names
 - Schema operations require elevated database privileges
+
+## Commit Guidelines
+
+### Commit Message Language
+- **All commit messages must be written in Korean**
+- Use clear, descriptive Korean phrases for commit messages
+- Follow conventional commit format when applicable
+
+Example:
+```bash
+git commit -m "feat: 결재 시스템 기본 구조 구현
+
+- 결재 문서 엔티티 및 레포지토리 추가
+- 결재 워크플로우 서비스 로직 구현
+- REST API 컨트롤러 및 DTO 작성"
+```

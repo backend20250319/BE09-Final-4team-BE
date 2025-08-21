@@ -9,7 +9,7 @@ import com.hermes.approvalservice.exception.NotFoundException;
 import com.hermes.approvalservice.repository.ApprovalDocumentRepository;
 import com.hermes.approvalservice.repository.DocumentCommentRepository;
 import com.hermes.approvalservice.service.DocumentPermissionService;
-import com.hermes.jwt.util.AuthUtils;
+import com.hermes.jwt.context.AuthContext;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +28,7 @@ public class DocumentCommentController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<DocumentCommentResponse>>> getComments(@PathVariable Long documentId) {
-        Long userId = AuthUtils.getCurrentUserId();
+        Long userId = AuthContext.getCurrentUserId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
@@ -49,7 +49,7 @@ public class DocumentCommentController {
     public ResponseEntity<ApiResponse<DocumentCommentResponse>> createComment(
             @PathVariable Long documentId,
             @Valid @RequestBody CreateCommentRequest request) {
-        Long userId = AuthUtils.getCurrentUserId();
+        Long userId = AuthContext.getCurrentUserId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));

@@ -8,7 +8,7 @@ import com.hermes.approvalservice.exception.NotFoundException;
 import com.hermes.approvalservice.repository.ApprovalDocumentRepository;
 import com.hermes.approvalservice.repository.DocumentAttachmentRepository;
 import com.hermes.approvalservice.service.DocumentPermissionService;
-import com.hermes.jwt.util.AuthUtils;
+import com.hermes.jwt.context.AuthContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -38,7 +38,7 @@ public class DocumentAttachmentController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<DocumentAttachmentResponse>>> getAttachments(@PathVariable Long documentId) {
-        Long userId = AuthUtils.getCurrentUserId();
+        Long userId = AuthContext.getCurrentUserId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
@@ -59,7 +59,7 @@ public class DocumentAttachmentController {
     public ResponseEntity<ApiResponse<DocumentAttachmentResponse>> uploadAttachment(
             @PathVariable Long documentId,
             @RequestParam("file") MultipartFile file) {
-        Long userId = AuthUtils.getCurrentUserId();
+        Long userId = AuthContext.getCurrentUserId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
@@ -109,7 +109,7 @@ public class DocumentAttachmentController {
     public ResponseEntity<Resource> downloadAttachment(
             @PathVariable Long documentId,
             @PathVariable Long fileId) {
-        Long userId = AuthUtils.getCurrentUserId();
+        Long userId = AuthContext.getCurrentUserId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
