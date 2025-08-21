@@ -20,4 +20,3 @@ include 'tenant-service'
 
 include 'communication-service'
 include 'libs:ftp-starter'
-project(':libs:ftp-starter').projectDir = new File(rootDir, 'libs/ftp-starter')
