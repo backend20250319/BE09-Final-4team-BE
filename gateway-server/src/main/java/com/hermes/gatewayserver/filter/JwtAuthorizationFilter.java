@@ -1,6 +1,7 @@
 package com.hermes.gatewayserver.filter;
 
-import com.hermes.gatewayserver.dto.ApiResponse;
+import com.hermes.jwt.JwtTokenProvider;
+import com.hermes.jwt.JwtPayload;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,7 +14,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -24,7 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
 
-    private final WebClient.Builder webClientBuilder;
+    private final JwtTokenProvider jwtTokenProvider;
     private final FilterProperties filterProperties;
 
     @Override
@@ -39,7 +39,7 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
 
         log.info(" [Gateway] 화이트리스트 확인 중: path={}", path);
         log.info(" [Gateway] 현재 화이트리스트: {}", filterProperties.getWhitelist());
-        
+
         if (isWhiteListed(path)) {
             log.info(" [Gateway] 화이트리스트 경로 → JWT 검증 후 헤더 주입");
 
@@ -67,167 +67,87 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
 
     private Mono<Void> performJwtValidation(String token, ServerHttpRequest request,
                                             ServerWebExchange exchange, GatewayFilterChain chain) {
-        log.info(" [Gateway] JWT 검증 요청 시작 → /token/validate");
+        log.info(" [Gateway] JWT 검증 시작 (로컬 검증)");
         log.info(" [Gateway] 토큰 길이: {} 문자", token.length());
         log.info(" [Gateway] 토큰 시작 부분: {}", token.substring(0, Math.min(50, token.length())) + "...");
 
-        return webClientBuilder.build()
-                .post()
-                .uri("http://user-service/api/token/validate")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                .retrieve()
-                .onStatus(status -> status.isError(),
-                        res -> {
-                            log.error(" [Gateway] JWT 검증 실패: {} - {}", res.statusCode(), res.statusCode().value());
-                            return res.bodyToMono(String.class)
-                                    .flatMap(body -> {
-                                        log.error(" [Gateway] 에러 응답 본문: {}", body);
-                                        return Mono.error(new RuntimeException("JWT 검증 실패: " + res.statusCode() + " - " + body));
-                                    })
-                                    .defaultIfEmpty("응답 본문 없음")
-                                    .flatMap(body -> Mono.error(new RuntimeException("JWT 검증 실패: " + res.statusCode() + " - " + body)));
-                        })
-                .bodyToMono(ApiResponse.class)
-                .flatMap(apiResponse -> {
-                    log.info(" [Gateway] ApiResponse 받음: success={}, message={}", apiResponse.isSuccess(), apiResponse.getMessage());
-                    log.info(" [Gateway] ApiResponse 데이터 타입: {}", apiResponse.getData() != null ? apiResponse.getData().getClass().getSimpleName() : "null");
+        try {
+            // 1. JWT 토큰 유효성 검증
+            if (!jwtTokenProvider.isValidToken(token)) {
+                log.warn(" [Gateway] JWT 토큰이 유효하지 않음");
+                return unauthorized(exchange);
+            }
 
-                    if (!apiResponse.isSuccess()) {
-                        log.error(" [Gateway] ApiResponse 실패: {}", apiResponse.getMessage());
-                        return Mono.error(new RuntimeException("JWT 검증 실패: " + apiResponse.getMessage()));
-                    }
+            // 2. JWT 페이로드에서 사용자 정보 추출
+            JwtPayload payload = jwtTokenProvider.getPayloadFromToken(token);
+            if (payload == null || payload.getEmail() == null || payload.getUserId() == null) {
+                log.warn(" [Gateway] JWT 페이로드에서 사용자 정보를 추출할 수 없음");
+                return unauthorized(exchange);
+            }
 
-                    if (apiResponse.getData() == null) {
-                        log.error(" [Gateway] ApiResponse 데이터가 null입니다");
-                        return Mono.error(new RuntimeException("JWT 검증 실패: 응답 데이터가 null입니다"));
-                    }
+            log.info(" [Gateway] JWT 검증 성공 → userId={}, email={}", payload.getUserId(), payload.getEmail());
 
-                    try {
-                        TokenValidationResponse response;
-                        
-                        if (apiResponse.getData() instanceof TokenValidationResponse) {
-                            response = (TokenValidationResponse) apiResponse.getData();
-                        } else if (apiResponse.getData() instanceof java.util.Map) {
-                            java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) apiResponse.getData();
-                            String email = (String) dataMap.get("email");
-                            String userId = String.valueOf(dataMap.get("userId"));
-                            response = new TokenValidationResponse(email, userId);
-                        } else {
-                            throw new RuntimeException("지원하지 않는 데이터 타입: " + apiResponse.getData().getClass());
-                        }
-                        
-                        log.info(" [Gateway] JWT 검증 성공 → userId={}, email={}", response.getUserId(), response.getEmail());
+            // 3. 사용자 정보를 헤더로 주입 (블랙리스트 검증 생략)
+            return injectUserHeaders(token, request, exchange, chain, payload);
 
-                        return checkBlacklist(token, request, exchange, chain, response);
-                        
-                    } catch (ClassCastException e) {
-                        log.error(" [Gateway] 데이터 타입 변환 실패: {}", e.getMessage());
-                        log.error(" [Gateway] 실제 데이터: {}", apiResponse.getData());
-                        return Mono.error(new RuntimeException("JWT 검증 실패: 데이터 타입 변환 실패"));
-                    }
-                })
-                .onErrorResume(e -> {
-                    log.error(" [Gateway] JWT 검증 중 예외 발생: {}", e.getMessage(), e);
+        } catch (Exception e) {
+            log.error(" [Gateway] JWT 검증 중 예외 발생: {}", e.getMessage(), e);
 
-                    if (isWhiteListed(request.getURI().getPath())) {
-                        log.info(" [Gateway] 화이트리스트 경로 → JWT 검증 실패해도 통과");
-                        return chain.filter(exchange);
-                    }
+            if (isWhiteListed(request.getURI().getPath())) {
+                log.info(" [Gateway] 화이트리스트 경로 → JWT 검증 실패해도 통과");
+                return chain.filter(exchange);
+            }
 
-                    return unauthorized(exchange);
-                });
+            return unauthorized(exchange);
+        }
     }
 
-    private Mono<Void> checkBlacklist(String token, ServerHttpRequest request, 
-                                     ServerWebExchange exchange, GatewayFilterChain chain, 
-                                     TokenValidationResponse response) {
-        log.info(" [Gateway] 블랙리스트 검증 요청 시작 → /token/check-blacklist");
+    private Mono<Void> injectUserHeaders(String token, ServerHttpRequest request,
+                                         ServerWebExchange exchange, GatewayFilterChain chain,
+                                         JwtPayload payload) {
+        log.info(" [Gateway] 사용자 정보 헤더 주입 시작 (블랙리스트 검증 생략)");
 
-        return webClientBuilder.build()
-                .post()
-                .uri("http://user-service/api/token/check-blacklist")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                .retrieve()
-                .onStatus(status -> status.isError(),
-                        res -> {
-                            log.error(" [Gateway] 블랙리스트 검증 실패: {} - {}", res.statusCode(), res.statusCode().value());
-                            return res.bodyToMono(String.class)
-                                    .flatMap(body -> {
-                                        log.error(" [Gateway] 블랙리스트 검증 에러 응답 본문: {}", body);
-                                        return Mono.error(new RuntimeException("블랙리스트 검증 실패: " + res.statusCode() + " - " + body));
-                                    })
-                                    .defaultIfEmpty("응답 본문 없음")
-                                    .flatMap(body -> Mono.error(new RuntimeException("블랙리스트 검증 실패: " + res.statusCode() + " - " + body)));
-                        })
-                .bodyToMono(ApiResponse.class)
-                .flatMap(apiResponse -> {
-                    log.info(" [Gateway] 블랙리스트 검증 응답: success={}, message={}", apiResponse.isSuccess(), apiResponse.getMessage());
+        try {
+            // 사용자 정보를 헤더로 주입
+            ServerHttpRequest modifiedRequest = request.mutate()
+                    .header("X-User-Id", payload.getUserId())
+                    .header("X-User-Email", payload.getEmail())
+                    .header("X-User-Role", payload.getRole() != null ? payload.getRole() : "USER")
+                    .build();
 
-                    if (!apiResponse.isSuccess()) {
-                        log.error(" [Gateway] 블랙리스트 검증 ApiResponse 실패: {}", apiResponse.getMessage());
-                        return Mono.error(new RuntimeException("블랙리스트 검증 실패: " + apiResponse.getMessage()));
-                    }
+            log.info(" [Gateway] 사용자 정보 헤더 주입 완료: X-User-Id={}, X-User-Email={}, X-User-Role={}",
+                    payload.getUserId(), payload.getEmail(), payload.getRole());
 
-                    if (apiResponse.getData() == null) {
-                        log.error(" [Gateway] 블랙리스트 검증 응답 데이터가 null입니다");
-                        return Mono.error(new RuntimeException("블랙리스트 검증 실패: 응답 데이터가 null입니다"));
-                    }
+            ServerWebExchange modifiedExchange = exchange.mutate()
+                    .request(modifiedRequest)
+                    .build();
 
-                    try {
-                        java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) apiResponse.getData();
-                        Boolean isBlacklisted = (Boolean) dataMap.get("isBlacklisted");
-                        
-                        if (isBlacklisted != null && isBlacklisted) {
-                            log.warn(" [Gateway] 블랙리스트된 토큰 사용 시도: userId={}", response.getUserId());
-                            return unauthorized(exchange);
-                        }
-                        
-                        log.info(" [Gateway] 블랙리스트 검증 성공 → 토큰 유효: userId={}", response.getUserId());
+            return chain.filter(modifiedExchange);
 
-                        ServerHttpRequest modifiedRequest = request.mutate()
-                                .header("X-User-Id", response.getUserId())
-                                .header("X-User-Email", response.getEmail())
-                                .build();
+        } catch (Exception e) {
+            log.error(" [Gateway] 사용자 정보 헤더 주입 중 예외 발생: {}", e.getMessage(), e);
 
-                        log.info(" [Gateway] 사용자 정보 헤더 주입 완료: X-User-Id={}, X-User-Email={}",
-                                response.getUserId(), response.getEmail());
+            if (isWhiteListed(request.getURI().getPath())) {
+                log.info(" [Gateway] 화이트리스트 경로 → 헤더 주입 실패해도 통과");
+                return chain.filter(exchange);
+            }
 
-                        ServerWebExchange modifiedExchange = exchange.mutate()
-                                .request(modifiedRequest)
-                                .build();
-
-                        return chain.filter(modifiedExchange);
-                        
-                    } catch (ClassCastException e) {
-                        log.error(" [Gateway] 블랙리스트 검증 데이터 타입 변환 실패: {}", e.getMessage());
-                        log.error(" [Gateway] 실제 데이터: {}", apiResponse.getData());
-                        return Mono.error(new RuntimeException("블랙리스트 검증 실패: 데이터 타입 변환 실패"));
-                    }
-                })
-                .onErrorResume(e -> {
-                    log.error(" [Gateway] 블랙리스트 검증 중 예외 발생: {}", e.getMessage(), e);
-
-                    if (isWhiteListed(request.getURI().getPath())) {
-                        log.info(" [Gateway] 화이트리스트 경로 → 블랙리스트 검증 실패해도 통과");
-                        return chain.filter(exchange);
-                    }
-
-                    return unauthorized(exchange);
-                });
+            return unauthorized(exchange);
+        }
     }
 
     private boolean isWhiteListed(String path) {
         List<String> whitelist = filterProperties.getWhitelist();
         log.info(" [Gateway] isWhiteListed 호출: path={}, whitelist={}", path, whitelist);
-        
+
         if (whitelist == null) {
             log.warn(" [Gateway] 화이트리스트가 null입니다!");
             return false;
         }
-        
+
         boolean isWhitelisted = whitelist.stream().anyMatch(path::startsWith);
         log.info(" [Gateway] 화이트리스트 매칭 결과: {} → {}", path, isWhitelisted);
-        
+
         return isWhitelisted;
     }
 

@@ -1,4 +1,4 @@
-package com.hermes.userservice.dto;
+package com.hermes.jwt.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
