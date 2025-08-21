@@ -1,4 +1,4 @@
-package com.hermes.attendanceservice.common;
+package com.hermes.api.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

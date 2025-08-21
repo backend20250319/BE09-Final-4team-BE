@@ -1,6 +1,6 @@
 package com.hermes.attendanceservice.controller;
 
-import com.hermes.attendanceservice.common.ApiResponse;
+import com.hermes.api.common.ApiResponse;
 import com.hermes.attendanceservice.dto.AttendanceResponse;
 import com.hermes.attendanceservice.dto.WeeklyWorkSummary;
 import com.hermes.attendanceservice.dto.WeeklyWorkDetail;
