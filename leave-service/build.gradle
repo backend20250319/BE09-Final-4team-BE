@@ -1,40 +1,32 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.4'
-    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
 }
 
 group = 'com.hermes'
 version = '0.0.1-SNAPSHOT'
-description = 'vacation-service'
+description = 'leave-service'
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.0.0"
     }
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
-}
-
-repositories {
-    mavenCentral()
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'  // 로드 밸런서 추가
-    implementation project(':libs:api-common')  // api-common 라이브러리 추가
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+    implementation project(':libs:api-common')
+    
+    // PostgreSQL 드라이버
+    runtimeOnly 'org.postgresql:postgresql'
+    
+    // Lombok
     compileOnly 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
+    
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 }

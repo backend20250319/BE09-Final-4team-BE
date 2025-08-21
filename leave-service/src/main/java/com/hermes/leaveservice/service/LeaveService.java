@@ -4,7 +4,7 @@ import com.hermes.leaveservice.entity.LeaveRequest;
 import com.hermes.leaveservice.entity.LeaveType;
 import com.hermes.leaveservice.dto.CreateLeaveRequestDto;
 import com.hermes.leaveservice.dto.LeaveRequestResponseDto;
-import com.hermes.userservice.entity.User;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,7 +42,7 @@ public class LeaveService {
         
         // 3. LeaveRequest 엔티티 생성
         LeaveRequest leaveRequest = LeaveRequest.builder()
-                .employee(getUserById(createDto.getEmployeeId()))
+                .employeeId(createDto.getEmployeeId())
                 .leaveType(createDto.getLeaveType())
                 .startDate(createDto.getStartDate())
                 .endDate(createDto.getEndDate())
@@ -220,17 +220,7 @@ public class LeaveService {
         }
     }
     
-    /**
-     * User 엔티티를 조회합니다 (TODO: User Service 연동 필요)
-     * @param employeeId 직원 ID
-     * @return User 엔티티
-     */
-    private User getUserById(Long employeeId) {
-        // TODO: User Service에서 조회하거나 User Repository 사용
-        // return userRepository.findById(employeeId)
-        //         .orElseThrow(() -> new RuntimeException("직원을 찾을 수 없습니다"));
-        return null; // 임시 반환
-    }
+
     
     /**
      * LeaveRequest 엔티티를 응답 DTO로 변환합니다
@@ -247,8 +237,8 @@ public class LeaveService {
         
         return LeaveRequestResponseDto.builder()
                 .requestId(leaveRequest.getRequestId())
-                .employeeId(leaveRequest.getEmployee() != null ? leaveRequest.getEmployee().getId() : null)
-                .employeeName(leaveRequest.getEmployee() != null ? leaveRequest.getEmployee().getName() : null)
+                .employeeId(leaveRequest.getEmployeeId())
+                .employeeName(null) // TODO: User Service에서 조회 필요
                 .leaveType(leaveRequest.getLeaveType())
                 .leaveTypeName(leaveRequest.getLeaveType() != null ? leaveRequest.getLeaveType().getName() : null)
                 .startDate(leaveRequest.getStartDate())
@@ -260,8 +250,8 @@ public class LeaveService {
                 .reason(leaveRequest.getReason())
                 .status(leaveRequest.getStatus() != null ? leaveRequest.getStatus().name() : null)
                 .statusName(getStatusName(leaveRequest.getStatus()))
-                .approverId(leaveRequest.getApprover() != null ? leaveRequest.getApprover().getId() : null)
-                .approverName(leaveRequest.getApprover() != null ? leaveRequest.getApprover().getName() : null)
+                .approverId(leaveRequest.getApproverId())
+                .approverName(null) // TODO: User Service에서 조회 필요
                 .requestedAt(leaveRequest.getRequestedAt())
                 .approvedAt(leaveRequest.getApprovedAt())
                 .build();
