@@ -1,7 +1,7 @@
-package com.hermes.ftpspringbootstarter.service;
+package com.hermes.ftpstarter.service;
 
-import com.hermes.ftpspringbootstarter.dto.FtpResponseDto;
-import com.hermes.ftpspringbootstarter.properties.FtpProperties;
+import com.hermes.ftpstarter.dto.FtpResponseDto;
+import com.hermes.ftpstarter.properties.FtpProperties;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.hermes.ftpspringbootstarter.properties;
+package com.hermes.ftpstarter.properties;
 
 
 import lombok.Data;

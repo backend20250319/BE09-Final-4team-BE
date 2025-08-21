@@ -2,9 +2,9 @@ package com.hermes.communicationservice;
 
 
 
-import com.hermes.ftpspringbootstarter.common.ApiResponse;
-import com.hermes.ftpspringbootstarter.dto.FtpResponseDto;
-import com.hermes.ftpspringbootstarter.service.FtpService;
+import com.hermes.ftpstarter.common.ApiResponse;
+import com.hermes.ftpstarter.dto.FtpResponseDto;
+import com.hermes.ftpstarter.service.FtpService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

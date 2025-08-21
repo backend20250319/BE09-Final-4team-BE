@@ -1,4 +1,4 @@
-package com.hermes.ftpspringbootstarter.dto;
+package com.hermes.ftpstarter.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,8 +1,8 @@
-package com.hermes.ftpspringbootstarter.config;
+package com.hermes.ftpstarter.config;
 
 
-import com.hermes.ftpspringbootstarter.properties.FtpProperties;
-import com.hermes.ftpspringbootstarter.service.FtpService;
+import com.hermes.ftpstarter.properties.FtpProperties;
+import com.hermes.ftpstarter.service.FtpService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
