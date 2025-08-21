@@ -5,11 +5,19 @@ include 'libs:mt-starter'
 
 include 'config-server'
 include 'discovery-server'
+
+include 'libs:jwt-common'
+include 'libs:api-common'
+
 include 'gateway-server'
 include 'user-service'
 include 'org-service'
 include 'news-crawler-service'
+
+include 'leave-service'
+include 'attendance-service'
 include 'tenant-service'
+
 include 'communication-service'
 include 'ftp-spring-boot-starter'
 project(':ftp-spring-boot-starter').projectDir = new File(rootDir, 'ftp-spring-boot-starter')
