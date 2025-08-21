@@ -10,3 +10,6 @@ include 'user-service'
 include 'org-service'
 include 'news-crawler-service'
 include 'tenant-service'
+include 'communication-service'
+include 'ftp-spring-boot-starter'
+project(':ftp-spring-boot-starter').projectDir = new File(rootDir, 'ftp-spring-boot-starter')

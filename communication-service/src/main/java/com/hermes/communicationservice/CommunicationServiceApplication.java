@@ -3,7 +3,7 @@ package com.hermes.communicationservice;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication(scanBasePackages = {"com.hermes.communicationservice", "com.hermes.ftpspringbootstarter"})
+@SpringBootApplication
 public class CommunicationServiceApplication {
 
   public static void main(String[] args) {
