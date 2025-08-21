@@ -30,7 +30,7 @@ ext {
 
 dependencies {
     // 모듈 의존성
-    implementation project(':ftp-spring-boot-starter')
+    implementation project(':libs:ftp-starter')
 
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'

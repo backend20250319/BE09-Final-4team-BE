@@ -19,5 +19,5 @@ include 'attendance-service'
 include 'tenant-service'
 
 include 'communication-service'
-include 'ftp-spring-boot-starter'
-project(':ftp-spring-boot-starter').projectDir = new File(rootDir, 'ftp-spring-boot-starter')
+include 'libs:ftp-starter'
+project(':libs:ftp-starter').projectDir = new File(rootDir, 'libs/ftp-starter')
