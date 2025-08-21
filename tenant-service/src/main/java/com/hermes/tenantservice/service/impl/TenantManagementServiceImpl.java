@@ -45,21 +45,10 @@ public class TenantManagementServiceImpl implements TenantManagementService {
                 throw new IllegalArgumentException("이미 존재하는 테넌트 ID입니다: " + request.getTenantId());
             }
 
-            // 스키마명 생성 또는 사용
-            String schemaName = StringUtils.hasText(request.getCustomSchemaName()) 
-                ? request.getCustomSchemaName()
-                : TenantUtils.convertToSchemaName(request.getTenantId());
-
-            // 스키마명 중복 확인
-            if (tenantRepository.existsBySchemaName(schemaName)) {
-                throw new IllegalArgumentException("이미 존재하는 스키마명입니다: " + schemaName);
-            }
-
-            // 테넌트 엔티티 생성
+            // 테넌트 엔티티 생성 (스키마명은 tenantId에서 자동 생성)
             Tenant tenant = new Tenant(
                 request.getTenantId(),
-                request.getName(),
-                schemaName
+                request.getName()
             );
             tenant.setDescription(request.getDescription());
             tenant.setAdminEmail(request.getAdminEmail());
@@ -73,7 +62,6 @@ public class TenantManagementServiceImpl implements TenantManagementService {
                 tenantEventPublisher.publishTenantCreated(
                     savedTenant.getTenantId(),
                     savedTenant.getName(),
-                    savedTenant.getSchemaName(),
                     savedTenant.getAdminEmail()
                 );
                 log.info("테넌트 생성 이벤트 발행 완료: tenantId={}", request.getTenantId());
@@ -152,7 +140,7 @@ public class TenantManagementServiceImpl implements TenantManagementService {
 
             // 테넌트 삭제 이벤트 발행 (각 서비스가 자신의 스키마를 삭제)
             if (deleteSchema) {
-                tenantEventPublisher.publishTenantDeleted(tenantId, tenant.getSchemaName());
+                tenantEventPublisher.publishTenantDeleted(tenantId);
                 log.info("테넌트 삭제 이벤트 발행 완료: tenantId={}", tenantId);
             }
 

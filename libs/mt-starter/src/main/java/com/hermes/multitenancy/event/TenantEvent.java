@@ -1,5 +1,6 @@
 package com.hermes.multitenancy.event;
 
+import com.hermes.multitenancy.util.TenantUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,32 +26,36 @@ public class TenantEvent {
     private EventType eventType;
     private String tenantId;
     private String tenantName;
-    private String schemaName;
     private String status;
     private String adminEmail;
     private LocalDateTime timestamp;
     
-    public static TenantEvent created(String tenantId, String tenantName, String schemaName, String adminEmail) {
+    public static TenantEvent created(String tenantId, String tenantName, String adminEmail) {
         return new TenantEvent(
             EventType.TENANT_CREATED,
             tenantId,
-            tenantName, 
-            schemaName,
+            tenantName,
             "ACTIVE",
             adminEmail,
             LocalDateTime.now()
         );
     }
     
-    public static TenantEvent deleted(String tenantId, String schemaName) {
+    public static TenantEvent deleted(String tenantId) {
         return new TenantEvent(
             EventType.TENANT_DELETED,
             tenantId,
             null,
-            schemaName, 
             null,
             null,
             LocalDateTime.now()
         );
+    }
+
+    /**
+     * 스키마명을 동적으로 생성하여 반환
+     */
+    public String getSchemaName() {
+        return TenantUtils.generateSchemaName(this.tenantId);
     }
 }

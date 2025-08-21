@@ -19,50 +19,48 @@ public class TenantEventPublisher {
     /**
      * 테넌트 생성 이벤트 발행
      */
-    public void publishTenantCreated(String tenantId, String tenantName, String schemaName, String adminEmail) {
-        TenantEvent event = TenantEvent.created(tenantId, tenantName, schemaName, adminEmail);
+    public void publishTenantCreated(String tenantId, String tenantName, String adminEmail) {
+        TenantEvent event = TenantEvent.created(tenantId, tenantName, adminEmail);
         
         publishEvent(event, properties.getTenantCreatedRoutingKey());
-        log.info("Tenant CREATED event published: tenantId={}, schemaName={}", tenantId, schemaName);
+        log.info("Tenant CREATED event published: tenantId={}, schemaName={}", tenantId, event.getSchemaName());
     }
 
     /**
      * 테넌트 삭제 이벤트 발행
      */
-    public void publishTenantDeleted(String tenantId, String schemaName) {
-        TenantEvent event = TenantEvent.deleted(tenantId, schemaName);
+    public void publishTenantDeleted(String tenantId) {
+        TenantEvent event = TenantEvent.deleted(tenantId);
         
         publishEvent(event, properties.getTenantDeletedRoutingKey());
-        log.info("Tenant DELETED event published: tenantId={}, schemaName={}", tenantId, schemaName);
+        log.info("Tenant DELETED event published: tenantId={}, schemaName={}", tenantId, event.getSchemaName());
     }
 
     /**
      * 테넌트 업데이트 이벤트 발행
      */
-    public void publishTenantUpdated(String tenantId, String tenantName, String schemaName, String adminEmail) {
+    public void publishTenantUpdated(String tenantId, String tenantName, String adminEmail) {
         TenantEvent event = new TenantEvent(
                 TenantEvent.EventType.TENANT_UPDATED,
                 tenantId,
                 tenantName,
-                schemaName,
                 "ACTIVE",
                 adminEmail,
                 java.time.LocalDateTime.now()
         );
         
         publishEvent(event, properties.getTenantUpdatedRoutingKey());
-        log.info("Tenant UPDATED event published: tenantId={}, schemaName={}", tenantId, schemaName);
+        log.info("Tenant UPDATED event published: tenantId={}, schemaName={}", tenantId, event.getSchemaName());
     }
 
     /**
      * 테넌트 상태 변경 이벤트 발행
      */
-    public void publishTenantStatusChanged(String tenantId, String schemaName, String status) {
+    public void publishTenantStatusChanged(String tenantId, String status) {
         TenantEvent event = new TenantEvent(
                 TenantEvent.EventType.TENANT_STATUS_CHANGED,
                 tenantId,
                 null,
-                schemaName,
                 status,
                 null,
                 java.time.LocalDateTime.now()
@@ -70,7 +68,7 @@ public class TenantEventPublisher {
         
         publishEvent(event, properties.getTenantStatusChangedRoutingKey());
         log.info("Tenant STATUS_CHANGED event published: tenantId={}, schemaName={}, status={}", 
-                tenantId, schemaName, status);
+                tenantId, event.getSchemaName(), status);
     }
 
     /**

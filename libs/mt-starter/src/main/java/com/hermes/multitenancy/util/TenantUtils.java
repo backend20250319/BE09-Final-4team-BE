@@ -6,6 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 테넌트 관련 유틸리티 클래스
+ * 
+ * TenantId와 SchemaName 통일 규칙:
+ * - 소문자로 시작 (a-z)
+ * - 소문자, 숫자, 언더스코어만 허용 (a-z0-9_)
+ * - 최대 길이: TenantId(50자), SchemaName(63자)
+ * - 스키마명은 "tenant_{tenantId}" 패턴으로 생성
  */
 @Slf4j
 public class TenantUtils {
@@ -19,14 +25,15 @@ public class TenantUtils {
 
     /**
      * 테넌트 ID 유효성 검사
+     * PostgreSQL 스키마명 규칙과 일치하도록 통일
      */
     public static boolean isValidTenantId(String tenantId) {
         if (tenantId == null || tenantId.trim().isEmpty()) {
             return false;
         }
         
-        // 테넌트 ID는 영숫자와 하이픈, 언더스코어만 허용
-        return tenantId.matches("^[a-zA-Z0-9_-]+$") && tenantId.length() <= 50;
+        // 스키마명과 동일한 규칙: 소문자로 시작, 소문자+숫자+언더스코어만 허용
+        return tenantId.matches("^[a-z][a-z0-9_]*$") && tenantId.length() <= 50;
     }
 
     /**
@@ -43,6 +50,7 @@ public class TenantUtils {
 
     /**
      * 테넌트 ID를 스키마명으로 변환
+     * TenantId가 스키마명 규칙을 따르므로 단순 접두사 추가
      */
     public static String convertToSchemaName(String tenantId) {
         if (tenantId == null || tenantId.isEmpty()) {
@@ -53,7 +61,15 @@ public class TenantUtils {
             return TenantContext.DEFAULT_SCHEMA_NAME;
         }
         
-        return "tenant_" + tenantId.toLowerCase().replaceAll("[^a-z0-9]", "_");
+        // TenantId가 이미 스키마명 규칙을 따르므로 단순히 접두사 추가
+        return "tenant_" + tenantId;
+    }
+
+    /**
+     * 테넌트 ID로부터 스키마명 생성 (convertToSchemaName의 alias)
+     */
+    public static String generateSchemaName(String tenantId) {
+        return convertToSchemaName(tenantId);
     }
 
     /**
@@ -70,6 +86,7 @@ public class TenantUtils {
 
     /**
      * 도메인을 테넌트 ID로 변환
+     * 새로운 TenantId 규칙(소문자로 시작, 소문자+숫자+언더스코어)에 맞게 변환
      */
     public static String convertDomainToTenantId(String domain) {
         if (domain == null || domain.isEmpty()) {
@@ -79,15 +96,20 @@ public class TenantUtils {
         // 최상위 도메인 제거 (예: company.com -> company)
         String tenantId = domain.replaceAll("\\.[^.]+$", "");
         
-        // 특수 문자를 밑줄로 변경
-        tenantId = tenantId.replaceAll("[^a-zA-Z0-9]", "_");
+        // 소문자로 변환 및 유효하지 않은 문자를 언더스코어로 변경
+        tenantId = tenantId.toLowerCase().replaceAll("[^a-z0-9_]", "_");
+        
+        // 숫자로 시작하면 앞에 접두사 추가
+        if (tenantId.matches("^[0-9].*")) {
+            tenantId = "t_" + tenantId;
+        }
         
         // 유효하지 않은 경우 기본 테넌트 반환
         if (!isValidTenantId(tenantId)) {
             return TenantContext.DEFAULT_TENANT_ID;
         }
         
-        return tenantId.toLowerCase();
+        return tenantId;
     }
 
     /**

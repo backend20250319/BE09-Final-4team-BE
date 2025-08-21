@@ -101,9 +101,7 @@ public class TenantServiceImpl implements TenantService {
         return TenantContext.executeWithTenant(
             new TenantInfo(TenantContext.DEFAULT_TENANT_ID, null, TenantContext.DEFAULT_SCHEMA_NAME, "ACTIVE"),
             () -> {
-                String schemaName = generateSchemaName(tenantId);
-                
-                Tenant tenant = new Tenant(tenantId, name, schemaName);
+                Tenant tenant = new Tenant(tenantId, name);
                 tenant.setAdminEmail(adminEmail);
                 
                 Tenant savedTenant = tenantRepository.save(tenant);
@@ -158,13 +156,4 @@ public class TenantServiceImpl implements TenantService {
         return domain.replaceAll("\\.[^.]+$", "").replaceAll("[^a-zA-Z0-9]", "");
     }
 
-    /**
-     * 테넌트 ID로부터 스키마명 생성
-     */
-    private String generateSchemaName(String tenantId) {
-        if (TenantContext.DEFAULT_TENANT_ID.equals(tenantId)) {
-            return TenantContext.DEFAULT_SCHEMA_NAME;
-        }
-        return "tenant_" + tenantId.toLowerCase().replaceAll("[^a-z0-9]", "_");
-    }
 }

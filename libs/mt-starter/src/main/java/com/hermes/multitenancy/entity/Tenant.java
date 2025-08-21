@@ -1,5 +1,6 @@
 package com.hermes.multitenancy.entity;
 
+import com.hermes.multitenancy.util.TenantUtils;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,11 +41,6 @@ public class Tenant {
     @Column(length = 500)
     private String description;
 
-    /**
-     * 데이터베이스 스키마명
-     */
-    @Column(nullable = false, length = 50)
-    private String schemaName;
 
     /**
      * 테넌트 상태 (ACTIVE, INACTIVE, SUSPENDED)
@@ -82,11 +78,17 @@ public class Tenant {
         updatedAt = LocalDateTime.now();
     }
 
-    public Tenant(String tenantId, String name, String schemaName) {
+    public Tenant(String tenantId, String name) {
         this.tenantId = tenantId;
         this.name = name;
-        this.schemaName = schemaName;
         this.status = TenantStatus.ACTIVE;
+    }
+
+    /**
+     * 스키마명을 동적으로 생성하여 반환
+     */
+    public String getSchemaName() {
+        return TenantUtils.generateSchemaName(this.tenantId);
     }
 
     /**

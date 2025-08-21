@@ -1,6 +1,7 @@
 package com.hermes.multitenancy.datasource;
 
 import com.hermes.multitenancy.context.TenantContext;
+import com.hermes.multitenancy.util.TenantUtils;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
@@ -71,7 +72,7 @@ public class TenantDataSourceProvider {
         log.info("Creating data source for tenant: {}", tenantId);
         
         // 테넌트 ID를 기반으로 스키마명 생성 (예: tenant_company1)
-        String schemaName = generateSchemaName(tenantId);
+        String schemaName = TenantUtils.generateSchemaName(tenantId);
         return createDataSource(schemaName);
     }
 
@@ -101,17 +102,6 @@ public class TenantDataSourceProvider {
         return new HikariDataSource(config);
     }
 
-    /**
-     * 테넌트 ID로부터 스키마명 생성
-     */
-    private String generateSchemaName(String tenantId) {
-        if (TenantContext.DEFAULT_TENANT_ID.equals(tenantId)) {
-            return TenantContext.DEFAULT_SCHEMA_NAME;
-        }
-        
-        // 스키마명은 tenant_ 접두사를 사용 (예: tenant_company1)
-        return "tenant_" + tenantId.toLowerCase().replaceAll("[^a-z0-9]", "_");
-    }
 
     /**
      * 테넌트 DataSource 제거 (테넌트 삭제 시 사용)

@@ -2,6 +2,7 @@ package com.hermes.multitenancy.jwt;
 
 import com.hermes.jwt.JwtTokenProvider;
 import com.hermes.multitenancy.dto.TenantInfo;
+import com.hermes.multitenancy.util.TenantUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -32,7 +33,7 @@ public class TenantJwtExtractor {
             
             if (tenantId != null && !tenantId.isEmpty()) {
                 // JWT에서 추출한 테넌트 ID로 직접 TenantInfo 생성
-                String schemaName = generateSchemaName(tenantId);
+                String schemaName = TenantUtils.generateSchemaName(tenantId);
                 return new TenantInfo(tenantId, tenantId, schemaName, "ACTIVE");
             }
             
@@ -41,7 +42,7 @@ public class TenantJwtExtractor {
             if (email != null && email.contains("@")) {
                 String inferredTenantId = convertDomainToTenantId(email.substring(email.indexOf("@") + 1));
                 if (inferredTenantId != null) {
-                    String schemaName = generateSchemaName(inferredTenantId);
+                    String schemaName = TenantUtils.generateSchemaName(inferredTenantId);
                     log.debug("Inferred tenant from email domain: {} -> {}", email, inferredTenantId);
                     return new TenantInfo(inferredTenantId, inferredTenantId, schemaName, "ACTIVE");
                 }
@@ -115,15 +116,6 @@ public class TenantJwtExtractor {
         return tenantId.toLowerCase();
     }
 
-    /**
-     * 테넌트 ID로부터 스키마명 생성
-     */
-    private String generateSchemaName(String tenantId) {
-        if (tenantId == null || tenantId.isEmpty()) {
-            return "public"; // 기본 스키마
-        }
-        return "tenant_" + tenantId.toLowerCase().replaceAll("[^a-z0-9]", "_");
-    }
 
     /**
      * JWT 토큰의 유효성 확인

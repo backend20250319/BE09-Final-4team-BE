@@ -28,15 +28,6 @@ public interface TenantManagementRepository extends JpaRepository<Tenant, Long> 
      */
     boolean existsByTenantId(String tenantId);
 
-    /**
-     * 스키마명으로 테넌트 조회
-     */
-    Optional<Tenant> findBySchemaName(String schemaName);
-
-    /**
-     * 스키마명 존재 여부 확인
-     */
-    boolean existsBySchemaName(String schemaName);
 
     /**
      * 관리자 이메일로 테넌트 조회

@@ -3,6 +3,7 @@ package com.hermes.multitenancy.filter;
 import com.hermes.multitenancy.context.TenantContext;
 import com.hermes.multitenancy.dto.TenantInfo;
 import com.hermes.multitenancy.jwt.TenantJwtExtractor;
+import com.hermes.multitenancy.util.TenantUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
@@ -70,7 +71,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
         String tenantId = request.getHeader(TENANT_HEADER);
         if (StringUtils.hasText(tenantId)) {
             log.debug("Tenant ID found in header: {}", tenantId);
-            return TenantInfo.of(tenantId, generateSchemaName(tenantId));
+            return TenantInfo.of(tenantId, TenantUtils.generateSchemaName(tenantId));
         }
         
         // 2. JWT 토큰에서 테넌트 정보 추출
@@ -87,7 +88,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
         tenantId = extractTenantFromSubdomain(request);
         if (tenantId != null) {
             log.debug("Tenant ID extracted from subdomain: {}", tenantId);
-            return TenantInfo.of(tenantId, generateSchemaName(tenantId));
+            return TenantInfo.of(tenantId, TenantUtils.generateSchemaName(tenantId));
         }
         
         return null;
@@ -126,15 +127,6 @@ public class TenantContextFilter extends OncePerRequestFilter {
         return null;
     }
 
-    /**
-     * 테넌트 ID로부터 스키마명 생성
-     */
-    private String generateSchemaName(String tenantId) {
-        if (TenantContext.DEFAULT_TENANT_ID.equals(tenantId)) {
-            return TenantContext.DEFAULT_SCHEMA_NAME;
-        }
-        return "tenant_" + tenantId.toLowerCase().replaceAll("[^a-z0-9]", "_");
-    }
 
     /**
      * 기본 테넌트 정보 반환
