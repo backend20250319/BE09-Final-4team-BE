@@ -1,6 +1,6 @@
 package com.hermes.userservice.exception;
 
-import com.hermes.userservice.dto.ApiResponse;
+import com.hermes.jwt.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
