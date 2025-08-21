@@ -1,8 +1,8 @@
 package com.hermes.communicationservice;
 
 
+import com.hermes.api.common.ApiResponse;
 
-import com.hermes.ftpstarter.common.ApiResponse;
 import com.hermes.ftpstarter.dto.FtpResponseDto;
 import com.hermes.ftpstarter.service.FtpService;
 import lombok.RequiredArgsConstructor;
@@ -41,11 +41,9 @@ public class FtpController {
 
   // 다운로드 주소 반환
   @GetMapping("/file-url")
-  public ApiResponse<FtpResponseDto> getFileUrl(@RequestParam String fileName) {
-    FtpResponseDto response = FtpResponseDto.builder()
-        .storedFileName(fileName)
-        .build();
-    return ApiResponse.success("다운로드 주소 반환 성공", response);
+  public ApiResponse<String> getFileUrl(@RequestParam String fileName) {
+    String url = ftpService.getFileUrl(fileName);
+    return ApiResponse.success("다운로드 주소 반환 성공", url);
   }
 
 }
