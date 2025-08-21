@@ -34,15 +34,15 @@ public class FtpController {
 
   // 파일 삭제
   @DeleteMapping("/delete")
-  public ApiResponse<Object> delete(@RequestParam("filename") String filename) {
-    ftpService.deleteFile(filename);
+  public ApiResponse<Object> delete(@RequestParam("storedName") String storedName) {
+    ftpService.deleteFile(storedName);
     return ApiResponse.success("삭제 성공");
   }
 
   // 다운로드 주소 반환
   @GetMapping("/file-url")
-  public ApiResponse<String> getFileUrl(@RequestParam String fileName) {
-    String url = ftpService.getFileUrl(fileName);
+  public ApiResponse<String> getFileUrl(@RequestParam String storedName) {
+    String url = ftpService.getFileUrl(storedName);
     return ApiResponse.success("다운로드 주소 반환 성공", url);
   }
 

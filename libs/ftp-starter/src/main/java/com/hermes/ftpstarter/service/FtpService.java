@@ -23,7 +23,7 @@ public class FtpService {
   public FtpResponseDto uploadFile(MultipartFile file) {
     FTPClient ftpClient = new FTPClient();
     String originalName = file.getOriginalFilename();
-    String uniqueName = UUID.randomUUID() + "_" + originalName; // UUID 붙여서 고유 이름 생성
+    String storedName = UUID.randomUUID().toString(); // UUID 붙여서 고유 이름 생성
 
     try (InputStream inputStream = file.getInputStream()) {
       ftpClient.connect(ftpProperties.getHost(), ftpProperties.getUploadPort());
@@ -35,12 +35,12 @@ public class FtpService {
         throw new RuntimeException("FTP 디렉토리 변경 실패: " + ftpProperties.getBaseDir());
       }
 
-      boolean stored = ftpClient.storeFile(uniqueName, inputStream);
+      boolean stored = ftpClient.storeFile(storedName, inputStream);
         if (!stored) {
-            throw new RuntimeException("FTP 업로드 실패: " + uniqueName);
+            throw new RuntimeException("FTP 업로드 실패: " + originalName);
         }
 
-      return FtpResponseDto.builder().storedFileName(uniqueName).build();
+      return FtpResponseDto.builder().storedName(storedName).build();
 
     } catch (IOException e) {
       throw new RuntimeException("FTP 업로드 중 오류 발생", e);
@@ -55,14 +55,14 @@ public class FtpService {
     }
   }
 
-  public String getFileUrl(String fileName) {
+  public String getFileUrl(String storedName) {
     return "http://" + ftpProperties.getHost() + ":" + ftpProperties.getDownloadPort()
-        + ftpProperties.getBaseDir() + "/" + fileName;
+        + ftpProperties.getBaseDir() + "/" + storedName;
   }
 
-  public void deleteFile(String filename) {
-    if (!existsFileByname(filename)) {
-      throw new RuntimeException("존재하지 않는 파일명: " + filename);
+  public void deleteFile(String storedName) {
+    if (!existsFileByname(storedName)) {
+      throw new RuntimeException("존재하지 않는 파일명: " + storedName);
     }
 
     FTPClient ftpClient = new FTPClient();
@@ -75,9 +75,9 @@ public class FtpService {
         throw new RuntimeException("FTP 디렉토리 변경 실패: " + ftpProperties.getBaseDir());
       }
 
-      boolean deleted = ftpClient.deleteFile(filename);
+      boolean deleted = ftpClient.deleteFile(storedName);
         if (!deleted) {
-            throw new RuntimeException("FTP 파일 삭제 실패: " + filename);
+            throw new RuntimeException("FTP 파일 삭제 실패: " + storedName);
         }
 
     } catch (IOException e) {
