@@ -1,4 +1,4 @@
-package com.hermes.userservice.dto;
+package com.hermes.authservice.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

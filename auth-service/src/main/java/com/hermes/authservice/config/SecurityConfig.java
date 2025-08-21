@@ -1,4 +1,4 @@
-package com.hermes.userservice.config;
+package com.hermes.authservice.config;
 
 import com.hermes.jwt.JwtProperties;
 import com.hermes.jwt.JwtTokenProvider;
@@ -17,6 +17,7 @@ public class SecurityConfig {
 
     private static final String[] WHITELIST = {
             "/api/auth/login",
+            "/api/auth/refresh",
     };
 
     @Bean

@@ -1,4 +1,4 @@
-package com.hermes.userservice.entity;
+package com.hermes.authservice.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,9 +10,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-
-// RefreshToken Entity - userId 기준으로 1:1 관리
-
 @Entity
 @Table(name = "refresh_tokens")
 @Getter
@@ -23,16 +20,17 @@ import java.time.LocalDateTime;
 public class RefreshToken {
 
     @Id
-    @Column(name = "user_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(nullable = false, unique = true)
     private String token;
 
+    @Column(nullable = false)
     private LocalDateTime expiration;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    private User user;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

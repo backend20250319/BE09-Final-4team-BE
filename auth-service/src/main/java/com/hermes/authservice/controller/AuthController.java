@@ -1,13 +1,13 @@
-package com.hermes.userservice.controller;
+package com.hermes.authservice.controller;
 
 import com.hermes.jwt.dto.ApiResponse;
-import com.hermes.userservice.dto.LoginRequestDto;
+import com.hermes.authservice.dto.LoginRequestDto;
 import com.hermes.jwt.dto.TokenResponse;
 import com.hermes.jwt.dto.RefreshRequest;
-import com.hermes.userservice.service.UserService;
+import com.hermes.authservice.service.AuthService;
 import com.hermes.jwt.JwtTokenProvider;
-import com.hermes.userservice.entity.RefreshToken;
-import com.hermes.userservice.repository.RefreshTokenRepository;
+import com.hermes.authservice.entity.RefreshToken;
+import com.hermes.authservice.repository.RefreshTokenRepository;
 import com.hermes.jwt.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserService userService;
+    private final AuthService authService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenBlacklistService tokenBlacklistService;
@@ -34,7 +34,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<TokenResponse>> login(@RequestBody LoginRequestDto loginDto) {
         log.info(" [Auth Controller] /login 요청 - email: {}", loginDto.getEmail());
-        TokenResponse tokenResponse = userService.login(loginDto);
+        TokenResponse tokenResponse = authService.login(loginDto);
         return ResponseEntity.ok(ApiResponse.success("로그인이 성공했습니다.", tokenResponse));
     }
 
@@ -57,7 +57,7 @@ public class AuthController {
         }
 
         // refreshToken도 함께 전달하여 완전한 로그아웃 처리
-        userService.logout(Long.valueOf(userId), accessToken);
+        authService.logout(Long.valueOf(userId), accessToken);
 
         Map<String, String> result = new HashMap<>();
         result.put("userId", userId);
@@ -87,7 +87,8 @@ public class AuthController {
         Long userId = Long.valueOf(jwtTokenProvider.getClaimFromToken(token, "userId"));
         String email = jwtTokenProvider.getEmailFromToken(token);
 
-        RefreshToken saved = refreshTokenRepository.findById(userId)
+        // 수정: findByUserId 사용 (findById 대신)
+        RefreshToken saved = refreshTokenRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("RefreshToken not found"));
 
         if (!saved.getToken().equals(request.getRefreshToken())) {
