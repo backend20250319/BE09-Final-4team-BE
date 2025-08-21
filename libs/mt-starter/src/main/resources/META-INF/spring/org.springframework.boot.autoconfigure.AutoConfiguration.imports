@@ -1,0 +1,3 @@
+com.hermes.multitenancy.config.MultiTenancyAutoConfiguration
+com.hermes.multitenancy.config.JwtAutoConfiguration
+com.hermes.multitenancy.config.TenantEventAutoConfiguration

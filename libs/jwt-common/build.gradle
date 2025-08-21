@@ -6,20 +6,7 @@ plugins {
 group = 'com.hermes'
 version = '0.0.1-SNAPSHOT'
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
-repositories {
-    mavenCentral()
-}
-
-
-
 dependencies {
-
     api 'io.jsonwebtoken:jjwt-api:0.12.6'
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
@@ -29,33 +16,9 @@ dependencies {
 
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
-    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
-    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
-
-    implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
-}
-
-
-
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-    }
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
-}
-
-tasks.named('bootJar') {
-    enabled = false
-}
-
-tasks.named('jar') {
-    enabled = true
 }

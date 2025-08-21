@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+}
+
+group = 'com.hermes'
+version = '1.0.0'
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.0.0"
+    }
+}
+
+dependencies {
+    // Multi-tenancy starter
+    implementation project(':libs:mt-starter')
+    
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    
+    // Spring Cloud
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap'
+    
+    // Database
+    runtimeOnly 'org.postgresql:postgresql'
+    
+    // Flyway (PostgreSQL specific)
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    
+    // Documentation
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+    
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testRuntimeOnly 'com.h2database:h2'
+}
+
+test {
+    useJUnitPlatform()
+}

@@ -61,9 +61,6 @@ public class User {
 
     @Column(length = 100)
     private String role;  // Role (direct input)
-
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EmployeeAssignment> assignments = new ArrayList<>();  // Department assignment list
     
     @Column
     private LocalDateTime lastLoginAt;  // Last login time
@@ -76,8 +73,6 @@ public class User {
     
     @Column(length = 500)
     private String profileImage;  // Profile image URL
-    
-
     
     // @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     // private WorkHourPolicy workHourPolicy;  // 근무 정책
