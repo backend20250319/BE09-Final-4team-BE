@@ -1,4 +1,4 @@
-package com.hermes.userservice.jwt.dto;
+package com.hermes.jwt.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RefreshRequest {
+public class TokenRequest {
     private Long userId;
     private String email;
-    private String refreshToken;
 }

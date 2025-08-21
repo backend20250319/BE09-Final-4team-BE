@@ -1,4 +1,4 @@
-package com.hermes.userservice.jwt.entity;
+package com.hermes.userservice.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -23,11 +23,16 @@ import java.time.LocalDateTime;
 public class RefreshToken {
 
     @Id
+    @Column(name = "user_id")
     private Long userId;
 
     private String token;
 
     private LocalDateTime expiration;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private User user;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
