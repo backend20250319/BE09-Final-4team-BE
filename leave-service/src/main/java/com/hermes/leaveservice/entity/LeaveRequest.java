@@ -12,7 +12,7 @@ import java.time.LocalTime;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-import com.hermes.userservice.entity.User;
+
 
 @Entity
 @Table(name = "leave_requests")
@@ -27,9 +27,8 @@ public class LeaveRequest {
     @Column(name = "request_id")
     private Long requestId;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id", nullable = false)
-    private User employee;
+    @Column(name = "employee_id", nullable = false)
+    private Long employeeId;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "leave_type", nullable = false)
@@ -57,9 +56,8 @@ public class LeaveRequest {
     @Column(name = "status", nullable = false)
     private RequestStatus status;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "approver_id")
-    private User approver;
+    @Column(name = "approver_id")
+    private Long approverId;
     
     @Column(name = "requested_at", nullable = false)
     private LocalDateTime requestedAt;
