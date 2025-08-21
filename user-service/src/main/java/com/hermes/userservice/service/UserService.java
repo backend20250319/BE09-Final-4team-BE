@@ -1,7 +1,7 @@
 package com.hermes.userservice.service;
 
 import com.hermes.jwt.JwtTokenProvider;
-import com.hermes.jwt.service.TokenBlacklistService; // libs/jwt-common에서 import
+import com.hermes.jwt.service.TokenBlacklistService;
 import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.InvalidCredentialsException;
@@ -62,33 +62,21 @@ public class UserService {
         return new TokenResponse(accessToken, refreshToken);
     }
 
-    // 로그아웃 메서드 개선 - Access Token과 Refresh Token 모두 블랙리스트에 추가
+    // 로그아웃 메서드 개선 - Access Token과 Refresh Token 모두 완전 삭제
     public void logout(Long userId, String accessToken, String refreshToken) {
         log.info(" [User Service] 로그아웃 처리 시작 - userId: {}", userId);
 
         try {
-            // 1. RefreshToken 삭제
+            // 1. RefreshToken을 DB에서 삭제
             refreshTokenRepository.deleteById(userId);
             log.info("[User Service] RefreshToken 삭제 완료 - userId: {}", userId);
 
-            // 2. Access Token을 블랙리스트에 추가
-            if (accessToken != null && !accessToken.isEmpty()) {
-                tokenBlacklistService.blacklistToken(accessToken, jwtTokenProvider.getExpirationTime());
-                log.info(" [User Service] Access Token 블랙리스트 추가 완료 - userId: {}", userId);
-            }
-
-            // 3. Refresh Token을 블랙리스트에 추가
-            if (refreshToken != null && !refreshToken.isEmpty()) {
-                tokenBlacklistService.blacklistRefreshToken(refreshToken, jwtTokenProvider.getRefreshExpiration());
-                log.info(" [User Service] Refresh Token 블랙리스트 추가 완료 - userId: {}", userId);
-            }
-
-            // 4. 사용자 로그아웃 시간 기록
-            tokenBlacklistService.recordUserLogout(userId, System.currentTimeMillis());
-            log.info(" [User Service] 사용자 로그아웃 시간 기록 완료 - userId: {}", userId);
+            // 2. TokenBlacklistService를 통해 모든 토큰 완전 삭제
+            tokenBlacklistService.logoutUser(userId, accessToken, refreshToken);
+            log.info(" [User Service] 모든 토큰 완전 삭제 완료 - userId: {}", userId);
 
         } catch (Exception e) {
-            log.error("❌[User Service] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage(), e);
+            log.error("[User Service] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage(), e);
             throw new RuntimeException("로그아웃 처리 중 오류가 발생했습니다.", e);
         }
     }
