@@ -85,6 +85,7 @@ All services register with Eureka at `http://localhost:8761/eureka`
 ### Gateway Routing
 - `/api/users/**` → user-service  
 - `/api/news/**` → news-crawler-service
+- `/api/approval/**` → approval-service
 
 ## Multi-Tenancy Usage
 
