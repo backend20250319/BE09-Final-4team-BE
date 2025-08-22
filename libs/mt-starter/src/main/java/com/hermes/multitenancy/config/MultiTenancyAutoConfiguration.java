@@ -1,11 +1,6 @@
 package com.hermes.multitenancy.config;
 
 import com.hermes.multitenancy.datasource.TenantDataSourceProvider;
-import com.hermes.multitenancy.filter.TenantContextFilter;
-import com.hermes.multitenancy.jwt.TenantJwtExtractor;
-import com.hermes.multitenancy.service.TenantService;
-import com.hermes.multitenancy.service.TenantServiceImpl;
-import com.hermes.multitenancy.util.SchemaUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
