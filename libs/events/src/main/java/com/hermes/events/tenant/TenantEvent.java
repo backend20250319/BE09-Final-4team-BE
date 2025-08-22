@@ -1,6 +1,5 @@
-package com.hermes.multitenancy.event;
+package com.hermes.events.tenant;
 
-import com.hermes.multitenancy.util.TenantUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -54,8 +53,12 @@ public class TenantEvent {
 
     /**
      * 스키마명을 동적으로 생성하여 반환
+     * TenantUtils.generateSchemaName() 로직을 인라인화
      */
     public String getSchemaName() {
-        return TenantUtils.generateSchemaName(this.tenantId);
+        if (tenantId == null || tenantId.isEmpty() || "default".equals(tenantId)) {
+            return "public";
+        }
+        return "tenant_" + tenantId;
     }
 }

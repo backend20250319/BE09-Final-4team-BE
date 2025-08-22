@@ -2,7 +2,7 @@ package com.hermes.multitenancy.messaging;
 
 import com.hermes.multitenancy.context.TenantContext;
 import com.hermes.multitenancy.dto.TenantInfo;
-import com.hermes.multitenancy.event.TenantEvent;
+import com.hermes.events.tenant.TenantEvent;
 import com.hermes.multitenancy.config.RabbitMQProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,6 +1,6 @@
 package com.hermes.tenantservice.repository;
 
-import com.hermes.multitenancy.entity.Tenant;
+import com.hermes.tenantservice.entity.Tenant;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,7 +16,7 @@ import java.util.Optional;
  * 시스템 관리용으로 기본 스키마(public)에서 작동
  */
 @Repository
-public interface TenantManagementRepository extends JpaRepository<Tenant, Long> {
+public interface TenantRepository extends JpaRepository<Tenant, Long> {
 
     /**
      * 테넌트 ID로 테넌트 조회
@@ -37,7 +37,7 @@ public interface TenantManagementRepository extends JpaRepository<Tenant, Long> 
     /**
      * 활성 상태인 테넌트 목록 조회
      */
-    @Query("SELECT t FROM Tenant t WHERE t.status = com.hermes.multitenancy.entity.Tenant.TenantStatus.ACTIVE")
+    @Query("SELECT t FROM Tenant t WHERE t.status = com.hermes.tenantservice.entity.Tenant.TenantStatus.ACTIVE")
     Page<Tenant> findActiveTenantsBy(Pageable pageable);
 
     /**
@@ -67,6 +67,6 @@ public interface TenantManagementRepository extends JpaRepository<Tenant, Long> 
     /**
      * 활성 테넌트 수 조회
      */
-    @Query("SELECT COUNT(t) FROM Tenant t WHERE t.status = com.hermes.multitenancy.entity.Tenant.TenantStatus.ACTIVE")
+    @Query("SELECT COUNT(t) FROM Tenant t WHERE t.status = com.hermes.tenantservice.entity.Tenant.TenantStatus.ACTIVE")
     long countActiveTenants();
 }

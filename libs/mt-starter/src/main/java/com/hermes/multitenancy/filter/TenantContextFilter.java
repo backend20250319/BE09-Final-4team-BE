@@ -6,6 +6,7 @@ import com.hermes.multitenancy.jwt.TenantJwtExtractor;
 import com.hermes.multitenancy.util.TenantUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,7 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
+@ConditionalOnProperty(name = "hermes.multitenancy.enabled", havingValue = "true", matchIfMissing = true)
 public class TenantContextFilter extends OncePerRequestFilter {
 
     private final TenantJwtExtractor tenantJwtExtractor;

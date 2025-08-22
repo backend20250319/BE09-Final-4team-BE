@@ -306,6 +306,6 @@ Standard Spring Boot Actuator endpoints available on all services.
 - Schema operations require elevated database privileges
 
 ## 기타
-- All commit messages must be written in Korean
-- Never commit without explicit user instruction
-- gradlew 빌드할 땐 항상 '-Dfile.encoding=UTF-8'을 붙일 것. 따옴표 포함.
+- 커밋 메시지는 항상 한국어로 간단 명료하게 작성하세요.
+- 사용자의 명시적인 지시 없이 커밋을 하지 마세요.
+- gradlew 빌드할 땐 항상 '-Dfile.encoding=UTF-8'을 붙여야 합니다 (따옴표 포함)

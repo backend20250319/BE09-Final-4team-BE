@@ -1,6 +1,5 @@
-package com.hermes.multitenancy.entity;
+package com.hermes.tenantservice.entity;
 
-import com.hermes.multitenancy.util.TenantUtils;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -86,9 +85,13 @@ public class Tenant {
 
     /**
      * 스키마명을 동적으로 생성하여 반환
+     * TenantUtils.generateSchemaName() 로직을 인라인화
      */
     public String getSchemaName() {
-        return TenantUtils.generateSchemaName(this.tenantId);
+        if (tenantId == null || tenantId.isEmpty() || "default".equals(tenantId)) {
+            return "public";
+        }
+        return "tenant_" + tenantId;
     }
 
     /**

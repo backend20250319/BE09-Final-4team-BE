@@ -1,20 +1,36 @@
-package com.hermes.multitenancy.messaging;
+package com.hermes.tenantservice.messaging;
 
-import com.hermes.multitenancy.config.RabbitMQProperties;
-import com.hermes.multitenancy.event.TenantEvent;
+import com.hermes.events.tenant.TenantEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
  * 테넌트 이벤트를 RabbitMQ로 발행하는 Publisher
  */
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class TenantEventPublisher {
 
     private final RabbitTemplate rabbitTemplate;
-    private final RabbitMQProperties properties;
+
+    @Value("${hermes.multitenancy.rabbitmq.tenant-exchange:tenant.events}")
+    private String tenantExchange;
+
+    @Value("${hermes.multitenancy.rabbitmq.tenant-created-routing-key:tenant.created}")
+    private String tenantCreatedRoutingKey;
+
+    @Value("${hermes.multitenancy.rabbitmq.tenant-deleted-routing-key:tenant.deleted}")
+    private String tenantDeletedRoutingKey;
+
+    @Value("${hermes.multitenancy.rabbitmq.tenant-updated-routing-key:tenant.updated}")
+    private String tenantUpdatedRoutingKey;
+
+    @Value("${hermes.multitenancy.rabbitmq.tenant-status-changed-routing-key:tenant.status.changed}")
+    private String tenantStatusChangedRoutingKey;
 
     /**
      * 테넌트 생성 이벤트 발행
@@ -22,7 +38,7 @@ public class TenantEventPublisher {
     public void publishTenantCreated(String tenantId, String tenantName, String adminEmail) {
         TenantEvent event = TenantEvent.created(tenantId, tenantName, adminEmail);
         
-        publishEvent(event, properties.getTenantCreatedRoutingKey());
+        publishEvent(event, tenantCreatedRoutingKey);
         log.info("Tenant CREATED event published: tenantId={}, schemaName={}", tenantId, event.getSchemaName());
     }
 
@@ -32,7 +48,7 @@ public class TenantEventPublisher {
     public void publishTenantDeleted(String tenantId) {
         TenantEvent event = TenantEvent.deleted(tenantId);
         
-        publishEvent(event, properties.getTenantDeletedRoutingKey());
+        publishEvent(event, tenantDeletedRoutingKey);
         log.info("Tenant DELETED event published: tenantId={}, schemaName={}", tenantId, event.getSchemaName());
     }
 
@@ -49,7 +65,7 @@ public class TenantEventPublisher {
                 java.time.LocalDateTime.now()
         );
         
-        publishEvent(event, properties.getTenantUpdatedRoutingKey());
+        publishEvent(event, tenantUpdatedRoutingKey);
         log.info("Tenant UPDATED event published: tenantId={}, schemaName={}", tenantId, event.getSchemaName());
     }
 
@@ -66,7 +82,7 @@ public class TenantEventPublisher {
                 java.time.LocalDateTime.now()
         );
         
-        publishEvent(event, properties.getTenantStatusChangedRoutingKey());
+        publishEvent(event, tenantStatusChangedRoutingKey);
         log.info("Tenant STATUS_CHANGED event published: tenantId={}, schemaName={}, status={}", 
                 tenantId, event.getSchemaName(), status);
     }
@@ -77,7 +93,7 @@ public class TenantEventPublisher {
     private void publishEvent(TenantEvent event, String routingKey) {
         try {
             rabbitTemplate.convertAndSend(
-                    properties.getTenantExchange(),
+                    tenantExchange,
                     routingKey,
                     event
             );
