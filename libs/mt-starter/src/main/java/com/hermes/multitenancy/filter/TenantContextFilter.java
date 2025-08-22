@@ -1,8 +1,9 @@
 package com.hermes.multitenancy.filter;
 
+import com.hermes.jwt.JwtTokenProvider;
+import com.hermes.jwt.context.UserInfo;
 import com.hermes.multitenancy.context.TenantContext;
 import com.hermes.multitenancy.dto.TenantInfo;
-import com.hermes.multitenancy.jwt.TenantJwtExtractor;
 import com.hermes.multitenancy.util.TenantUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,11 +31,10 @@ import java.io.IOException;
 @ConditionalOnProperty(name = "hermes.multitenancy.enabled", havingValue = "true", matchIfMissing = true)
 public class TenantContextFilter extends OncePerRequestFilter {
 
-    private final TenantJwtExtractor tenantJwtExtractor;
+    private final JwtTokenProvider jwtTokenProvider;
     
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
-    private static final String TENANT_HEADER = "X-Tenant-ID";
 
     @Override
     protected void doFilterInternal(
@@ -66,31 +66,24 @@ public class TenantContextFilter extends OncePerRequestFilter {
     }
 
     /**
-     * HTTP 요청에서 테넌트 정보 추출
+     * HTTP 요청에서 테넌트 정보 추출 (JWT에서만)
      */
     private TenantInfo extractTenantInfo(HttpServletRequest request) {
-        // 1. 먼저 헤더에서 직접 테넌트 ID 확인
-        String tenantId = request.getHeader(TENANT_HEADER);
-        if (StringUtils.hasText(tenantId)) {
-            log.debug("Tenant ID found in header: {}", tenantId);
-            return TenantInfo.of(tenantId, TenantUtils.generateSchemaName(tenantId));
-        }
-        
-        // 2. JWT 토큰에서 테넌트 정보 추출
+        // JWT 토큰에서만 테넌트 정보 추출
         String token = extractTokenFromRequest(request);
-        if (token != null && tenantJwtExtractor.isValidToken(token)) {
-            TenantInfo tenantInfo = tenantJwtExtractor.extractTenantInfo(token);
-            if (tenantInfo != null) {
-                log.debug("Tenant info extracted from JWT: {}", tenantInfo.getTenantId());
-                return tenantInfo;
+        if (token != null) {
+            try {
+                UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
+                String tenantId = userInfo.getTenantId();
+                
+                if (StringUtils.hasText(tenantId)) {
+                    String schemaName = TenantUtils.generateSchemaName(tenantId);
+                    log.debug("Tenant info extracted from JWT: {}", tenantId);
+                    return new TenantInfo(tenantId, schemaName);
+                }
+            } catch (Exception e) {
+                log.debug("Failed to extract tenant info from JWT token: {}", e.getMessage());
             }
-        }
-        
-        // 3. 하위 도메인에서 테넌트 추론 (예: tenant1.example.com)
-        tenantId = extractTenantFromSubdomain(request);
-        if (tenantId != null) {
-            log.debug("Tenant ID extracted from subdomain: {}", tenantId);
-            return TenantInfo.of(tenantId, TenantUtils.generateSchemaName(tenantId));
         }
         
         return null;
@@ -109,25 +102,6 @@ public class TenantContextFilter extends OncePerRequestFilter {
         return null;
     }
 
-    /**
-     * 하위 도메인에서 테넌트 ID 추출
-     */
-    private String extractTenantFromSubdomain(HttpServletRequest request) {
-        String serverName = request.getServerName();
-        
-        if (serverName != null && serverName.contains(".")) {
-            String[] parts = serverName.split("\\.");
-            if (parts.length > 2) {
-                String subdomain = parts[0];
-                // "www"나 "api" 등은 테넌트 ID가 아님
-                if (!subdomain.equals("www") && !subdomain.equals("api") && !subdomain.equals("localhost")) {
-                    return subdomain;
-                }
-            }
-        }
-        
-        return null;
-    }
 
 
     /**
