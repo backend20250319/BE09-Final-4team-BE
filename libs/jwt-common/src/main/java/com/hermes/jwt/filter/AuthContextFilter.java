@@ -1,10 +1,11 @@
 package com.hermes.jwt.filter;
 
+import com.hermes.jwt.JwtTokenProvider;
 import com.hermes.jwt.context.AuthContext;
 import com.hermes.jwt.context.UserInfo;
-import com.hermes.jwt.context.Role;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -13,18 +14,19 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 
 /**
- * HTTP 헤더에서 사용자 정보를 추출하여 AuthContext에 설정하는 필터
- * Gateway에서 JWT 검증 후 주입한 헤더를 처리합니다.
+ * JWT 토큰에서 직접 사용자 정보를 추출하여 AuthContext에 설정하는 필터
+ * 보안을 위해 HTTP 헤더가 아닌 JWT 토큰에서 직접 추출합니다.
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 @Order(1) // 다른 필터들보다 먼저 실행
 public class AuthContextFilter implements Filter {
     
-    private static final String HEADER_USER_ID = "X-User-Id";
-    private static final String HEADER_USER_EMAIL = "X-User-Email";
-    private static final String HEADER_USER_ROLE = "X-User-Role";
-    private static final String HEADER_TENANT_ID = "X-Tenant-Id";
+    private final JwtTokenProvider jwtTokenProvider;
+    
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String BEARER_PREFIX = "Bearer ";
     
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -32,7 +34,7 @@ public class AuthContextFilter implements Filter {
         
         if (request instanceof HttpServletRequest) {
             HttpServletRequest httpRequest = (HttpServletRequest) request;
-            processAuthHeaders(httpRequest);
+            processJwtToken(httpRequest);
         }
         
         try {
@@ -44,41 +46,52 @@ public class AuthContextFilter implements Filter {
     }
     
     /**
-     * HTTP 헤더에서 사용자 정보를 추출하여 AuthContext에 설정
+     * JWT 토큰에서 사용자 정보를 추출하여 AuthContext에 설정
      */
-    private void processAuthHeaders(HttpServletRequest request) {
-        String userId = request.getHeader(HEADER_USER_ID);
-        String email = request.getHeader(HEADER_USER_EMAIL);
-        String role = request.getHeader(HEADER_USER_ROLE);
-        String tenantId = request.getHeader(HEADER_TENANT_ID);
+    private void processJwtToken(HttpServletRequest request) {
+        String token = extractTokenFromRequest(request);
         
-        log.debug("Processing auth headers: userId={}, email={}, role={}, tenantId={}", 
-                 userId, email, role, tenantId);
+        if (token == null) {
+            log.debug("No JWT token found, skipping AuthContext setup");
+            return;
+        }
         
-        // 사용자 ID가 있는 경우에만 AuthContext 설정
-        if (StringUtils.hasText(userId)) {
-            try {
-                Role userRole = Role.fromString(role, Role.USER); // 기본값은 USER
-                
-                UserInfo userInfo = UserInfo.builder()
-                        .userId(Long.valueOf(userId))
-                        .email(email)
-                        .role(userRole)
-                        .tenantId(tenantId)
-                        .build();
-                
+        try {
+            // JWT 토큰 유효성 검증
+            if (!jwtTokenProvider.isValidToken(token)) {
+                log.debug("Invalid JWT token, skipping AuthContext setup");
+                return;
+            }
+            
+            // JWT에서 사용자 정보 추출
+            UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
+            
+            if (userInfo != null && userInfo.getUserId() != null) {
                 AuthContext.setCurrentUser(userInfo);
                 
-                log.debug("AuthContext set successfully: userId={}, email={}, role={}", 
-                         userInfo.getUserId(), userInfo.getEmail(), userInfo.getRoleString());
-                
-            } catch (NumberFormatException e) {
-                log.warn("Invalid user ID format in header: {}", userId);
-                // 유효하지 않은 사용자 ID인 경우 AuthContext를 설정하지 않음
+                log.debug("AuthContext set from JWT: userId={}, email={}, role={}, tenantId={}", 
+                         userInfo.getUserId(), userInfo.getEmail(), userInfo.getRoleString(), userInfo.getTenantId());
+            } else {
+                log.debug("Invalid user info from JWT token");
             }
-        } else {
-            log.debug("No user ID header found, skipping AuthContext setup");
+            
+        } catch (Exception e) {
+            log.warn("Failed to process JWT token: {}", e.getMessage());
+            // JWT 처리 실패시 AuthContext를 설정하지 않음
         }
+    }
+    
+    /**
+     * HTTP 요청에서 JWT 토큰 추출
+     */
+    private String extractTokenFromRequest(HttpServletRequest request) {
+        String authHeader = request.getHeader(AUTHORIZATION_HEADER);
+        
+        if (StringUtils.hasText(authHeader) && authHeader.startsWith(BEARER_PREFIX)) {
+            return authHeader.substring(BEARER_PREFIX.length());
+        }
+        
+        return null;
     }
     
     @Override

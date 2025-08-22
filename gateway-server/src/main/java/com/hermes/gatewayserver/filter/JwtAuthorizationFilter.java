@@ -87,8 +87,8 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
 
             log.info(" [Gateway] JWT 검증 성공 → userId={}, email={}", userInfo.getUserId(), userInfo.getEmail());
 
-            // 3. 사용자 정보를 헤더로 주입 (블랙리스트 검증 생략)
-            return injectUserHeaders(token, request, exchange, chain, userInfo);
+            // 3. JWT 검증 성공 - 토큰 그대로 전달 (헤더 주입 제거)
+            return chain.filter(exchange);
 
         } catch (Exception e) {
             log.error(" [Gateway] JWT 검증 중 예외 발생: {}", e.getMessage(), e);
@@ -102,40 +102,6 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
         }
     }
 
-    private Mono<Void> injectUserHeaders(String token, ServerHttpRequest request,
-                                         ServerWebExchange exchange, GatewayFilterChain chain,
-                                         UserInfo userInfo) {
-        log.info(" [Gateway] 사용자 정보 헤더 주입 시작 (블랙리스트 검증 생략)");
-
-        try {
-            // 사용자 정보를 헤더로 주입
-            ServerHttpRequest modifiedRequest = request.mutate()
-                    .header("X-User-Id", userInfo.getUserId().toString())
-                    .header("X-User-Email", userInfo.getEmail())
-                    .header("X-User-Role", userInfo.getRoleString())
-                    .header("X-Tenant-Id", userInfo.getTenantId() != null ? userInfo.getTenantId() : "")
-                    .build();
-
-            log.info(" [Gateway] 사용자 정보 헤더 주입 완료: X-User-Id={}, X-User-Email={}, X-User-Role={}, X-Tenant-Id={}",
-                    userInfo.getUserId(), userInfo.getEmail(), userInfo.getRoleString(), userInfo.getTenantId());
-
-            ServerWebExchange modifiedExchange = exchange.mutate()
-                    .request(modifiedRequest)
-                    .build();
-
-            return chain.filter(modifiedExchange);
-
-        } catch (Exception e) {
-            log.error(" [Gateway] 사용자 정보 헤더 주입 중 예외 발생: {}", e.getMessage(), e);
-
-            if (isWhiteListed(request.getURI().getPath())) {
-                log.info(" [Gateway] 화이트리스트 경로 → 헤더 주입 실패해도 통과");
-                return chain.filter(exchange);
-            }
-
-            return unauthorized(exchange);
-        }
-    }
 
     private boolean isWhiteListed(String path) {
         List<String> whitelist = filterProperties.getWhitelist();
