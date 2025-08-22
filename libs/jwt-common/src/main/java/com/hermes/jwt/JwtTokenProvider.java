@@ -1,6 +1,7 @@
 package com.hermes.jwt;
 
 import com.hermes.jwt.context.Role;
+import com.hermes.jwt.context.UserInfo;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -75,17 +76,32 @@ public class JwtTokenProvider {
         }
     }
 
-    public JwtPayload getPayloadFromToken(String token) {
+    public UserInfo getUserInfoFromToken(String token) {
         Claims claims = parseToken(token).getPayload();
 
         String email = claims.getSubject();
         Object userIdObj = claims.get("userId");
         Object roleObj = claims.get("role");
+        Object tenantIdObj = claims.get("tenantId");
 
-        String userId = userIdObj != null ? userIdObj.toString() : null;
-        String role = roleObj != null ? roleObj.toString() : null;
+        Long userId = null;
+        if (userIdObj != null) {
+            try {
+                userId = Long.parseLong(userIdObj.toString());
+            } catch (NumberFormatException e) {
+                // userId 파싱 실패시 null 유지
+            }
+        }
+        
+        Role role = Role.fromString(roleObj != null ? roleObj.toString() : null, Role.USER);
+        String tenantId = tenantIdObj != null ? tenantIdObj.toString() : null;
 
-        return new JwtPayload(userId, email, role);
+        return UserInfo.builder()
+                .userId(userId)
+                .email(email)
+                .role(role)
+                .tenantId(tenantId)
+                .build();
     }
     
     /**

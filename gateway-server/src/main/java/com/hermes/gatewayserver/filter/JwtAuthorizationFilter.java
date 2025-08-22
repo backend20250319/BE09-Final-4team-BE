@@ -1,7 +1,7 @@
 package com.hermes.gatewayserver.filter;
 
 import com.hermes.jwt.JwtTokenProvider;
-import com.hermes.jwt.JwtPayload;
+import com.hermes.jwt.context.UserInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -79,16 +79,16 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
             }
 
             // 2. JWT 페이로드에서 사용자 정보 추출
-            JwtPayload payload = jwtTokenProvider.getPayloadFromToken(token);
-            if (payload == null || payload.getEmail() == null || payload.getUserId() == null) {
+            UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
+            if (userInfo == null || userInfo.getEmail() == null || userInfo.getUserId() == null) {
                 log.warn(" [Gateway] JWT 페이로드에서 사용자 정보를 추출할 수 없음");
                 return unauthorized(exchange);
             }
 
-            log.info(" [Gateway] JWT 검증 성공 → userId={}, email={}", payload.getUserId(), payload.getEmail());
+            log.info(" [Gateway] JWT 검증 성공 → userId={}, email={}", userInfo.getUserId(), userInfo.getEmail());
 
             // 3. 사용자 정보를 헤더로 주입 (블랙리스트 검증 생략)
-            return injectUserHeaders(token, request, exchange, chain, payload);
+            return injectUserHeaders(token, request, exchange, chain, userInfo);
 
         } catch (Exception e) {
             log.error(" [Gateway] JWT 검증 중 예외 발생: {}", e.getMessage(), e);
@@ -104,19 +104,20 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
 
     private Mono<Void> injectUserHeaders(String token, ServerHttpRequest request,
                                          ServerWebExchange exchange, GatewayFilterChain chain,
-                                         JwtPayload payload) {
+                                         UserInfo userInfo) {
         log.info(" [Gateway] 사용자 정보 헤더 주입 시작 (블랙리스트 검증 생략)");
 
         try {
             // 사용자 정보를 헤더로 주입
             ServerHttpRequest modifiedRequest = request.mutate()
-                    .header("X-User-Id", payload.getUserId())
-                    .header("X-User-Email", payload.getEmail())
-                    .header("X-User-Role", payload.getRole() != null ? payload.getRole() : "USER")
+                    .header("X-User-Id", userInfo.getUserId().toString())
+                    .header("X-User-Email", userInfo.getEmail())
+                    .header("X-User-Role", userInfo.getRoleString())
+                    .header("X-Tenant-Id", userInfo.getTenantId() != null ? userInfo.getTenantId() : "")
                     .build();
 
-            log.info(" [Gateway] 사용자 정보 헤더 주입 완료: X-User-Id={}, X-User-Email={}, X-User-Role={}",
-                    payload.getUserId(), payload.getEmail(), payload.getRole());
+            log.info(" [Gateway] 사용자 정보 헤더 주입 완료: X-User-Id={}, X-User-Email={}, X-User-Role={}, X-Tenant-Id={}",
+                    userInfo.getUserId(), userInfo.getEmail(), userInfo.getRoleString(), userInfo.getTenantId());
 
             ServerWebExchange modifiedExchange = exchange.mutate()
                     .request(modifiedRequest)

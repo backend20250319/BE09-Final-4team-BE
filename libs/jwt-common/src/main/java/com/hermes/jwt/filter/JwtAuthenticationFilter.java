@@ -1,7 +1,7 @@
 package com.hermes.jwt.filter;
 
 import com.hermes.jwt.JwtTokenProvider;
-import com.hermes.jwt.JwtPayload;
+import com.hermes.jwt.context.UserInfo;
 import com.hermes.jwt.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -83,9 +83,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
                 
-                JwtPayload payload = jwtTokenProvider.getPayloadFromToken(token);
-                setUserContext(request, payload);
-                log.debug("JWT validation successful for user: {}", payload.getEmail());
+                UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
+                setUserContext(request, userInfo);
+                log.debug("JWT validation successful for user: {}", userInfo.getEmail());
             } else {
                 log.warn("Invalid or missing JWT token for request: {}", requestURI);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -113,10 +113,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private void setUserContext(HttpServletRequest request, JwtPayload payload) {
-        request.setAttribute("userId", payload.getUserId());
-        request.setAttribute("email", payload.getEmail());
-        request.setAttribute("role", payload.getRole());
+    private void setUserContext(HttpServletRequest request, UserInfo userInfo) {
+        request.setAttribute("userId", userInfo.getUserId());
+        request.setAttribute("email", userInfo.getEmail());
+        request.setAttribute("role", userInfo.getRoleString());
+        request.setAttribute("tenantId", userInfo.getTenantId());
     }
 
     @Override
