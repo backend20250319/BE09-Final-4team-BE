@@ -59,23 +59,15 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public boolean isValidToken(String token) {
-        try {
-            parseToken(token);
-            return true;
-        } catch (InvalidJwtException e) {
-            return false;
-        }
-    }
 
-    public String getEmailFromToken(String token) {
-        try {
-            return parseToken(token).getPayload().getSubject();
-        } catch (InvalidJwtException e) {
-            return null;
-        }
-    }
-
+    /**
+     * JWT 토큰에서 사용자 정보를 추출합니다.
+     * 토큰이 유효하지 않으면 InvalidJwtException을 던집니다.
+     * 
+     * @param token JWT 토큰
+     * @return 사용자 정보
+     * @throws InvalidJwtException 토큰이 유효하지 않은 경우
+     */
     public UserInfo getUserInfoFromToken(String token) {
         Claims claims = parseToken(token).getPayload();
 
@@ -89,7 +81,7 @@ public class JwtTokenProvider {
             try {
                 userId = Long.parseLong(userIdObj.toString());
             } catch (NumberFormatException e) {
-                // userId 파싱 실패시 null 유지
+                throw new InvalidJwtException("Invalid userId format in JWT token: " + userIdObj);
             }
         }
         
@@ -104,19 +96,6 @@ public class JwtTokenProvider {
                 .build();
     }
     
-    /**
-     * 토큰에서 Role enum을 추출합니다.
-     */
-    public Role getRoleFromToken(String token) {
-        String roleString = getClaimFromToken(token, "role");
-        return Role.fromString(roleString, Role.USER);
-    }
-
-    public String getClaimFromToken(String token, String claimName) {
-        Claims claims = parseToken(token).getPayload();
-        Object value = claims.get(claimName);
-        return value != null ? value.toString() : null;
-    }
 
     private Jws<Claims> parseToken(String token) {
         try {

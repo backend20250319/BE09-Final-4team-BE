@@ -57,27 +57,21 @@ public class AuthContextFilter implements Filter {
         }
         
         try {
-            // JWT 토큰 유효성 검증
-            if (!jwtTokenProvider.isValidToken(token)) {
-                log.debug("Invalid JWT token, skipping AuthContext setup");
-                return;
-            }
-            
-            // JWT에서 사용자 정보 추출
+            // JWT 토큰에서 사용자 정보 추출 (유효성 검증 포함)
             UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
             
-            if (userInfo != null && userInfo.getUserId() != null) {
+            if (userInfo.getUserId() != null) {
                 AuthContext.setCurrentUser(userInfo);
                 
                 log.debug("AuthContext set from JWT: userId={}, email={}, role={}, tenantId={}", 
                          userInfo.getUserId(), userInfo.getEmail(), userInfo.getRoleString(), userInfo.getTenantId());
             } else {
-                log.debug("Invalid user info from JWT token");
+                log.debug("Invalid user ID from JWT token");
             }
             
         } catch (Exception e) {
-            log.warn("Failed to process JWT token: {}", e.getMessage());
-            // JWT 처리 실패시 AuthContext를 설정하지 않음
+            log.debug("Failed to process JWT token: {}", e.getMessage());
+            // JWT 처리 실패시 AuthContext를 설정하지 않음 (정상 동작)
         }
     }
     

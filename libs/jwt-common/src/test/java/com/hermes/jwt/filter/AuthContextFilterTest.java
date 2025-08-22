@@ -64,7 +64,6 @@ class AuthContextFilterTest {
                 .build();
         
         when(request.getHeader("Authorization")).thenReturn(authHeader);
-        when(jwtTokenProvider.isValidToken(validToken)).thenReturn(true);
         when(jwtTokenProvider.getUserInfoFromToken(validToken)).thenReturn(expectedUserInfo);
         
         // AuthContext 검증을 위해 filterChain에서 확인
@@ -82,7 +81,6 @@ class AuthContextFilterTest {
         
         // Then
         verify(filterChain).doFilter(request, response);
-        verify(jwtTokenProvider).isValidToken(validToken);
         verify(jwtTokenProvider).getUserInfoFromToken(validToken);
     }
     
@@ -93,15 +91,14 @@ class AuthContextFilterTest {
         String authHeader = "Bearer " + invalidToken;
         
         when(request.getHeader("Authorization")).thenReturn(authHeader);
-        when(jwtTokenProvider.isValidToken(invalidToken)).thenReturn(false);
+        when(jwtTokenProvider.getUserInfoFromToken(invalidToken)).thenThrow(new RuntimeException("Invalid token"));
         
         // When
         authContextFilter.doFilter(request, response, filterChain);
         
         // Then
         verify(filterChain).doFilter(request, response);
-        verify(jwtTokenProvider).isValidToken(invalidToken);
-        verify(jwtTokenProvider, never()).getUserInfoFromToken(any());
+        verify(jwtTokenProvider).getUserInfoFromToken(invalidToken);
         
         // AuthContext가 설정되지 않았는지 확인
         assertNull(AuthContext.getCurrentUserId());
@@ -117,7 +114,6 @@ class AuthContextFilterTest {
         
         // Then
         verify(filterChain).doFilter(request, response);
-        verify(jwtTokenProvider, never()).isValidToken(any());
         verify(jwtTokenProvider, never()).getUserInfoFromToken(any());
         
         // AuthContext가 설정되지 않았는지 확인
@@ -135,7 +131,6 @@ class AuthContextFilterTest {
         
         // Then
         verify(filterChain).doFilter(request, response);
-        verify(jwtTokenProvider, never()).isValidToken(any());
         verify(jwtTokenProvider, never()).getUserInfoFromToken(any());
         
         // AuthContext가 설정되지 않았는지 확인
@@ -156,7 +151,6 @@ class AuthContextFilterTest {
                 .build();
         
         when(request.getHeader("Authorization")).thenReturn(authHeader);
-        when(jwtTokenProvider.isValidToken(validToken)).thenReturn(true);
         when(jwtTokenProvider.getUserInfoFromToken(validToken)).thenReturn(userInfo);
         
         // When

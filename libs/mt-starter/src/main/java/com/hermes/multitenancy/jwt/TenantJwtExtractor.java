@@ -1,6 +1,7 @@
 package com.hermes.multitenancy.jwt;
 
 import com.hermes.jwt.JwtTokenProvider;
+import com.hermes.jwt.context.UserInfo;
 import com.hermes.multitenancy.dto.TenantInfo;
 import com.hermes.multitenancy.util.TenantUtils;
 import lombok.RequiredArgsConstructor;
@@ -18,27 +19,23 @@ public class TenantJwtExtractor {
     private final JwtTokenProvider jwtTokenProvider;
 
     /**
-     * JWT 토큰에서 테넌트 정보 추출
+     * JWT 토큰에서 테넌트 정보 추출 (1번 파싱으로 최적화)
      */
     public TenantInfo extractTenantInfo(String token) {
         try {
-            // JWT 토큰 유효성 검증
-            if (!jwtTokenProvider.isValidToken(token)) {
-                log.warn("Invalid JWT token provided");
-                return null;
-            }
+            // JWT 토큰에서 사용자 정보 추출 (유효성 검증 포함) - 1번만 파싱!
+            UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
             
-            // 테넌트 ID 추출 시도
-            String tenantId = extractTenantId(token);
-            
+            // 1순위: JWT에 tenantId가 직접 포함된 경우
+            String tenantId = userInfo.getTenantId();
             if (tenantId != null && !tenantId.isEmpty()) {
-                // JWT에서 추출한 테넌트 ID로 직접 TenantInfo 생성
                 String schemaName = TenantUtils.generateSchemaName(tenantId);
+                log.debug("Found tenant ID in JWT: {}", tenantId);
                 return new TenantInfo(tenantId, tenantId, schemaName, "ACTIVE");
             }
             
-            // 테넌트 ID가 없으면 사용자 이메일에서 테넌트 추론
-            String email = jwtTokenProvider.getEmailFromToken(token);
+            // 2순위: 이메일 도메인에서 테넌트 추론
+            String email = userInfo.getEmail();
             if (email != null && email.contains("@")) {
                 String inferredTenantId = convertDomainToTenantId(email.substring(email.indexOf("@") + 1));
                 if (inferredTenantId != null) {
@@ -52,48 +49,11 @@ public class TenantJwtExtractor {
             return null;
             
         } catch (Exception e) {
-            log.error("Failed to extract tenant info from JWT token", e);
+            log.error("Failed to extract tenant info from JWT token: {}", e.getMessage());
             return null;
         }
     }
 
-    /**
-     * JWT 토큰에서 테넌트 ID 추출
-     */
-    private String extractTenantId(String token) {
-        try {
-            // JWT 클레임에서 "tenantId" 필드 확인
-            String tenantId = jwtTokenProvider.getClaimFromToken(token, "tenantId");
-            if (tenantId != null && !tenantId.isEmpty()) {
-                return tenantId;
-            }
-
-            // 클레임에서 "tenant" 필드 확인 (대안)
-            tenantId = jwtTokenProvider.getClaimFromToken(token, "tenant");
-            if (tenantId != null && !tenantId.isEmpty()) {
-                return tenantId;
-            }
-
-            // 클레임에서 "org" 필드 확인 (대안)
-            tenantId = jwtTokenProvider.getClaimFromToken(token, "org");
-            if (tenantId != null && !tenantId.isEmpty()) {
-                return tenantId;
-            }
-
-            // 이메일 도메인에서 테넌트 추론
-            String email = jwtTokenProvider.getEmailFromToken(token);
-            if (email != null && email.contains("@")) {
-                String domain = email.substring(email.indexOf("@") + 1);
-                return convertDomainToTenantId(domain);
-            }
-
-            return null;
-            
-        } catch (Exception e) {
-            log.debug("Failed to extract tenant ID from JWT token", e);
-            return null;
-        }
-    }
 
     /**
      * 이메일 도메인을 테넌트 ID로 변환
@@ -122,7 +82,8 @@ public class TenantJwtExtractor {
      */
     public boolean isValidToken(String token) {
         try {
-            return jwtTokenProvider.isValidToken(token);
+            jwtTokenProvider.getUserInfoFromToken(token);
+            return true;
         } catch (Exception e) {
             log.debug("Invalid JWT token", e);
             return false;

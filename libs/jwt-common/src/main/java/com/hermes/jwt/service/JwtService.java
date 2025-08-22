@@ -50,90 +50,21 @@ public class JwtService {
     }
 
     /**
-     * Refresh Token을 검증하고 새로운 토큰을 생성합니다.
+     * JWT 토큰에서 사용자 정보를 추출합니다.
+     * JwtTokenProvider.getUserInfoFromToken을 직접 사용하는 것을 권장합니다.
      * 
-     * @param refreshToken 기존 refresh token
-     * @param email 사용자 이메일 (토큰에서 추출할 수 없는 경우 사용)
-     * @param userId 사용자 ID (토큰에서 추출할 수 없는 경우 사용)
-     * @param role 사용자 역할
-     * @return TokenResponse (새로운 accessToken, 새로운 refreshToken)
+     * @param token JWT 토큰
+     * @return 사용자 정보
+     * @deprecated JwtTokenProvider.getUserInfoFromToken을 직접 사용하세요
      */
-    public TokenResponse refreshTokens(String refreshToken, String email, Long userId, String role) {
-        if (!jwtTokenProvider.isValidToken(refreshToken)) {
-            throw new RuntimeException("Invalid refresh token.");
-        }
-
-        // 토큰에서 정보 추출 (fallback으로 파라미터 사용)
-        String extractedUserId = jwtTokenProvider.getEmailFromToken(refreshToken); // subject가 userId
-        String extractedEmail = jwtTokenProvider.getClaimFromToken(refreshToken, "email");
-        
-        // 추출된 정보가 없으면 파라미터 사용
-        if (extractedUserId == null || extractedUserId.isEmpty()) {
-            extractedUserId = String.valueOf(userId);
-        }
-        if (extractedEmail == null || extractedEmail.isEmpty()) {
-            extractedEmail = email;
-        }
-
-        Long finalUserId = Long.parseLong(extractedUserId);
-        String finalEmail = extractedEmail;
-
-        // 새로운 토큰 생성
-String newAccessToken = jwtTokenProvider.createToken(finalEmail, finalUserId, role);
-        String newRefreshToken = jwtTokenProvider.createRefreshToken(String.valueOf(finalUserId), finalEmail);
-
-        return new TokenResponse(newAccessToken, newRefreshToken);
-    }
-
-    /**
-     * 토큰을 검증합니다.
-     * 
-     * @param token 검증할 토큰
-     * @return 유효성 여부
-     */
+    @Deprecated
     public boolean validateToken(String token) {
-        return jwtTokenProvider.isValidToken(token);
-    }
-
-    /**
-     * 토큰에서 이메일을 추출합니다.
-     * 
-     * @param token JWT 토큰
-     * @return 이메일
-     */
-    public String getEmailFromToken(String token) {
-        return jwtTokenProvider.getEmailFromToken(token);
-    }
-
-    /**
-     * 토큰에서 사용자 ID를 추출합니다.
-     * 
-     * @param token JWT 토큰
-     * @return 사용자 ID
-     */
-    public Long getUserIdFromToken(String token) {
-        String userIdStr = jwtTokenProvider.getClaimFromToken(token, "userId");
-        return userIdStr != null ? Long.parseLong(userIdStr) : null;
-    }
-
-    /**
-     * 토큰에서 역할을 추출합니다. (문자열)
-     * 
-     * @param token JWT 토큰
-     * @return 역할 문자열
-     */
-    public String getRoleFromToken(String token) {
-        return jwtTokenProvider.getClaimFromToken(token, "role");
-    }
-    
-    /**
-     * 토큰에서 역할을 추출합니다. (Role enum)
-     * 
-     * @param token JWT 토큰
-     * @return 역할 enum
-     */
-    public Role getRoleEnumFromToken(String token) {
-        return jwtTokenProvider.getRoleFromToken(token);
+        try {
+            jwtTokenProvider.getUserInfoFromToken(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

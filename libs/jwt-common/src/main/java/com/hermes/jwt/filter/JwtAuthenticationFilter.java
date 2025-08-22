@@ -75,19 +75,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             String token = extractToken(request);
-            if (token != null && jwtTokenProvider.isValidToken(token)) {
-
+            if (token != null) {
                 if (tokenBlacklistService.isBlacklisted(token)) {
                     log.warn("Blacklisted token used for request: {}", requestURI);
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }
                 
+                // JWT 토큰에서 사용자 정보 추출 (유효성 검증 포함)
                 UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
                 setUserContext(request, userInfo);
                 log.debug("JWT validation successful for user: {}", userInfo.getEmail());
             } else {
-                log.warn("Invalid or missing JWT token for request: {}", requestURI);
+                log.warn("Missing JWT token for request: {}", requestURI);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }

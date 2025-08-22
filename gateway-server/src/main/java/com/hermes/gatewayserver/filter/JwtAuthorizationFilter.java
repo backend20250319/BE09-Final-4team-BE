@@ -72,22 +72,17 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
         log.info(" [Gateway] 토큰 시작 부분: {}", token.substring(0, Math.min(50, token.length())) + "...");
 
         try {
-            // 1. JWT 토큰 유효성 검증
-            if (!jwtTokenProvider.isValidToken(token)) {
-                log.warn(" [Gateway] JWT 토큰이 유효하지 않음");
-                return unauthorized(exchange);
-            }
-
-            // 2. JWT 페이로드에서 사용자 정보 추출
+            // JWT 토큰에서 사용자 정보 추출 (유효성 검증 포함)
             UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
-            if (userInfo == null || userInfo.getEmail() == null || userInfo.getUserId() == null) {
-                log.warn(" [Gateway] JWT 페이로드에서 사용자 정보를 추출할 수 없음");
+            
+            if (userInfo.getEmail() == null || userInfo.getUserId() == null) {
+                log.warn(" [Gateway] JWT에서 필수 사용자 정보가 누락됨");
                 return unauthorized(exchange);
             }
 
             log.info(" [Gateway] JWT 검증 성공 → userId={}, email={}", userInfo.getUserId(), userInfo.getEmail());
 
-            // 3. JWT 검증 성공 - 토큰 그대로 전달 (헤더 주입 제거)
+            // JWT 검증 성공 - 토큰 그대로 전달
             return chain.filter(exchange);
 
         } catch (Exception e) {
