@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: communication-service
+  config:
+    import:
+      - "application-communication-db.yml"
+      - "optional:application-ftp.yml"
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: 8086
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+ftp:
+  enabled: true
+

@@ -15,5 +15,8 @@ include 'news-crawler-service'
 
 include 'leave-service'
 include 'attendance-service'
+
 include 'tenant-service'
 
+include 'communication-service'
+include 'libs:ftp-starter'

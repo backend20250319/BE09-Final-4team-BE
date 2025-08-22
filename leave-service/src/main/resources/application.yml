@@ -1,13 +1,13 @@
 spring:
   application:
-    name: attendance-service
+    name: leave-service
   config:
     import: optional:configserver:http://localhost:8888
-
+    
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
@@ -18,22 +18,22 @@ spring:
 
 # Server Configuration
 server:
-  port: 8082
+  port: 8087
 
 # Logging Configuration
 logging:
   level:
-    com.hermes.attendanceservice: DEBUG
+    com.hermes.leaveservice: DEBUG
     org.springframework.web: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.springframework.cloud.config: DEBUG
     org.springframework.boot.autoconfigure: DEBUG
 
-# Attendance Service Configuration
-attendance:
-  start-time: "09:00"
-  end-time: "18:00"
+# Leave Service Configuration
+leave:
+  max-annual-leave: 15
+  max-sick-leave: 10
 
 # Eureka Client Configuration
 eureka:
