@@ -6,8 +6,10 @@ import com.hermes.jwt.dto.TokenResponse;
 import com.hermes.jwt.dto.RefreshRequest;
 import com.hermes.userservice.service.UserService;
 import com.hermes.jwt.JwtTokenProvider;
+import com.hermes.jwt.context.UserInfo;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.repository.RefreshTokenRepository;
+import com.hermes.userservice.repository.UserRepository;
 import com.hermes.jwt.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +31,7 @@ public class AuthController {
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final UserRepository userRepository;
     private final TokenBlacklistService tokenBlacklistService;
 
     @PostMapping("/login")
@@ -80,12 +83,15 @@ public class AuthController {
 
         String token = authHeader.substring(7);
 
-        if (!jwtTokenProvider.isValidToken(token)) {
-            throw new RuntimeException("유효하지 않은 토큰입니다.");
+        // JWT에서 사용자 정보 추출 (유효성 검증 포함)
+        UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
+        
+        if (userInfo.getUserId() == null || userInfo.getEmail() == null) {
+            throw new RuntimeException("JWT에서 필수 사용자 정보를 추출할 수 없습니다.");
         }
-
-        Long userId = Long.valueOf(jwtTokenProvider.getClaimFromToken(token, "userId"));
-        String email = jwtTokenProvider.getEmailFromToken(token);
+        
+        Long userId = userInfo.getUserId();
+        String email = userInfo.getEmail();
 
         RefreshToken saved = refreshTokenRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("RefreshToken not found"));
@@ -106,7 +112,12 @@ public class AuthController {
             throw new RuntimeException("만료된 RefreshToken입니다.");
         }
 
-        String newAccessToken = jwtTokenProvider.createToken(email, userId, "USER");
+        // 사용자 정보를 조회하여 실제 권한을 확인
+        com.hermes.userservice.entity.User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        
+        String userRole = user.getIsAdmin() ? "ADMIN" : "USER";
+        String newAccessToken = jwtTokenProvider.createToken(email, userId, userRole);
 
         log.info(" [Auth Controller] 토큰 갱신 성공: userId={}", userId);
         return ResponseEntity.ok(ApiResponse.success("토큰이 성공적으로 갱신되었습니다.",

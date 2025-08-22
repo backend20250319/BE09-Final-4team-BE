@@ -1,5 +1,7 @@
 package com.hermes.jwt;
 
+import com.hermes.jwt.context.Role;
+import com.hermes.jwt.context.UserInfo;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -38,6 +40,11 @@ public class JwtTokenProvider {
                 .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
     }
+    
+    public String createToken(String email, Long userId, Role role) {
+        String roleString = role != null ? role.name() : Role.USER.name();
+        return createToken(email, userId, roleString);
+    }
 
     public String createRefreshToken(String subject,  String email) {
         Date now = new Date();
@@ -52,41 +59,43 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public boolean isValidToken(String token) {
-        try {
-            parseToken(token);
-            return true;
-        } catch (InvalidJwtException e) {
-            return false;
-        }
-    }
 
-    public String getEmailFromToken(String token) {
-        try {
-            return parseToken(token).getPayload().getSubject();
-        } catch (InvalidJwtException e) {
-            return null;
-        }
-    }
-
-    public JwtPayload getPayloadFromToken(String token) {
+    /**
+     * JWT 토큰에서 사용자 정보를 추출합니다.
+     * 토큰이 유효하지 않으면 InvalidJwtException을 던집니다.
+     * 
+     * @param token JWT 토큰
+     * @return 사용자 정보
+     * @throws InvalidJwtException 토큰이 유효하지 않은 경우
+     */
+    public UserInfo getUserInfoFromToken(String token) {
         Claims claims = parseToken(token).getPayload();
 
         String email = claims.getSubject();
         Object userIdObj = claims.get("userId");
         Object roleObj = claims.get("role");
+        Object tenantIdObj = claims.get("tenantId");
 
-        String userId = userIdObj != null ? userIdObj.toString() : null;
-        String role = roleObj != null ? roleObj.toString() : null;
+        Long userId = null;
+        if (userIdObj != null) {
+            try {
+                userId = Long.parseLong(userIdObj.toString());
+            } catch (NumberFormatException e) {
+                throw new InvalidJwtException("Invalid userId format in JWT token: " + userIdObj);
+            }
+        }
+        
+        Role role = Role.fromString(roleObj != null ? roleObj.toString() : null, Role.USER);
+        String tenantId = tenantIdObj != null ? tenantIdObj.toString() : null;
 
-        return new JwtPayload(userId, email, role);
+        return UserInfo.builder()
+                .userId(userId)
+                .email(email)
+                .role(role)
+                .tenantId(tenantId)
+                .build();
     }
-
-    public String getClaimFromToken(String token, String claimName) {
-        Claims claims = parseToken(token).getPayload();
-        Object value = claims.get(claimName);
-        return value != null ? value.toString() : null;
-    }
+    
 
     private Jws<Claims> parseToken(String token) {
         try {

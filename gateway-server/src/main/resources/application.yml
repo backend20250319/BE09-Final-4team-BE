@@ -21,6 +21,10 @@ spring:
               uri: lb://news-crawler-service
               predicates:
                 - Path=/api/news/**
+            - id: approval-service
+              uri: lb://approval-service
+              predicates:
+                - Path=/api/approval/**
 
 eureka:
   client:
