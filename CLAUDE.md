@@ -309,3 +309,4 @@ Standard Spring Boot Actuator endpoints available on all services.
 - 커밋 메시지는 항상 한국어로 간단 명료하게 작성하세요.
 - 사용자의 명시적인 지시 없이 커밋을 하지 마세요.
 - gradlew 빌드할 땐 항상 '-Dfile.encoding=UTF-8'을 붙여야 합니다 (따옴표 포함)
+- 빌드 테스트는 수정사항이 많아서 빌드 오류가 예상될 때만 하세요. 실제로 수정한 모듈만 선택적으로 빌드하세요.

@@ -20,8 +20,14 @@ import java.io.IOException;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Order(1) // 다른 필터들보다 먼저 실행
+@Order(AuthContextFilter.ORDER) // 다른 필터들보다 먼저 실행
 public class AuthContextFilter implements Filter {
+    
+    /**
+     * AuthContextFilter의 실행 순서
+     * 다른 필터에서 이 값을 참조하여 순서를 보장할 수 있습니다.
+     */
+    public static final int ORDER = 1;
     
     private final JwtTokenProvider jwtTokenProvider;
     
