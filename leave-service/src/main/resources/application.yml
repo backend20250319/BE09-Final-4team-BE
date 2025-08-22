@@ -3,6 +3,18 @@ spring:
     name: leave-service
   config:
     import: optional:configserver:http://localhost:8888
+    
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
 
 # Server Configuration
 server:
