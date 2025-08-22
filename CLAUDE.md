@@ -305,6 +305,7 @@ Standard Spring Boot Actuator endpoints available on all services.
 - Connection strings must match service-specific database names
 - Schema operations require elevated database privileges
 
-## Commit Guidelines
+## 기타
 - All commit messages must be written in Korean
 - Never commit without explicit user instruction
+- gradlew 빌드할 땐 항상 '-Dfile.encoding=UTF-8'을 붙일 것. 따옴표 포함.
