@@ -100,7 +100,7 @@ public abstract class AbstractTenantEventListener {
      * 기본적으로 public 스키마를 사용하지만, 각 서비스에서 오버라이드 가능
      */
     protected TenantInfo getSystemTenantInfo() {
-        return new TenantInfo("system", "System Tenant", "public", "ACTIVE");
+        return new TenantInfo("system", "public");
     }
 
     /**

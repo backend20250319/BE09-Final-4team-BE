@@ -136,9 +136,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
     private TenantInfo getDefaultTenantInfo() {
         return new TenantInfo(
             TenantContext.DEFAULT_TENANT_ID,
-            "Default Tenant",
-            TenantContext.DEFAULT_SCHEMA_NAME,
-            "ACTIVE"
+            TenantContext.DEFAULT_SCHEMA_NAME
         );
     }
 

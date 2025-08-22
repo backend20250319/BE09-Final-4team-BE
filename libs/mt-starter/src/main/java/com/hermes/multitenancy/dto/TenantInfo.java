@@ -14,11 +14,9 @@ import lombok.NoArgsConstructor;
 public class TenantInfo {
 
     private String tenantId;
-    private String name;
     private String schemaName;
-    private String status;
 
     public static TenantInfo of(String tenantId, String schemaName) {
-        return new TenantInfo(tenantId, null, schemaName, "ACTIVE");
+        return new TenantInfo(tenantId, schemaName);
     }
 }

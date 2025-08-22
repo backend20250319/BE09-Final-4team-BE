@@ -31,7 +31,7 @@ public class TenantJwtExtractor {
             if (tenantId != null && !tenantId.isEmpty()) {
                 String schemaName = TenantUtils.generateSchemaName(tenantId);
                 log.debug("Found tenant ID in JWT: {}", tenantId);
-                return new TenantInfo(tenantId, tenantId, schemaName, "ACTIVE");
+                return new TenantInfo(tenantId, schemaName);
             }
             
             // 2순위: 이메일 도메인에서 테넌트 추론
@@ -41,7 +41,7 @@ public class TenantJwtExtractor {
                 if (inferredTenantId != null) {
                     String schemaName = TenantUtils.generateSchemaName(inferredTenantId);
                     log.debug("Inferred tenant from email domain: {} -> {}", email, inferredTenantId);
-                    return new TenantInfo(inferredTenantId, inferredTenantId, schemaName, "ACTIVE");
+                    return new TenantInfo(inferredTenantId, schemaName);
                 }
             }
             
