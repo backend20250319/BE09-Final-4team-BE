@@ -1,8 +1,6 @@
 package com.hermes.userservice.config;
 
-import com.hermes.auth.JwtProperties;
 import com.hermes.auth.JwtTokenProvider;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,17 +10,11 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
     private static final String[] WHITELIST = {
             "/api/auth/login",
     };
-
-    @Bean
-    public JwtTokenProvider jwtTokenProvider(JwtProperties properties) {
-        return new JwtTokenProvider(properties);
-    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtTokenProvider jwtTokenProvider) throws Exception {

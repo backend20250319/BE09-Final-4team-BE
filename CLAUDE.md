@@ -4,40 +4,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Hermes is a Spring Boot microservices system implementing a multi-tenant architecture with schema-per-tenant strategy. It provides enterprise workforce management capabilities including user management, organization structure, attendance tracking, and news crawling.
+Hermes is a Spring Boot microservices system implementing a multi-tenant architecture with schema-per-tenant strategy. It provides enterprise workforce management capabilities including user management, organization structure, attendance tracking, document approval, and news crawling.
 
 ## Architecture
 
 ### Microservices Structure
 - **config-server** (port 8888): Spring Cloud Config Server for centralized configuration
 - **discovery-server** (port 8761): Eureka service discovery 
-- **gateway-server** (port 9000): Spring Cloud Gateway for API routing
+- **gateway-server** (port 9000): Spring Cloud Gateway for API routing and authentication
 - **user-service** (port 8081): User authentication, authorization, and management
-- **org-service**: Organization hierarchy and employee assignment management
-- **attendance-service**: Employee attendance tracking and work hour management  
-- **news-crawler-service**: News article crawling and management
-- **tenant-service**: Multi-tenant management and schema operations
-- **approval-service** (port 8084): Approval workflow and document approval management
+- **org-service** (port 8083): Organization hierarchy and employee assignment management
+- **attendance-service** (port 8082): Employee attendance tracking and work hour management  
+- **news-crawler-service** (port 8083): News article crawling and management
+- **tenant-service** (port 8083): Multi-tenant management and schema operations
+- **approval-service** (port 8084): Document approval workflow and template management
+- **companyinfo-service** (port 8084): Company information and settings management
+- **leave-service** (port 8087): Employee leave request and management
+- **communication-service** (port 8086): File transfer and communication utilities
 
-### Shared Libraries
-- **jwt-common**: JWT token handling, validation, and security utilities
+### Shared Libraries (Spring Boot Starters)
+- **auth-starter**: Spring Boot Starter for JWT authentication and authorization with auto-configuration
 - **mt-starter**: Multi-tenancy auto-configuration starter with RabbitMQ event-driven schema management
-
-### Multi-Tenancy Implementation
-- **Schema-per-tenant** pattern with PostgreSQL
-- **Automatic schema creation/deletion** via RabbitMQ events
-- **JWT-based tenant identification** from token payload
-- **Dynamic DataSource routing** based on tenant context
+- **ftp-starter**: FTP file transfer utilities with auto-configuration
+- **api-common**: Common API response classes and utilities
+- **events**: Event models for inter-service communication
 
 ## Development Commands
 
 ### Build & Test
 ```bash
 # Build entire project
-./gradlew build
+./gradlew build '-Dfile.encoding=UTF-8'
 
 # Build specific service
-./gradlew :user-service:build
+./gradlew :user-service:build '-Dfile.encoding=UTF-8'
 
 # Run tests
 ./gradlew test
@@ -46,31 +46,10 @@ Hermes is a Spring Boot microservices system implementing a multi-tenant archite
 ./gradlew :user-service:test
 
 # Clean build
-./gradlew clean build
+./gradlew clean build '-Dfile.encoding=UTF-8'
 ```
 
-### Running Services
-```bash
-# Run individual service
-./gradlew :config-server:bootRun
-./gradlew :discovery-server:bootRun
-./gradlew :gateway-server:bootRun
-./gradlew :user-service:bootRun
-./gradlew :approval-service:bootRun
-```
-
-**Startup Order**: config-server → discovery-server → other services
-
-### Database Operations
-```bash
-# PostgreSQL connection per service
-# Each service uses independent database:
-# - user-service: hermes_user_db
-# - org-service: hermes_org_db  
-# - news-crawler-service: hermes_news_db
-# - tenant-service: hermes_tenant_db
-# - approval-service: hermes_approval_db
-```
+**Startup Order**: config-server → discovery-server → gateway-server → other services
 
 ## Key Configuration
 
@@ -87,10 +66,72 @@ All services register with Eureka at `http://localhost:8761/eureka`
 - `/api/news/**` → news-crawler-service
 - `/api/approval/**` → approval-service
 
-## Multi-Tenancy Usage
+## Authentication & Security
 
-### Auto-Configuration (Recommended)
+### auth-starter Usage
+Simply add the dependency to enable JWT authentication:
+
+```gradle
+dependencies {
+    implementation project(':libs:auth-starter')
+}
+```
+
+**Auto-Configured Components:**
+- **JwtTokenProvider**: JWT token creation and validation (`@Component`)
+- **JwtService**: High-level JWT operations (`@Service`)
+- **TokenBlacklistService**: Token revocation and blacklist management (`@Service`)
+- **AuthContextFilter**: Request authentication and context setup (`@Component`)
+- **JwtProperties**: Configuration properties with `jwt.*` prefix (`@Component`)
+
+**Configuration Example:**
+```yaml
+jwt:
+  secret: your-secret-key-base64
+  expiration-time: 3600000  # 1 hour
+  refresh-expiration: 604800000  # 7 days
+```
+
+### AuthContext System
+Hermes uses a ThreadLocal-based authentication context for clean, consistent user access:
+
+```java
+// In controllers - no @RequestHeader needed
+Long currentUserId = AuthContext.getCurrentUserId();
+boolean isAdmin = AuthContext.isCurrentUserAdmin();
+String userRole = AuthContext.getCurrentUserRole();
+
+// Automatic permission checking
+AuthContext.requireAdmin(); // Throws exception if not admin
+AuthContext.requirePermission(Role.USER); // Throws if insufficient permission
+
+// Type-safe role checking
+Role currentRole = AuthContext.getCurrentUser().getRole();
+boolean hasPermission = currentRole.hasPermission(Role.ADMIN);
+```
+
+**Key Components:**
+- **AuthContext**: ThreadLocal-based user information storage
+- **AuthContextFilter**: Extracts user info from Gateway headers → AuthContext
+- **UserInfo**: User data model (userId, email, role, tenantId)
+- **Role**: Enum for type-safe role management (ADMIN, USER)
+
+### Authentication Flow
+1. Login via user-service `/api/auth/login`
+2. JWT token with tenant context
+3. Gateway validates tokens via user-service and injects user headers
+4. Services extract user info via AuthContextFilter → AuthContext
+
+## Multi-Tenancy
+
+### mt-starter Usage
 Add mt-starter dependency and minimal configuration:
+
+```gradle
+dependencies {
+    implementation project(':libs:mt-starter')
+}
+```
 
 ```yaml
 spring:
@@ -107,18 +148,23 @@ hermes:
 
 This automatically creates `tenant.events.my-service` queue and handles schema lifecycle.
 
-### JWT Tenant Context
-JWT tokens must include `tenantId` field:
-```json
-{
-  "userId": "user123",
-  "tenantId": "company1", 
-  "role": "USER"
-}
-```
+**Auto-Configured Components:**
+- **TenantContextFilter**: Tenant routing and context management
+- **TenantRoutingDataSource**: Dynamic DataSource routing
+- **FlywayTenantInitializer**: Automatic schema migration
+- **TenantEventListener**: RabbitMQ event handling for schema operations
 
-### Schema Naming Convention
-Tenant schemas follow pattern: `tenant_{tenantId}`
+### Implementation Details
+- **Schema-per-tenant** pattern with PostgreSQL
+- **Automatic schema creation/deletion** via RabbitMQ events
+- **JWT-based tenant identification** from token payload
+- **Dynamic DataSource routing** based on tenant context
+- **Schema naming**: `tenant_{tenantId}`
+
+### Tenant Lifecycle Events
+- **TENANT_CREATED**: Triggers schema creation in all services
+- **TENANT_DELETED**: Triggers schema deletion in all services  
+- **TENANT_UPDATED**: Updates tenant metadata
 
 ## Development Patterns
 
@@ -146,20 +192,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 }
 ```
 
-### Exception Handling
-- Global exception handlers in each service
-- Common business exceptions in jwt-common library
-- Standardized ApiResponse format across services
-
 ## Testing
-
-### Test Structure
-- Unit tests in `src/test/java`
-- Each service has `{ServiceName}ApplicationTests.java`
-- Test configurations in `src/test/resources`
-
-### Test Databases
-Use separate test configurations for isolated testing environments.
 
 ### Authentication Testing
 Use AuthTestUtils for easy test authentication setup:
@@ -191,102 +224,6 @@ void cleanUp() {
 }
 ```
 
-## Security
-
-### AuthContext System (Recommended)
-Hermes uses a ThreadLocal-based authentication context for clean, consistent user access:
-
-```java
-// In controllers - no @RequestHeader needed
-Long currentUserId = AuthContext.getCurrentUserId();
-boolean isAdmin = AuthContext.isCurrentUserAdmin();
-String userRole = AuthContext.getCurrentUserRole();
-
-// Automatic permission checking
-AuthContext.requireAdmin(); // Throws exception if not admin
-AuthContext.requirePermission(Role.USER); // Throws if insufficient permission
-
-// Type-safe role checking
-Role currentRole = AuthContext.getCurrentUser().getRole();
-boolean hasPermission = currentRole.hasPermission(Role.ADMIN);
-```
-
-**Key Components:**
-- **AuthContext**: ThreadLocal-based user information storage
-- **AuthContextFilter**: Extracts user info from Gateway headers → AuthContext
-- **UserInfo**: User data model (userId, email, role, tenantId)
-- **Role**: Enum for type-safe role management (ADMIN, USER)
-
-**Benefits:**
-- No repetitive `@RequestHeader` in every controller method
-- Automatic header validation and user context setup
-- Clean service layer without user ID parameters
-- Type-safe role management with enum
-- Consistent error handling for authentication/authorization
-
-### Role System
-Hermes uses a simple 2-level role hierarchy:
-- **ADMIN**: Full system access, can perform all operations
-- **USER**: Standard user access, limited to user-level operations
-
-The Role enum provides type safety and eliminates string-based role errors:
-```java
-// In entities - determined by isAdmin flag
-boolean isAdmin = user.getIsAdmin();
-Role userRole = isAdmin ? Role.ADMIN : Role.USER;
-
-// In services - type-safe permission checking
-if (!currentUser.getRole().hasPermission(Role.ADMIN)) {
-    throw new InsufficientPermissionException("Admin access required");
-}
-```
-
-### JWT Implementation
-- Token generation/validation in jwt-common
-- Multi-tenant JWT payload support
-- Token blacklist service for logout
-- Gateway validates JWT → injects headers → AuthContext processes
-
-### Authentication Flow
-1. Login via user-service `/api/auth/login`
-2. JWT token with tenant context
-3. Gateway validates tokens via user-service
-4. Services extract tenant from JWT for schema routing
-
-## Event-Driven Architecture
-
-### Tenant Lifecycle Events
-- **TENANT_CREATED**: Triggers schema creation in all services
-- **TENANT_DELETED**: Triggers schema deletion in all services  
-- **TENANT_UPDATED**: Updates tenant metadata
-
-### Message Flow
-tenant-service → RabbitMQ → service-specific queues → automatic schema operations
-
-## Configuration Management
-
-### Profiles & Environments
-- Development: local application.yml files
-- Production: centralized via config-server
-- Secret management: application-secret.yml files
-
-### Service-Specific Settings
-Each service maintains its own `application.yml` with:
-- Database connections
-- Service discovery configuration  
-- Multi-tenancy settings
-- Custom business logic configuration
-
-## Monitoring & Operations
-
-### Health Checks
-Standard Spring Boot Actuator endpoints available on all services.
-
-### Logging
-- Tenant context in log patterns: `[%X{tenantId:-system}]`
-- Service-specific log levels configurable
-- RabbitMQ operation logging for tenant events
-
 ## Common Troubleshooting
 
 ### Multi-Tenancy Issues
@@ -297,16 +234,13 @@ Standard Spring Boot Actuator endpoints available on all services.
 
 ### Service Discovery
 - Ensure Eureka server is running first
-- Check service registration in Eureka dashboard
+- Check service registration in Eureka dashboard: `http://localhost:8761`
 - Verify `spring.application.name` is unique per service
 
-### Database Connectivity
-- Each service requires its own PostgreSQL database
-- Connection strings must match service-specific database names
-- Schema operations require elevated database privileges
+## Development Guidelines
 
-## 기타
-- 커밋 메시지는 항상 한국어로 간단 명료하게 작성하세요.
-- 사용자의 명시적인 지시 없이 커밋을 하지 마세요.
-- gradlew 빌드할 땐 항상 '-Dfile.encoding=UTF-8'을 붙여야 합니다 (따옴표 포함)
-- 빌드 테스트는 수정사항이 많아서 빌드 오류가 예상될 때만 하세요. 실제로 수정한 모듈만 선택적으로 빌드하세요.
+- **Commit messages**: Always write in Korean, keep them concise and clear
+- **No automatic commits**: Never commit without explicit user instruction
+- **Encoding**: Always use `-Dfile.encoding=UTF-8` when building with gradlew
+- **Selective building**: Only build modified modules when testing, not the entire project
+- **Zero Configuration**: Prefer auto-configuration starters over manual bean registration
