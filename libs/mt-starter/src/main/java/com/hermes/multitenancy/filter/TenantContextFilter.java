@@ -1,7 +1,7 @@
 package com.hermes.multitenancy.filter;
 
-import com.hermes.jwt.context.AuthContext;
-import com.hermes.jwt.filter.AuthContextFilter;
+import com.hermes.auth.context.AuthContext;
+import com.hermes.auth.filter.AuthContextFilter;
 import com.hermes.multitenancy.context.TenantContext;
 import com.hermes.multitenancy.dto.TenantInfo;
 import com.hermes.multitenancy.util.TenantUtils;

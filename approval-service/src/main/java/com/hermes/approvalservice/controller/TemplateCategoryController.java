@@ -5,7 +5,7 @@ import com.hermes.approvalservice.dto.request.CreateCategoryRequest;
 import com.hermes.approvalservice.dto.request.UpdateCategoryRequest;
 import com.hermes.approvalservice.dto.response.CategoryResponse;
 import com.hermes.approvalservice.service.TemplateCategoryService;
-import com.hermes.jwt.context.AuthContext;
+import com.hermes.auth.context.AuthContext;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

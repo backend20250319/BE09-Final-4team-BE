@@ -1,7 +1,7 @@
 package com.hermes.multitenancy.config;
 
-import com.hermes.jwt.JwtProperties;
-import com.hermes.jwt.JwtTokenProvider;
+import com.hermes.auth.JwtProperties;
+import com.hermes.auth.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

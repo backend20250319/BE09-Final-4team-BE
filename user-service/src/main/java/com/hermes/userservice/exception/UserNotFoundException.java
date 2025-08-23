@@ -1,6 +1,6 @@
 package com.hermes.userservice.exception;
 
-import com.hermes.jwt.exception.BusinessException;
+import com.hermes.auth.exception.BusinessException;
 
 // 사용자를 찾을 수 없을 때 발생하는 예외
 

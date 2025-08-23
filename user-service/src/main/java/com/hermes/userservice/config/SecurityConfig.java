@@ -1,7 +1,7 @@
 package com.hermes.userservice.config;
 
-import com.hermes.jwt.JwtProperties;
-import com.hermes.jwt.JwtTokenProvider;
+import com.hermes.auth.JwtProperties;
+import com.hermes.auth.JwtTokenProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
