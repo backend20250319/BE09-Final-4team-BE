@@ -7,6 +7,7 @@ import com.hermes.jwt.dto.RefreshRequest;
 import com.hermes.userservice.service.UserService;
 import com.hermes.jwt.JwtTokenProvider;
 import com.hermes.jwt.context.UserInfo;
+import com.hermes.jwt.context.AuthContext;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;
@@ -42,14 +43,18 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Map<String, String>>> logout(@RequestHeader(value = "X-User-Id", required = false) String userId,
-                                                                   @RequestHeader(value = "X-User-Email", required = false) String email,
-                                                                   @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
-        log.info(" [Auth Controller] /logout 요청 - userId: {}, email: {}", userId, email);
-
+    public ResponseEntity<ApiResponse<Map<String, String>>> logout(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
+        
+        // AuthContext에서 사용자 정보 가져오기
+        Long userId = AuthContext.getCurrentUserId();
+        String email = AuthContext.getCurrentUserEmail();
+        
         if (userId == null) {
-            throw new IllegalArgumentException("X-User-Id 헤더가 누락되었습니다. Gateway에서 JWT 검증이 실패했거나 헤더 주입이 되지 않았습니다.");
+            throw new IllegalArgumentException("사용자 인증 정보가 누락되었습니다.");
         }
+        
+        log.info(" [Auth Controller] /logout 요청 - userId: {}, email: {}", userId, email);
 
         String accessToken = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -60,10 +65,10 @@ public class AuthController {
         }
 
         // refreshToken도 함께 전달하여 완전한 로그아웃 처리
-        userService.logout(Long.valueOf(userId), accessToken);
+        userService.logout(userId, accessToken);
 
         Map<String, String> result = new HashMap<>();
-        result.put("userId", userId);
+        result.put("userId", userId.toString());
         result.put("email", email != null ? email : "unknown");
         result.put("message", "로그아웃이 성공적으로 처리되었습니다. 모든 토큰이 삭제되었습니다.");
 

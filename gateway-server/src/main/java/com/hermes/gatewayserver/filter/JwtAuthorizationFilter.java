@@ -2,9 +2,6 @@ package com.hermes.gatewayserver.filter;
 
 import com.hermes.jwt.JwtTokenProvider;
 import com.hermes.jwt.context.UserInfo;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -41,7 +38,7 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
         log.info(" [Gateway] 현재 화이트리스트: {}", filterProperties.getWhitelist());
 
         if (isWhiteListed(path)) {
-            log.info(" [Gateway] 화이트리스트 경로 → JWT 검증 후 헤더 주입");
+            log.info(" [Gateway] 화이트리스트 경로 → JWT 검증 후 통과");
 
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
@@ -82,7 +79,7 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
 
             log.info(" [Gateway] JWT 검증 성공 → userId={}, email={}", userInfo.getUserId(), userInfo.getEmail());
 
-            // JWT 검증 성공 - 토큰 그대로 전달
+            // JWT 검증 성공 - 토큰 그대로 전달 (헤더 주입 제거)
             return chain.filter(exchange);
 
         } catch (Exception e) {
@@ -96,7 +93,6 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
             return unauthorized(exchange);
         }
     }
-
 
     private boolean isWhiteListed(String path) {
         List<String> whitelist = filterProperties.getWhitelist();
@@ -121,13 +117,5 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
     @Override
     public int getOrder() {
         return -1;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class TokenValidationResponse {
-        private String email;
-        private String userId;
     }
 }

@@ -2,6 +2,7 @@ package com.hermes.userservice.config;
 
 import com.hermes.jwt.JwtProperties;
 import com.hermes.jwt.JwtTokenProvider;
+import com.hermes.jwt.filter.AuthContextFilter; 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +23,11 @@ public class SecurityConfig {
     @Bean
     public JwtTokenProvider jwtTokenProvider(JwtProperties properties) {
         return new JwtTokenProvider(properties);
+    }
+
+    @Bean
+    public AuthContextFilter authContextFilter(JwtTokenProvider jwtTokenProvider) {
+        return new AuthContextFilter(jwtTokenProvider);
     }
 
     @Bean
