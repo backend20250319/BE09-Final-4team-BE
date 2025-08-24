@@ -76,7 +76,7 @@ public class TenantContext {
      * 기본 테넌트 정보 반환
      */
     private static TenantInfo getDefaultTenant() {
-        return new TenantInfo(DEFAULT_TENANT_ID, "Default", DEFAULT_SCHEMA_NAME, "ACTIVE");
+        return new TenantInfo(DEFAULT_TENANT_ID, DEFAULT_SCHEMA_NAME);
     }
 
     /**

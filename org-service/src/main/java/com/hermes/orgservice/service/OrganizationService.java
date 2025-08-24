@@ -60,8 +60,8 @@ public class OrganizationService {
 
     @Transactional(readOnly = true)
     public List<OrganizationDto> getRootOrganizations() {
-        List<Organization> organizations = organizationRepository.findRootOrganizations();
-        return organizations.stream()
+        List<Organization> rootOrganizations = organizationRepository.findByParentIsNull();
+        return rootOrganizations.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
@@ -111,7 +111,7 @@ public class OrganizationService {
             throw new RuntimeException("Cannot delete organization with child organizations.");
         }
         
-        long memberCount = employeeAssignmentRepository.countByOrganizationId(organizationId);
+        long memberCount = employeeAssignmentRepository.countByOrganizationOrganizationId(organizationId);
         if (memberCount > 0) {
             throw new RuntimeException("Cannot delete organization with assigned employees.");
         }
@@ -131,15 +131,16 @@ public class OrganizationService {
     @Transactional(readOnly = true)
     public List<OrganizationHierarchyDto> getOrganizationHierarchy() {
         log.info("Organization hierarchy requested");
-        List<Organization> rootOrganizations = organizationRepository.findRootOrganizations();
+        List<Organization> rootOrganizations = organizationRepository.findByParentIsNull(); // 수정
         return rootOrganizations.stream()
                 .map(this::convertToHierarchyDto)
                 .collect(Collectors.toList());
     }
 
+
     private OrganizationDto convertToDto(Organization organization) {
-        long memberCount = employeeAssignmentRepository.countByOrganizationId(organization.getOrganizationId());
-        long leaderCount = employeeAssignmentRepository.countByOrganizationIdAndIsLeaderTrue(organization.getOrganizationId());
+        long memberCount = employeeAssignmentRepository.countByOrganizationOrganizationId(organization.getOrganizationId());
+        long leaderCount = employeeAssignmentRepository.countByOrganizationOrganizationIdAndIsLeaderTrue(organization.getOrganizationId());
         
         return OrganizationDto.builder()
                 .organizationId(organization.getOrganizationId())
@@ -152,8 +153,8 @@ public class OrganizationService {
     }
 
     private OrganizationHierarchyDto convertToHierarchyDto(Organization organization) {
-        long memberCount = employeeAssignmentRepository.countByOrganizationId(organization.getOrganizationId());
-        long leaderCount = employeeAssignmentRepository.countByOrganizationIdAndIsLeaderTrue(organization.getOrganizationId());
+        long memberCount = employeeAssignmentRepository.countByOrganizationOrganizationId(organization.getOrganizationId());
+        long leaderCount = employeeAssignmentRepository.countByOrganizationOrganizationIdAndIsLeaderTrue(organization.getOrganizationId());
         
         List<OrganizationHierarchyDto> children = null;
         if (organization.getChildren() != null && !organization.getChildren().isEmpty()) {
