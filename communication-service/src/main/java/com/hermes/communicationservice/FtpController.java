@@ -1,19 +1,13 @@
 package com.hermes.communicationservice;
 
-
 import com.hermes.api.common.ApiResponse;
-
 import com.hermes.ftpstarter.dto.FtpResponseDto;
 import com.hermes.ftpstarter.service.FtpService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
@@ -22,28 +16,29 @@ import org.springframework.web.multipart.MultipartFile;
 @ConditionalOnProperty(prefix = "ftp", name = "enabled", havingValue = "true")
 public class FtpController {
 
-  @Autowired
   private final FtpService ftpService;
 
   // 파일 업로드
   @PostMapping("/upload")
-  public ApiResponse<FtpResponseDto> upload(@RequestParam("file") MultipartFile file) {
+  public ResponseEntity<ApiResponse<FtpResponseDto>> upload(@RequestParam("file") MultipartFile file) {
     FtpResponseDto response = ftpService.uploadFile(file);
-    return ApiResponse.success("업로드 성공", response);
+    ApiResponse<FtpResponseDto> apiResponse = ApiResponse.success("업로드 성공", response);
+    return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
   }
 
   // 파일 삭제
   @DeleteMapping("/delete")
-  public ApiResponse<Object> delete(@RequestParam("storedName") String storedName) {
+  public ResponseEntity<ApiResponse<Object>> delete(@RequestParam("storedName") String storedName) {
     ftpService.deleteFile(storedName);
-    return ApiResponse.success("삭제 성공");
+    ApiResponse<Object> apiResponse = ApiResponse.success("삭제 성공");
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).body(apiResponse);
   }
 
   // 다운로드 주소 반환
   @GetMapping("/file-url")
-  public ApiResponse<String> getFileUrl(@RequestParam String storedName) {
+  public ResponseEntity<ApiResponse<String>> getFileUrl(@RequestParam String storedName) {
     String url = ftpService.getFileUrl(storedName);
-    return ApiResponse.success("다운로드 주소 반환 성공", url);
+    ApiResponse<String> apiResponse = ApiResponse.success("다운로드 주소 반환 성공", url);
+    return ResponseEntity.ok(apiResponse);
   }
-
 }

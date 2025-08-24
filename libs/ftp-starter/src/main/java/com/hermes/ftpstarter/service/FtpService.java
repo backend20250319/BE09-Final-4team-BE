@@ -1,6 +1,9 @@
 package com.hermes.ftpstarter.service;
 
 import com.hermes.ftpstarter.dto.FtpResponseDto;
+import com.hermes.ftpstarter.exception.FtpDeleteException;
+import com.hermes.ftpstarter.exception.FtpFileNotFoundException;
+import com.hermes.ftpstarter.exception.FtpUploadException;
 import com.hermes.ftpstarter.properties.FtpProperties;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
@@ -21,9 +24,13 @@ public class FtpService {
   }
 
   public FtpResponseDto uploadFile(MultipartFile file) {
+    if (file.isEmpty()) {
+      throw new FtpUploadException("업로드할 파일이 비어있습니다.");
+    }
+
     FTPClient ftpClient = new FTPClient();
     String originalName = file.getOriginalFilename();
-    String storedName = UUID.randomUUID().toString(); // UUID 붙여서 고유 이름 생성
+    String storedName = UUID.randomUUID().toString();
 
     try (InputStream inputStream = file.getInputStream()) {
       ftpClient.connect(ftpProperties.getHost(), ftpProperties.getUploadPort());
@@ -32,37 +39,29 @@ public class FtpService {
       ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
       if (!ftpClient.changeWorkingDirectory(ftpProperties.getBaseDir())) {
-        throw new RuntimeException("FTP 디렉토리 변경 실패: " + ftpProperties.getBaseDir());
+        throw new FtpUploadException("FTP 디렉토리 변경 실패: " + ftpProperties.getBaseDir());
       }
 
       boolean stored = ftpClient.storeFile(storedName, inputStream);
-        if (!stored) {
-            throw new RuntimeException("FTP 업로드 실패: " + originalName);
-        }
+      if (!stored) {
+        throw new FtpUploadException(originalName);
+      }
 
       return FtpResponseDto.builder().storedName(storedName).build();
 
     } catch (IOException e) {
-      throw new RuntimeException("FTP 업로드 중 오류 발생", e);
+      throw new FtpUploadException("FTP 업로드 중 오류 발생: " + originalName, e);
     } finally {
       try {
-          if (ftpClient.isConnected()) {
-              ftpClient.logout();
-          }
+        if (ftpClient.isConnected()) ftpClient.logout();
         ftpClient.disconnect();
-      } catch (IOException ignored) {
-      }
+      } catch (IOException ignored) {}
     }
-  }
-
-  public String getFileUrl(String storedName) {
-    return "http://" + ftpProperties.getHost() + ":" + ftpProperties.getDownloadPort()
-        + ftpProperties.getBaseDir() + "/" + storedName;
   }
 
   public void deleteFile(String storedName) {
     if (!existsFileByname(storedName)) {
-      throw new RuntimeException("존재하지 않는 파일명: " + storedName);
+      throw new FtpFileNotFoundException(storedName);
     }
 
     FTPClient ftpClient = new FTPClient();
@@ -72,28 +71,29 @@ public class FtpService {
       ftpClient.enterLocalPassiveMode();
 
       if (!ftpClient.changeWorkingDirectory(ftpProperties.getBaseDir())) {
-        throw new RuntimeException("FTP 디렉토리 변경 실패: " + ftpProperties.getBaseDir());
+        throw new FtpDeleteException("FTP 디렉토리 변경 실패: " + ftpProperties.getBaseDir());
       }
 
       boolean deleted = ftpClient.deleteFile(storedName);
-        if (!deleted) {
-            throw new RuntimeException("FTP 파일 삭제 실패: " + storedName);
-        }
+      if (!deleted) {
+        throw new FtpDeleteException(storedName);
+      }
 
     } catch (IOException e) {
-      throw new RuntimeException("FTP 삭제 중 오류 발생", e);
+      throw new FtpDeleteException("FTP 삭제 중 오류 발생: " + storedName, e);
     } finally {
       try {
-          if (ftpClient.isConnected()) {
-              ftpClient.logout();
-          }
+        if (ftpClient.isConnected()) ftpClient.logout();
         ftpClient.disconnect();
-      } catch (IOException ignored) {
-      }
+      } catch (IOException ignored) {}
     }
   }
 
-  // 존재하는 파일명(UUID포함)인지 확인
+  public String getFileUrl(String storedName) {
+    return "http://" + ftpProperties.getHost() + ":" + ftpProperties.getDownloadPort()
+        + ftpProperties.getBaseDir() + "/" + storedName;
+  }
+
   public boolean existsFileByname(String filename) {
     FTPClient ftpClient = new FTPClient();
     try {
@@ -116,5 +116,4 @@ public class FtpService {
       } catch (IOException ignored) {}
     }
   }
-
 }
