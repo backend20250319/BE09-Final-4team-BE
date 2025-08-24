@@ -46,7 +46,13 @@ public class FtpService {
         throw new FtpUploadException(originalName);
       }
 
-      return FtpResponseDto.builder().storedName(storedName).build();
+      String url = getFileUrl(storedName);
+
+      return FtpResponseDto.builder()
+          .originalName(originalName)
+          .storedName(storedName)
+          .url(url)
+          .build();
 
     } catch (IOException e) {
       throw new FtpUploadException("FTP 업로드 중 오류 발생: " + originalName, e);
@@ -107,6 +113,7 @@ public class FtpService {
 
   // Closeable FTPClient
   private static class CloseableFTPClient extends FTPClient implements Closeable {
+
     @Override
     public void close() throws IOException {
       if (isConnected()) {
