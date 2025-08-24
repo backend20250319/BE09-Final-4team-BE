@@ -1,7 +1,10 @@
-package com.hermes.ftpstarter.advice;
+package com.hermes.ftpstarter.global;
 
 import com.hermes.api.common.ApiResponse;
-import com.hermes.ftpstarter.exception.*;
+import com.hermes.ftpstarter.exception.FtpDeleteException;
+import com.hermes.ftpstarter.exception.FtpEmptyFileException;
+import com.hermes.ftpstarter.exception.FtpFileNotFoundException;
+import com.hermes.ftpstarter.exception.FtpUploadException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
