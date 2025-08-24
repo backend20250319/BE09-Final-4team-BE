@@ -1,15 +1,14 @@
 package com.hermes.ftpstarter.service;
 
 import com.hermes.ftpstarter.dto.FtpResponseDto;
-import com.hermes.ftpstarter.exception.FtpDeleteException;
-import com.hermes.ftpstarter.exception.FtpFileNotFoundException;
-import com.hermes.ftpstarter.exception.FtpUploadException;
+import com.hermes.ftpstarter.exception.*;
 import com.hermes.ftpstarter.properties.FtpProperties;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -23,19 +22,19 @@ public class FtpService {
     this.ftpProperties = ftpProperties;
   }
 
+  // 업로드
   public FtpResponseDto uploadFile(MultipartFile file) {
     if (file.isEmpty()) {
-      throw new FtpUploadException("업로드할 파일이 비어있습니다.");
+      throw new FtpEmptyFileException();
     }
 
-    FTPClient ftpClient = new FTPClient();
     String originalName = file.getOriginalFilename();
     String storedName = UUID.randomUUID().toString();
 
-    try (InputStream inputStream = file.getInputStream()) {
-      ftpClient.connect(ftpProperties.getHost(), ftpProperties.getUploadPort());
-      ftpClient.login(ftpProperties.getUser(), ftpProperties.getPassword());
-      ftpClient.enterLocalPassiveMode();
+    try (CloseableFTPClient ftpClient = new CloseableFTPClient();
+        InputStream inputStream = file.getInputStream()) {
+
+      connectAndLogin(ftpClient);
       ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
       if (!ftpClient.changeWorkingDirectory(ftpProperties.getBaseDir())) {
@@ -51,24 +50,17 @@ public class FtpService {
 
     } catch (IOException e) {
       throw new FtpUploadException("FTP 업로드 중 오류 발생: " + originalName, e);
-    } finally {
-      try {
-        if (ftpClient.isConnected()) ftpClient.logout();
-        ftpClient.disconnect();
-      } catch (IOException ignored) {}
     }
   }
 
+  // 삭제
   public void deleteFile(String storedName) {
     if (!existsFileByname(storedName)) {
       throw new FtpFileNotFoundException(storedName);
     }
 
-    FTPClient ftpClient = new FTPClient();
-    try {
-      ftpClient.connect(ftpProperties.getHost(), ftpProperties.getUploadPort());
-      ftpClient.login(ftpProperties.getUser(), ftpProperties.getPassword());
-      ftpClient.enterLocalPassiveMode();
+    try (CloseableFTPClient ftpClient = new CloseableFTPClient()) {
+      connectAndLogin(ftpClient);
 
       if (!ftpClient.changeWorkingDirectory(ftpProperties.getBaseDir())) {
         throw new FtpDeleteException("FTP 디렉토리 변경 실패: " + ftpProperties.getBaseDir());
@@ -81,25 +73,19 @@ public class FtpService {
 
     } catch (IOException e) {
       throw new FtpDeleteException("FTP 삭제 중 오류 발생: " + storedName, e);
-    } finally {
-      try {
-        if (ftpClient.isConnected()) ftpClient.logout();
-        ftpClient.disconnect();
-      } catch (IOException ignored) {}
     }
   }
 
+  // URL 조회
   public String getFileUrl(String storedName) {
     return "http://" + ftpProperties.getHost() + ":" + ftpProperties.getDownloadPort()
         + ftpProperties.getBaseDir() + "/" + storedName;
   }
 
+  // 파일 존재 여부 확인
   public boolean existsFileByname(String filename) {
-    FTPClient ftpClient = new FTPClient();
-    try {
-      ftpClient.connect(ftpProperties.getHost(), ftpProperties.getUploadPort());
-      ftpClient.login(ftpProperties.getUser(), ftpProperties.getPassword());
-      ftpClient.enterLocalPassiveMode();
+    try (CloseableFTPClient ftpClient = new CloseableFTPClient()) {
+      connectAndLogin(ftpClient);
 
       if (!ftpClient.changeWorkingDirectory(ftpProperties.getBaseDir())) {
         throw new RuntimeException("FTP 디렉토리 변경 실패: " + ftpProperties.getBaseDir());
@@ -109,11 +95,24 @@ public class FtpService {
 
     } catch (IOException e) {
       throw new RuntimeException("FTP 파일 존재 확인 중 오류 발생", e);
-    } finally {
-      try {
-        if (ftpClient.isConnected()) ftpClient.logout();
-        ftpClient.disconnect();
-      } catch (IOException ignored) {}
+    }
+  }
+
+  // 공통 연결 및 로그인
+  private void connectAndLogin(FTPClient ftpClient) throws IOException {
+    ftpClient.connect(ftpProperties.getHost(), ftpProperties.getUploadPort());
+    ftpClient.login(ftpProperties.getUser(), ftpProperties.getPassword());
+    ftpClient.enterLocalPassiveMode();
+  }
+
+  // Closeable FTPClient
+  private static class CloseableFTPClient extends FTPClient implements Closeable {
+    @Override
+    public void close() throws IOException {
+      if (isConnected()) {
+        logout();
+        disconnect();
+      }
     }
   }
 }
