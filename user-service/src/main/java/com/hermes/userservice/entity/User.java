@@ -1,6 +1,5 @@
 package com.hermes.userservice.entity;
 
-import com.hermes.auth.context.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,8 +13,6 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class User {
 
     @Id
@@ -42,7 +39,7 @@ public class User {
 
     @Column (nullable = false)
     private Boolean isAdmin = false;  // Admin flag
-
+    
     @Column
     private Boolean needsPasswordReset = false;  // Password reset required flag
 
@@ -62,31 +59,45 @@ public class User {
     @JoinColumn(name = "job_id")
     private Job job;  // Job
 
-    @Enumerated(EnumType.STRING)
     @Column(length = 100)
-    private Role role;  // Role (enum)
-
+    private String role;  // Role (direct input)
+    
     @Column
     private LocalDateTime lastLoginAt;  // Last login time
-
+    
     @Column
     private LocalDateTime createdAt;  // Created time
-
+    
     @Column
     private LocalDateTime updatedAt;  // Updated time
-
+    
     @Column(length = 500)
     private String profileImage;  // Profile image URL
-
+    
+    // @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private WorkHourPolicy workHourPolicy;  // 근무 정책
+    
+    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private List<LeaveRecord> leaveRecords = new ArrayList<>();  // 휴가 이력
+    
+    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private List<WorkSchedule> workSchedules = new ArrayList<>();  // 근무 일정
+    
+    // @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private DefaultWorkSchedule defaultWorkSchedule;  // 기본 근무 일정
+    
+    // @ManyToMany(mappedBy = "recipients", fetch = FetchType.LAZY)
+    // private List<Notification> notifications = new ArrayList<>();  // 알림 목록
+    
     @Column(columnDefinition = "TEXT")
     private String selfIntroduction;  // Self introduction
-
+    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
-
+    
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
@@ -95,5 +106,5 @@ public class User {
     public void updateLastLogin() {
         this.lastLoginAt = LocalDateTime.now();
     }
-
+    
 }

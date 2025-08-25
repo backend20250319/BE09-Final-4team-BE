@@ -17,30 +17,39 @@ repositories {
 	mavenCentral()
 }
 
-ext {
-	springCloudVersion = "2025.0.0"
-}
+
 
 dependencies {
-
+	// WebFlux (Gateway는 WebFlux 기반)
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
+	// Spring Cloud Gateway
 	implementation 'org.springframework.cloud:spring-cloud-starter-gateway-server-webflux'
 
+	// Eureka Client
 	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
+	// Config Server (추후 연동)
 	implementation 'org.springframework.cloud:spring-cloud-starter-config'
 
+	// 헬스 체크 및 모니터링
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-	implementation project(':libs:auth-starter')
-
+	// 공통 JWT 모듈
+	implementation project(":libs:auth-starter")
+	
+	// Documentation
 	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.11'
 
+	// 테스트
 	testImplementation 'io.projectreactor:reactor-test'
 
 	implementation 'com.github.ben-manes.caffeine:caffeine'
 }
+
+
+
+
 
 dependencyManagement {
 	imports {
@@ -50,8 +59,4 @@ dependencyManagement {
 
 tasks.named('test') {
 	useJUnitPlatform()
-}
-
-bootRun {
-	mainClass = 'com.hermes.gatewayserver.GatewayServerApplication'
 }
