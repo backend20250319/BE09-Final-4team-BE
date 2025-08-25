@@ -16,3 +16,13 @@ spring:
       - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterChainAutoConfiguration
 
+eureka:
+  client:
+    register-with-eureka: true     #
+    fetch-registry: true           
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+    instance-id: ${eureka.instance.hostname}:${spring.application.name}:${server.port}
