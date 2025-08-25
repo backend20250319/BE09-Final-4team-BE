@@ -42,6 +42,8 @@ dependencies {
     // Spring Cloud
     implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     // Database
     runtimeOnly 'org.postgresql:postgresql'

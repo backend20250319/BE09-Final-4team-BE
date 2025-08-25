@@ -25,6 +25,10 @@ spring:
               uri: lb://approval-service
               predicates:
                 - Path=/api/approval/**
+            - id: communication-service
+              uri: lb://communication-service
+              predicates:
+                - Path=/api/communication/**
 
 eureka:
   client:
