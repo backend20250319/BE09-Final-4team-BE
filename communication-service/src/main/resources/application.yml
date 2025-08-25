@@ -2,9 +2,7 @@ spring:
   application:
     name: communication-service
   config:
-    import:
-      - "application-communication-db.yml"
-      - "optional:application-ftp.yml"
+    import: optional:configserver:http://localhost:8888
 
   jpa:
     hibernate:
@@ -13,6 +11,8 @@ spring:
 
 server:
   port: 8086
+  servlet:
+    context-path: /communication-api
 
 eureka:
   client:
@@ -20,7 +20,3 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
-
-ftp:
-  enabled: true
-

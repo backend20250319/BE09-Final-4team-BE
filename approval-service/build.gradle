@@ -28,7 +28,7 @@ dependencies {
 
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
 
-    implementation project(":libs:jwt-common")
+    implementation project(":libs:auth-starter")
     implementation project(":libs:mt-starter")
 
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'

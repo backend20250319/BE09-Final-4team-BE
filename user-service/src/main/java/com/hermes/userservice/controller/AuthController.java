@@ -1,9 +1,9 @@
 package com.hermes.userservice.controller;
 
-import com.hermes.jwt.dto.ApiResponse;
+import com.hermes.auth.dto.ApiResponse;
 import com.hermes.userservice.dto.LoginRequestDto;
-import com.hermes.jwt.dto.TokenResponse;
-import com.hermes.jwt.dto.RefreshRequest;
+import com.hermes.auth.dto.TokenResponse;
+import com.hermes.auth.dto.RefreshRequest;
 import com.hermes.userservice.service.UserService;
 import com.hermes.jwt.JwtTokenProvider;
 import com.hermes.jwt.context.UserInfo;
@@ -11,7 +11,7 @@ import com.hermes.jwt.context.AuthContext;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;
-import com.hermes.jwt.service.TokenBlacklistService;
+import com.hermes.auth.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;

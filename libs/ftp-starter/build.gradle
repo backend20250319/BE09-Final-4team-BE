@@ -29,15 +29,30 @@ ext {
 }
 
 dependencies {
+    // 모듈 의존성
+    implementation project(':libs:api-common')
+
+    // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Lombok
     compileOnly 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // 개발용
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // Database
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // 테스트
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // 기타 라이브러리
     implementation 'commons-net:commons-net:3.9.0'
 }
+
 
 dependencyManagement {
     imports {

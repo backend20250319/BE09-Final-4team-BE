@@ -1,6 +1,6 @@
 package com.hermes.userservice.exception;
 
-import com.hermes.jwt.exception.BusinessException;
+import com.hermes.auth.exception.BusinessException;
 
 // 잘못된 인증 정보 예외
 

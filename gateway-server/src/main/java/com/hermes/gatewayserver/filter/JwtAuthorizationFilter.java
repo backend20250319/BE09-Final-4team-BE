@@ -1,7 +1,10 @@
 package com.hermes.gatewayserver.filter;
 
-import com.hermes.jwt.JwtTokenProvider;
-import com.hermes.jwt.context.UserInfo;
+import com.hermes.auth.JwtTokenProvider;
+import com.hermes.auth.context.UserInfo;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;

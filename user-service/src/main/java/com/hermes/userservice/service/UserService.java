@@ -8,7 +8,7 @@ import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.InvalidCredentialsException;
 import com.hermes.userservice.exception.UserNotFoundException;
-import com.hermes.jwt.dto.TokenResponse;
+import com.hermes.auth.dto.TokenResponse;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;

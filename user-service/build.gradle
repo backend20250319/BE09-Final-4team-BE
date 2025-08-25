@@ -26,7 +26,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
-    implementation project(":libs:jwt-common")
+
+    implementation project(":libs:auth-starter")
+
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.postgresql:postgresql:42.7.2'
     compileOnly 'org.projectlombok:lombok'

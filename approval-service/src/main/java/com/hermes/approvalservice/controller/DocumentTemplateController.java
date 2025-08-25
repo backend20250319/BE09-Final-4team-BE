@@ -6,7 +6,7 @@ import com.hermes.approvalservice.dto.request.UpdateTemplateRequest;
 import com.hermes.approvalservice.dto.response.TemplateResponse;
 import com.hermes.approvalservice.dto.response.TemplatesByCategoryResponse;
 import com.hermes.approvalservice.service.DocumentTemplateService;
-import com.hermes.jwt.context.AuthContext;
+import com.hermes.auth.context.AuthContext;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
