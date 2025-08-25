@@ -63,4 +63,53 @@ public class OrgServiceClientFallback implements OrgServiceClient {
         log.warn("org-service call failed - getLeadersByOrganizationId: {}", organizationId);
         return new ArrayList<>();
     }
+
+    @Override
+    public Map<String, Object> createOrganization(Map<String, Object> request) {
+        log.warn("org-service call failed - createOrganization");
+        Map<String, Object> fallback = new HashMap<>();
+        fallback.put("error", "org-service connection failed");
+        return fallback;
+    }
+
+    @Override
+    public Map<String, Object> updateOrganization(Long organizationId, Map<String, Object> request) {
+        log.warn("org-service call failed - updateOrganization: {}", organizationId);
+        Map<String, Object> fallback = new HashMap<>();
+        fallback.put("organizationId", organizationId);
+        fallback.put("error", "org-service connection failed");
+        return fallback;
+    }
+
+    @Override
+    public void deleteOrganization(Long organizationId) {
+        log.warn("org-service call failed - deleteOrganization: {}", organizationId);
+    }
+
+    @Override
+    public Map<String, Object> createAssignment(Map<String, Object> request) {
+        log.warn("org-service call failed - createAssignment");
+        Map<String, Object> fallback = new HashMap<>();
+        fallback.put("error", "org-service connection failed");
+        return fallback;
+    }
+
+    @Override
+    public Map<String, Object> updateAssignment(Long assignmentId, Map<String, Object> request) {
+        log.warn("org-service call failed - updateAssignment: {}", assignmentId);
+        Map<String, Object> fallback = new HashMap<>();
+        fallback.put("assignmentId", assignmentId);
+        fallback.put("error", "org-service connection failed");
+        return fallback;
+    }
+
+    @Override
+    public void deleteAssignment(Long assignmentId) {
+        log.warn("org-service call failed - deleteAssignment: {}", assignmentId);
+    }
+
+    @Override
+    public void deleteAssignmentsByEmployeeId(Long employeeId) {
+        log.warn("org-service call failed - deleteAssignmentsByEmployeeId: {}", employeeId);
+    }
 }

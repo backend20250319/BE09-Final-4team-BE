@@ -2,6 +2,7 @@ package com.hermes.userservice.service;
 
 import com.hermes.auth.JwtTokenProvider;
 import com.hermes.auth.context.Role;
+import com.hermes.auth.context.UserInfo;
 import com.hermes.auth.service.TokenBlacklistService;
 import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.entity.User;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -30,29 +32,25 @@ public class UserService {
     private final TokenBlacklistService tokenBlacklistService;
 
     public TokenResponse login(LoginRequestDto loginDto) {
-        // 사용자 조회
+
         User user = userRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("해당 이메일로 등록된 사용자가 없습니다."));
 
-        // 비밀번호 검증 (BCrypt 암호화된 비밀번호와 비교)
         if (!passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
             // 기존 평문 비밀번호와 비교
             if (!loginDto.getPassword().equals(user.getPassword())) {
                 throw new InvalidCredentialsException("비밀번호가 일치하지 않습니다.");
             }
 
-            // 평문 비밀번호를 BCrypt로 암호화하여 업데이트
             String encodedPassword = passwordEncoder.encode(loginDto.getPassword());
             user.setPassword(encodedPassword);
             userRepository.save(user);
         }
 
-        //  토큰 생성
         Role userRole = user.getIsAdmin() ? Role.ADMIN : Role.USER;
         String accessToken = jwtTokenProvider.createToken(user.getEmail(), user.getId(), userRole);
         String refreshToken = jwtTokenProvider.createRefreshToken(String.valueOf(user.getId()), user.getEmail());
 
-        //  RefreshToken 저장
         refreshTokenRepository.save(
                 RefreshToken.builder()
                         .userId(user.getId())
@@ -64,16 +62,42 @@ public class UserService {
         return new TokenResponse(accessToken, refreshToken);
     }
 
-    // 로그아웃 메서드 개선 - Access Token과 Refresh Token 모두 완전 삭제
+    public void logoutUser(String token) {
+        log.info("로그아웃 시작 - 토큰: {}", token != null ? token.substring(0, Math.min(20, token.length())) + "..." : "null");
+        
+        try {
+            UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
+            if (userInfo != null) {
+                log.info("사용자 정보 추출 성공: {} (ID: {})", userInfo.getEmail(), userInfo.getUserId());
+                
+                Optional<RefreshToken> tokenOpt = refreshTokenRepository.findByUserId(userInfo.getUserId());
+                if (tokenOpt.isPresent()) {
+                    refreshTokenRepository.delete(tokenOpt.get());
+                    log.info("사용자 {}의 Refresh Token을 삭제했습니다.", userInfo.getEmail());
+                }
+                
+                tokenBlacklistService.logoutUser(userInfo.getUserId(), token, null);
+                log.info("사용자 {}의 Access Token을 블랙리스트에 추가했습니다.", userInfo.getEmail());
+                
+            } else {
+                log.warn("토큰에서 사용자 정보를 추출할 수 없습니다.");
+            }
+        } catch (Exception e) {
+            log.error("로그아웃 처리 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("로그아웃 처리 중 오류가 발생했습니다: " + e.getMessage());
+        }
+        
+        log.info("사용자 로그아웃 완료");
+    }
+
     public void logout(Long userId, String accessToken, String refreshToken) {
         log.info(" [User Service] 로그아웃 처리 시작 - userId: {}", userId);
 
         try {
-            // 1. RefreshToken을 DB에서 삭제
+
             refreshTokenRepository.deleteById(userId);
             log.info("[User Service] RefreshToken 삭제 완료 - userId: {}", userId);
 
-            // 2. TokenBlacklistService를 통해 모든 토큰 완전 삭제
             tokenBlacklistService.logoutUser(userId, accessToken, refreshToken);
             log.info(" [User Service] 모든 토큰 완전 삭제 완료 - userId: {}", userId);
 
@@ -83,12 +107,10 @@ public class UserService {
         }
     }
 
-    //  기존 로그아웃 메서드
     public void logout(Long userId) {
         logout(userId, null, null);
     }
 
-    //  Access Token만 있는 경우
     public void logout(Long userId, String accessToken) {
         logout(userId, accessToken, null);
     }
