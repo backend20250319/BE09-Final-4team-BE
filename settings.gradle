@@ -16,6 +16,7 @@ include 'news-crawler-service'
 include 'leave-service'
 include 'attendance-service'
 include 'companyinfo-service'
+include 'workpolicy-service'
 
 include 'tenant-service'
 
