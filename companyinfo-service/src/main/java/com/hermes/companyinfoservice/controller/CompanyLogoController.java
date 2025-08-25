@@ -1,6 +1,6 @@
 package com.hermes.companyinfoservice.controller;
 
-import com.hermes.api.common.ApiResponse;
+import com.hermes.api.common.ApiResult;
 import com.hermes.companyinfoservice.dto.CompanyInfoDto;
 import com.hermes.companyinfoservice.service.CompanyInfoService;
 // import com.hermes.ftpstarter.dto.FtpResponseDto;
@@ -26,7 +26,7 @@ public class CompanyLogoController {
      * 회사 로고 업로드
      */
     @PostMapping("/upload/{companyId}")
-    public ResponseEntity<ApiResponse<CompanyInfoDto>> uploadLogo(
+    public ResponseEntity<ApiResult<CompanyInfoDto>> uploadLogo(
             @PathVariable Long companyId,
             @RequestParam("file") MultipartFile file) {
         
@@ -34,7 +34,7 @@ public class CompanyLogoController {
         
         // FTP 서비스가 비활성화되어 있음
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(ApiResponse.failure("FTP 서비스가 현재 비활성화되어 있습니다."));
+                .body(ApiResult.failure("FTP 서비스가 현재 비활성화되어 있습니다."));
         
         /*
         try {
@@ -86,12 +86,12 @@ public class CompanyLogoController {
      * 회사 로고 삭제
      */
     @DeleteMapping("/{companyId}")
-    public ResponseEntity<ApiResponse<CompanyInfoDto>> deleteLogo(@PathVariable Long companyId) {
+    public ResponseEntity<ApiResult<CompanyInfoDto>> deleteLogo(@PathVariable Long companyId) {
         log.info("Received request to delete logo for company ID: {}", companyId);
         
         // FTP 서비스가 비활성화되어 있음
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(ApiResponse.failure("FTP 서비스가 현재 비활성화되어 있습니다."));
+                .body(ApiResult.failure("FTP 서비스가 현재 비활성화되어 있습니다."));
         
         /*
         try {
@@ -133,26 +133,26 @@ public class CompanyLogoController {
      * 회사 로고 URL 조회
      */
     @GetMapping("/{companyId}")
-    public ResponseEntity<ApiResponse<String>> getLogoUrl(@PathVariable Long companyId) {
+    public ResponseEntity<ApiResult<String>> getLogoUrl(@PathVariable Long companyId) {
         log.info("Received request to get logo URL for company ID: {}", companyId);
         
         try {
             CompanyInfoDto company = companyInfoService.getCompanyInfoById(companyId);
             
             if (company.getLogoUrl() == null || company.getLogoUrl().isEmpty()) {
-                return ResponseEntity.ok(ApiResponse.success("로고가 설정되지 않았습니다.", null));
+                return ResponseEntity.ok(ApiResult.success("로고가 설정되지 않았습니다.", null));
             }
             
-            return ResponseEntity.ok(ApiResponse.success("로고 URL을 성공적으로 조회했습니다.", company.getLogoUrl()));
+            return ResponseEntity.ok(ApiResult.success("로고 URL을 성공적으로 조회했습니다.", company.getLogoUrl()));
             
         } catch (RuntimeException e) {
             log.error("Company not found with ID: {}", companyId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.failure("해당 ID의 회사를 찾을 수 없습니다."));
+                    .body(ApiResult.failure("해당 ID의 회사를 찾을 수 없습니다."));
         } catch (Exception e) {
             log.error("Error getting logo URL for company ID {}: {}", companyId, e.getMessage());
             return ResponseEntity.internalServerError()
-                    .body(ApiResponse.failure("로고 URL 조회 중 오류가 발생했습니다."));
+                    .body(ApiResult.failure("로고 URL 조회 중 오류가 발생했습니다."));
         }
     }
 

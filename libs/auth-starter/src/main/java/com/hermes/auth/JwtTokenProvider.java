@@ -23,8 +23,30 @@ public class JwtTokenProvider {
     private final long refreshExpiration;
 
     public JwtTokenProvider(JwtProperties properties) {
-        byte[] keyBytes = Decoders.BASE64.decode(properties.getSecret());
-        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
+        if (properties == null) {
+            throw new IllegalArgumentException("JWT configuration error: JwtProperties is null. Please check jwt.* properties in application configuration");
+        }
+        
+        String secret = properties.getSecret();
+        if (secret == null || secret.trim().isEmpty()) {
+            throw new IllegalArgumentException("JWT configuration error: jwt.secret is not configured or empty. Please set a valid JWT secret in application.yml/properties");
+        }
+        
+        if (properties.getExpirationTime() <= 0) {
+            throw new IllegalArgumentException("JWT configuration error: jwt.expiration-time must be a positive value (current: " + properties.getExpirationTime() + ")");
+        }
+        
+        if (properties.getRefreshExpiration() <= 0) {
+            throw new IllegalArgumentException("JWT configuration error: jwt.refresh-expiration must be a positive value (current: " + properties.getRefreshExpiration() + ")");
+        }
+        
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(secret);
+            this.secretKey = Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("JWT configuration error: jwt.secret must be a valid Base64 encoded string. Current secret format is invalid", e);
+        }
+        
         this.expirationTime = properties.getExpirationTime();
         this.refreshExpiration = properties.getRefreshExpiration();
     }
