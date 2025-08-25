@@ -114,4 +114,15 @@ public class UserService {
     public void logout(Long userId, String accessToken) {
         logout(userId, accessToken, null);
     }
+
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+    }
+
+    public User updateUserWorkPolicy(Long userId, Long workPolicyId) {
+        User user = getUserById(userId);
+        user.setWorkPolicyId(workPolicyId);
+        return userRepository.save(user);
+    }
 }
