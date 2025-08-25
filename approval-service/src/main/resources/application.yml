@@ -19,11 +19,13 @@ spring:
 
 hermes:
   multitenancy:
-    enabled: true
+    enabled: false
     schema:
       auto-create: true
     rabbitmq:
       enabled: true
+    flyway:
+      enabled: false
 
 eureka:
   client:

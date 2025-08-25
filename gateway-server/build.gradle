@@ -38,7 +38,8 @@ dependencies {
 	// 공통 JWT 모듈
 	implementation project(":libs:auth-starter")
 	
-
+	// Documentation
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.11'
 
 	// 테스트
 	testImplementation 'io.projectreactor:reactor-test'
