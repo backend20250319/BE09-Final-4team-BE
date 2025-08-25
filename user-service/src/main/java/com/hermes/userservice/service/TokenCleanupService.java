@@ -16,7 +16,7 @@ public class TokenCleanupService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
-    @Scheduled(fixedRate = 3600000) // 1시간 (밀리초)
+    @Scheduled(fixedRate = 1800000) // 30분 (밀리초)
     @Transactional
     public void cleanupExpiredTokens() {
         try {
