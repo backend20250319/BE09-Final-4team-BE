@@ -21,6 +21,28 @@ public class UserController {
     private final UserService userService;
     private final WorkPolicyIntegrationService workPolicyIntegrationService;
 
+    @PostMapping
+    public ResponseEntity<ApiResponse<User>> createUser(@RequestBody Map<String, Object> request) {
+        log.info("사용자 생성 요청: {}", request);
+        
+        try {
+            String name = (String) request.get("name");
+            String email = (String) request.get("email");
+            String password = (String) request.get("password");
+            Long workPolicyId = request.get("workPolicyId") != null ? 
+                    Long.valueOf(request.get("workPolicyId").toString()) : null;
+            
+            User createdUser = userService.createUser(name, email, password, workPolicyId);
+            
+            return ResponseEntity.ok(ApiResponse.success("사용자 생성 성공", createdUser));
+            
+        } catch (Exception e) {
+            log.error("사용자 생성 실패: error={}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("사용자 생성 실패: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getUser(@PathVariable Long userId) {
         log.info("사용자 조회 요청: userId={}", userId);
