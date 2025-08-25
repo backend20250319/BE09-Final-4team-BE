@@ -1,7 +1,7 @@
 package com.hermes.multitenancy.messaging;
 
 import com.hermes.multitenancy.config.RabbitMQProperties;
-import com.hermes.multitenancy.event.TenantEvent;
+import com.hermes.events.tenant.TenantEvent;
 import com.hermes.multitenancy.flyway.FlywayTenantInitializer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

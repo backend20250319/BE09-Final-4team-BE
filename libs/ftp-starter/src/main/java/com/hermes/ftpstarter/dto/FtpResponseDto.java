@@ -12,5 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FtpResponseDto {
-  private String storedFileName;
+  private String originalName;
+  private String storedName;
+  private String url;
 }

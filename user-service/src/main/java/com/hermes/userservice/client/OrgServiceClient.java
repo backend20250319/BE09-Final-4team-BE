@@ -32,4 +32,25 @@ public interface OrgServiceClient {
 
     @GetMapping("/api/assignments/organization/{organizationId}/leaders")
     List<Map<String, Object>> getLeadersByOrganizationId(@PathVariable("organizationId") Long organizationId);
+
+    @PostMapping("/api/organizations")
+    Map<String, Object> createOrganization(@RequestBody Map<String, Object> request);
+
+    @PutMapping("/api/organizations/{organizationId}")
+    Map<String, Object> updateOrganization(@PathVariable("organizationId") Long organizationId, @RequestBody Map<String, Object> request);
+
+    @DeleteMapping("/api/organizations/{organizationId}")
+    void deleteOrganization(@PathVariable("organizationId") Long organizationId);
+
+    @PostMapping("/api/assignments")
+    Map<String, Object> createAssignment(@RequestBody Map<String, Object> request);
+
+    @PutMapping("/api/assignments/{assignmentId}")
+    Map<String, Object> updateAssignment(@PathVariable("assignmentId") Long assignmentId, @RequestBody Map<String, Object> request);
+
+    @DeleteMapping("/api/assignments/{assignmentId}")
+    void deleteAssignment(@PathVariable("assignmentId") Long assignmentId);
+
+    @DeleteMapping("/api/assignments/employee/{employeeId}")
+    void deleteAssignmentsByEmployeeId(@PathVariable("employeeId") Long employeeId);
 }

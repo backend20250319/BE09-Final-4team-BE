@@ -35,7 +35,10 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     
     // JWT Common library
-    api project(':libs:jwt-common')
+    api project(':libs:auth-starter')
+    
+    // Events library for tenant events
+    api project(':libs:events')
     
     // Configuration Processor
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'

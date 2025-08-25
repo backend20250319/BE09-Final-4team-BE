@@ -1,6 +1,5 @@
 package com.hermes.multitenancy.dto;
 
-import com.hermes.multitenancy.entity.Tenant;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,18 +14,9 @@ import lombok.NoArgsConstructor;
 public class TenantInfo {
 
     private String tenantId;
-    private String name;
     private String schemaName;
-    private String status;
-
-    public TenantInfo(Tenant tenant) {
-        this.tenantId = tenant.getTenantId();
-        this.name = tenant.getName();
-        this.schemaName = tenant.getSchemaName();
-        this.status = tenant.getStatus().name();
-    }
 
     public static TenantInfo of(String tenantId, String schemaName) {
-        return new TenantInfo(tenantId, null, schemaName, "ACTIVE");
+        return new TenantInfo(tenantId, schemaName);
     }
 }

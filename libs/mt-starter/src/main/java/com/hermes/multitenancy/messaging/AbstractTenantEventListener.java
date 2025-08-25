@@ -2,7 +2,7 @@ package com.hermes.multitenancy.messaging;
 
 import com.hermes.multitenancy.context.TenantContext;
 import com.hermes.multitenancy.dto.TenantInfo;
-import com.hermes.multitenancy.event.TenantEvent;
+import com.hermes.events.tenant.TenantEvent;
 import com.hermes.multitenancy.config.RabbitMQProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -100,7 +100,7 @@ public abstract class AbstractTenantEventListener {
      * 기본적으로 public 스키마를 사용하지만, 각 서비스에서 오버라이드 가능
      */
     protected TenantInfo getSystemTenantInfo() {
-        return new TenantInfo("system", "System Tenant", "public", "ACTIVE");
+        return new TenantInfo("system", "public");
     }
 
     /**

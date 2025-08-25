@@ -1,7 +1,7 @@
 package com.hermes.gatewayserver.filter;
 
-import com.hermes.jwt.JwtTokenProvider;
-import com.hermes.jwt.JwtPayload;
+import com.hermes.auth.JwtTokenProvider;
+import com.hermes.auth.context.UserInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -72,23 +72,18 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
         log.info(" [Gateway] 토큰 시작 부분: {}", token.substring(0, Math.min(50, token.length())) + "...");
 
         try {
-            // 1. JWT 토큰 유효성 검증
-            if (!jwtTokenProvider.isValidToken(token)) {
-                log.warn(" [Gateway] JWT 토큰이 유효하지 않음");
+            // JWT 토큰에서 사용자 정보 추출 (유효성 검증 포함)
+            UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
+            
+            if (userInfo.getEmail() == null || userInfo.getUserId() == null) {
+                log.warn(" [Gateway] JWT에서 필수 사용자 정보가 누락됨");
                 return unauthorized(exchange);
             }
 
-            // 2. JWT 페이로드에서 사용자 정보 추출
-            JwtPayload payload = jwtTokenProvider.getPayloadFromToken(token);
-            if (payload == null || payload.getEmail() == null || payload.getUserId() == null) {
-                log.warn(" [Gateway] JWT 페이로드에서 사용자 정보를 추출할 수 없음");
-                return unauthorized(exchange);
-            }
+            log.info(" [Gateway] JWT 검증 성공 → userId={}, email={}", userInfo.getUserId(), userInfo.getEmail());
 
-            log.info(" [Gateway] JWT 검증 성공 → userId={}, email={}", payload.getUserId(), payload.getEmail());
-
-            // 3. 사용자 정보를 헤더로 주입 (블랙리스트 검증 생략)
-            return injectUserHeaders(token, request, exchange, chain, payload);
+            // JWT 검증 성공 - 토큰 그대로 전달
+            return chain.filter(exchange);
 
         } catch (Exception e) {
             log.error(" [Gateway] JWT 검증 중 예외 발생: {}", e.getMessage(), e);
@@ -102,39 +97,6 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
         }
     }
 
-    private Mono<Void> injectUserHeaders(String token, ServerHttpRequest request,
-                                         ServerWebExchange exchange, GatewayFilterChain chain,
-                                         JwtPayload payload) {
-        log.info(" [Gateway] 사용자 정보 헤더 주입 시작 (블랙리스트 검증 생략)");
-
-        try {
-            // 사용자 정보를 헤더로 주입
-            ServerHttpRequest modifiedRequest = request.mutate()
-                    .header("X-User-Id", payload.getUserId())
-                    .header("X-User-Email", payload.getEmail())
-                    .header("X-User-Role", payload.getRole() != null ? payload.getRole() : "USER")
-                    .build();
-
-            log.info(" [Gateway] 사용자 정보 헤더 주입 완료: X-User-Id={}, X-User-Email={}, X-User-Role={}",
-                    payload.getUserId(), payload.getEmail(), payload.getRole());
-
-            ServerWebExchange modifiedExchange = exchange.mutate()
-                    .request(modifiedRequest)
-                    .build();
-
-            return chain.filter(modifiedExchange);
-
-        } catch (Exception e) {
-            log.error(" [Gateway] 사용자 정보 헤더 주입 중 예외 발생: {}", e.getMessage(), e);
-
-            if (isWhiteListed(request.getURI().getPath())) {
-                log.info(" [Gateway] 화이트리스트 경로 → 헤더 주입 실패해도 통과");
-                return chain.filter(exchange);
-            }
-
-            return unauthorized(exchange);
-        }
-    }
 
     private boolean isWhiteListed(String path) {
         List<String> whitelist = filterProperties.getWhitelist();

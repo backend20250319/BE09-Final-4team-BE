@@ -1,7 +1,7 @@
 package com.hermes.tenantservice.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hermes.multitenancy.entity.Tenant;
+import com.hermes.tenantservice.entity.Tenant;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
