@@ -1,6 +1,3 @@
-server:
-  port: 8081
-
 spring:
   application:
     name: user-service
@@ -11,15 +8,11 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterChainAutoConfiguration
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
-    register-with-eureka: true
-    fetch-registry: true

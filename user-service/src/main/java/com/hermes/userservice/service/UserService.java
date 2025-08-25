@@ -2,6 +2,7 @@ package com.hermes.userservice.service;
 
 import com.hermes.jwt.JwtTokenProvider;
 import com.hermes.jwt.context.Role;
+import com.hermes.jwt.context.AuthContext;
 import com.hermes.jwt.service.TokenBlacklistService;
 import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.entity.User;
@@ -64,9 +65,17 @@ public class UserService {
         return new TokenResponse(accessToken, refreshToken);
     }
 
-    // 로그아웃 메서드 개선 - Access Token과 Refresh Token 모두 완전 삭제
-    public void logout(Long userId, String accessToken, String refreshToken) {
-        log.info(" [User Service] 로그아웃 처리 시작 - userId: {}", userId);
+    // 로그아웃 메서드 개선 - AuthContext 사용
+    public void logout(String accessToken, String refreshToken) {
+        // AuthContext에서 사용자 정보 가져오기
+        Long userId = AuthContext.getCurrentUserId();
+        String userEmail = AuthContext.getCurrentUserEmail();
+        
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 인증 정보가 누락되었습니다.");
+        }
+        
+        log.info(" [User Service] 로그아웃 처리 시작 - userId: {}, email: {}", userId, userEmail);
 
         try {
             // 1. RefreshToken을 DB에서 삭제
@@ -83,13 +92,41 @@ public class UserService {
         }
     }
 
-    //  기존 로그아웃 메서드
-    public void logout(Long userId) {
-        logout(userId, null, null);
+    //  기존 로그아웃 메서드 - AuthContext 사용
+    public void logout() {
+        logout(null, null);
     }
 
-    //  Access Token만 있는 경우
-    public void logout(Long userId, String accessToken) {
-        logout(userId, accessToken, null);
+    //  Access Token만 있는 경우 - AuthContext 사용
+    public void logout(String accessToken) {
+        logout(accessToken, null);
+    }
+
+    // 사용자 정보 조회 - AuthContext 사용
+    public User getCurrentUser() {
+        Long userId = AuthContext.getCurrentUserId();
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 인증 정보가 누락되었습니다.");
+        }
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("현재 사용자를 찾을 수 없습니다."));
+    }
+
+    // 사용자 ID 가져오기 - AuthContext 사용
+    public Long getCurrentUserId() {
+        Long userId = AuthContext.getCurrentUserId();
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 인증 정보가 누락되었습니다.");
+        }
+        return userId;
+    }
+
+    // 사용자 이메일 가져오기 - AuthContext 사용
+    public String getCurrentUserEmail() {
+        String email = AuthContext.getCurrentUserEmail();
+        if (email == null) {
+            throw new IllegalArgumentException("사용자 인증 정보가 누락되었습니다.");
+        }
+        return email;
     }
 }

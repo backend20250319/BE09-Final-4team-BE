@@ -16,6 +16,9 @@ spring:
           search-paths: .
           clone-on-start: true
           force-pull: true
+          refresh-rate: 0
+          deleteUntrackedBranches: true
+          timeout: 10
 
 eureka:
   client:

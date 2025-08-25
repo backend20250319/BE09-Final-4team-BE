@@ -79,7 +79,6 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
 
             log.info(" [Gateway] JWT 검증 성공 → userId={}, email={}", userInfo.getUserId(), userInfo.getEmail());
 
-            // JWT 검증 성공 - 토큰 그대로 전달 (헤더 주입 제거)
             return chain.filter(exchange);
 
         } catch (Exception e) {
@@ -116,6 +115,6 @@ public class JwtAuthorizationFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -1;
+        return 1;
     }
 }

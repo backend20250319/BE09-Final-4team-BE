@@ -46,7 +46,6 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Map<String, String>>> logout(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
         
-        // AuthContext에서 사용자 정보 가져오기
         Long userId = AuthContext.getCurrentUserId();
         String email = AuthContext.getCurrentUserEmail();
         
@@ -64,8 +63,7 @@ public class AuthController {
             log.warn("⚠ [Auth Controller] Authorization 헤더가 없거나 형식이 잘못됨 - userId: {}", userId);
         }
 
-        // refreshToken도 함께 전달하여 완전한 로그아웃 처리
-        userService.logout(userId, accessToken);
+        userService.logout(accessToken);
 
         Map<String, String> result = new HashMap<>();
         result.put("userId", userId.toString());
@@ -88,7 +86,6 @@ public class AuthController {
 
         String token = authHeader.substring(7);
 
-        // JWT에서 사용자 정보 추출 (유효성 검증 포함)
         UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
         
         if (userInfo.getUserId() == null || userInfo.getEmail() == null) {
@@ -109,7 +106,6 @@ public class AuthController {
             throw new RuntimeException("로그아웃된 Refresh Token입니다.");
         }
 
-        // 만료 시간 확인
         Instant now = Instant.now();
         Instant expiration = saved.getExpiration().atZone(ZoneId.systemDefault()).toInstant();
 
@@ -117,7 +113,6 @@ public class AuthController {
             throw new RuntimeException("만료된 RefreshToken입니다.");
         }
 
-        // 사용자 정보를 조회하여 실제 권한을 확인
         com.hermes.userservice.entity.User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         
