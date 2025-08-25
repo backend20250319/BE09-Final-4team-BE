@@ -1,6 +1,6 @@
 rootProject.name = 'hermes'
 
-include 'libs:jwt-common'
+include 'libs:auth-starter'
 include 'libs:events'
 include 'libs:mt-starter'
 include 'libs:api-common'

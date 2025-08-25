@@ -1,7 +1,7 @@
 package com.hermes.gatewayserver.filter;
 
-import com.hermes.jwt.JwtTokenProvider;
-import com.hermes.jwt.context.UserInfo;
+import com.hermes.auth.JwtTokenProvider;
+import com.hermes.auth.context.UserInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

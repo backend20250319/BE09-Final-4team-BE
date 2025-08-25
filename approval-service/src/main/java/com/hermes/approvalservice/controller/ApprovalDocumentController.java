@@ -8,7 +8,7 @@ import com.hermes.approvalservice.dto.response.DocumentResponse;
 import com.hermes.approvalservice.dto.response.DocumentSummaryResponse;
 import com.hermes.approvalservice.service.ApprovalDocumentService;
 import com.hermes.approvalservice.service.ApprovalProcessService;
-import com.hermes.jwt.context.AuthContext;
+import com.hermes.auth.context.AuthContext;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

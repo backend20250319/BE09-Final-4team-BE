@@ -8,7 +8,7 @@ import com.hermes.approvalservice.exception.NotFoundException;
 import com.hermes.approvalservice.repository.ApprovalDocumentRepository;
 import com.hermes.approvalservice.repository.DocumentAttachmentRepository;
 import com.hermes.approvalservice.service.DocumentPermissionService;
-import com.hermes.jwt.context.AuthContext;
+import com.hermes.auth.context.AuthContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;

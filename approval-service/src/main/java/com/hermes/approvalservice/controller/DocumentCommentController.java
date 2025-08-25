@@ -9,7 +9,7 @@ import com.hermes.approvalservice.exception.NotFoundException;
 import com.hermes.approvalservice.repository.ApprovalDocumentRepository;
 import com.hermes.approvalservice.repository.DocumentCommentRepository;
 import com.hermes.approvalservice.service.DocumentPermissionService;
-import com.hermes.jwt.context.AuthContext;
+import com.hermes.auth.context.AuthContext;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
