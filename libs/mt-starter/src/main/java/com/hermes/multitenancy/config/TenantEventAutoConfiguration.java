@@ -3,7 +3,6 @@ package com.hermes.multitenancy.config;
 import com.hermes.multitenancy.flyway.FlywayTenantInitializer;
 import com.hermes.multitenancy.messaging.DefaultTenantEventListener;
 import com.hermes.multitenancy.messaging.FlywayTenantEventListener;
-import com.hermes.multitenancy.messaging.TenantEventPublisher;
 import com.hermes.multitenancy.util.SchemaUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
@@ -179,15 +178,6 @@ public class TenantEventAutoConfiguration {
         return new DefaultTenantEventListener(properties, schemaUtils, serviceName);
     }
 
-    /**
-     * TenantEventPublisher 빈 자동 등록
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public TenantEventPublisher tenantEventPublisher(RabbitTemplate rabbitTemplate, RabbitMQProperties properties) {
-        log.info("Auto-registering TenantEventPublisher for service '{}'", serviceName);
-        return new TenantEventPublisher(rabbitTemplate, properties);
-    }
 
     /**
      * 자동 구성 정보 로깅
@@ -197,7 +187,7 @@ public class TenantEventAutoConfiguration {
         log.info("Tenant Event Auto Configuration for service '{}' completed:", serviceName);
         log.info("  - Queue: tenant.events.{}", serviceName);
         log.info("  - Dead Letter Queue: tenant.events.dlq.{}", serviceName);
-        log.info("  - TenantEventPublisher: Auto-registered");
+        log.info("  - TenantEventPublisher: Should be provided by tenant-service");
         log.info("  - Default event listener: {}", "Auto-registered (if no custom listener)");
         return new Object();
     }

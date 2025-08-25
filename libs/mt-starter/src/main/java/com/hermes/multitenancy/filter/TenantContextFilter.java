@@ -1,11 +1,12 @@
 package com.hermes.multitenancy.filter;
 
+import com.hermes.auth.context.AuthContext;
+import com.hermes.auth.filter.AuthContextFilter;
 import com.hermes.multitenancy.context.TenantContext;
 import com.hermes.multitenancy.dto.TenantInfo;
-import com.hermes.multitenancy.jwt.TenantJwtExtractor;
-import lombok.RequiredArgsConstructor;
+import com.hermes.multitenancy.util.TenantUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.Ordered;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -19,19 +20,14 @@ import java.io.IOException;
 
 /**
  * 테넌트 컨텍스트 설정 필터
- * HTTP 요청에서 JWT 토큰을 추출하여 테넌트 정보를 TenantContext에 설정
+ * AuthContext에서 테넌트 정보를 가져와 TenantContext에 설정
+ * AuthContextFilter 다음에 실행됨
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
-@Order(Ordered.HIGHEST_PRECEDENCE + 10)
+@Order(AuthContextFilter.ORDER + 1) // AuthContextFilter 다음에 실행
+@ConditionalOnProperty(name = "hermes.multitenancy.enabled", havingValue = "true", matchIfMissing = true)
 public class TenantContextFilter extends OncePerRequestFilter {
-
-    private final TenantJwtExtractor tenantJwtExtractor;
-    
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
-    private static final String TENANT_HEADER = "X-Tenant-ID";
 
     @Override
     protected void doFilterInternal(
@@ -40,17 +36,11 @@ public class TenantContextFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
         
         try {
-            // 테넌트 정보 추출 및 설정
-            TenantInfo tenantInfo = extractTenantInfo(request);
+            // AuthContext에서 테넌트 정보 추출 및 설정
+            TenantInfo tenantInfo = extractTenantInfoFromAuthContext();
             
-            if (tenantInfo != null) {
-                TenantContext.setTenant(tenantInfo);
-                log.debug("Tenant context set for request: {}", tenantInfo.getTenantId());
-            } else {
-                // 기본 테넌트 설정
-                TenantContext.setTenant(getDefaultTenantInfo());
-                log.debug("Using default tenant for request");
-            }
+            TenantContext.setTenant(tenantInfo);
+            log.debug("Tenant context set: {}", tenantInfo.getTenantId());
             
             // 다음 필터로 진행
             filterChain.doFilter(request, response);
@@ -63,78 +53,27 @@ public class TenantContextFilter extends OncePerRequestFilter {
     }
 
     /**
-     * HTTP 요청에서 테넌트 정보 추출
+     * AuthContext에서 테넌트 정보 추출
      */
-    private TenantInfo extractTenantInfo(HttpServletRequest request) {
-        // 1. 먼저 헤더에서 직접 테넌트 ID 확인
-        String tenantId = request.getHeader(TENANT_HEADER);
-        if (StringUtils.hasText(tenantId)) {
-            log.debug("Tenant ID found in header: {}", tenantId);
-            return TenantInfo.of(tenantId, generateSchemaName(tenantId));
-        }
-        
-        // 2. JWT 토큰에서 테넌트 정보 추출
-        String token = extractTokenFromRequest(request);
-        if (token != null && tenantJwtExtractor.isValidToken(token)) {
-            TenantInfo tenantInfo = tenantJwtExtractor.extractTenantInfo(token);
-            if (tenantInfo != null) {
-                log.debug("Tenant info extracted from JWT: {}", tenantInfo.getTenantId());
-                return tenantInfo;
+    private TenantInfo extractTenantInfoFromAuthContext() {
+        try {
+            // AuthContext에서 테넌트 ID 가져오기
+            String tenantId = AuthContext.getCurrentTenantId();
+            
+            if (StringUtils.hasText(tenantId)) {
+                String schemaName = TenantUtils.generateSchemaName(tenantId);
+                log.debug("Tenant info extracted from AuthContext: {}", tenantId);
+                return new TenantInfo(tenantId, schemaName);
             }
+        } catch (Exception e) {
+            log.debug("Failed to extract tenant info from AuthContext: {}", e.getMessage());
         }
         
-        // 3. 하위 도메인에서 테넌트 추론 (예: tenant1.example.com)
-        tenantId = extractTenantFromSubdomain(request);
-        if (tenantId != null) {
-            log.debug("Tenant ID extracted from subdomain: {}", tenantId);
-            return TenantInfo.of(tenantId, generateSchemaName(tenantId));
-        }
-        
-        return null;
+        // 기본 테넌트 반환
+        log.debug("Using default tenant");
+        return getDefaultTenantInfo();
     }
 
-    /**
-     * HTTP 요청에서 JWT 토큰 추출
-     */
-    private String extractTokenFromRequest(HttpServletRequest request) {
-        String authorizationHeader = request.getHeader(AUTHORIZATION_HEADER);
-        
-        if (StringUtils.hasText(authorizationHeader) && authorizationHeader.startsWith(BEARER_PREFIX)) {
-            return authorizationHeader.substring(BEARER_PREFIX.length());
-        }
-        
-        return null;
-    }
-
-    /**
-     * 하위 도메인에서 테넌트 ID 추출
-     */
-    private String extractTenantFromSubdomain(HttpServletRequest request) {
-        String serverName = request.getServerName();
-        
-        if (serverName != null && serverName.contains(".")) {
-            String[] parts = serverName.split("\\.");
-            if (parts.length > 2) {
-                String subdomain = parts[0];
-                // "www"나 "api" 등은 테넌트 ID가 아님
-                if (!subdomain.equals("www") && !subdomain.equals("api") && !subdomain.equals("localhost")) {
-                    return subdomain;
-                }
-            }
-        }
-        
-        return null;
-    }
-
-    /**
-     * 테넌트 ID로부터 스키마명 생성
-     */
-    private String generateSchemaName(String tenantId) {
-        if (TenantContext.DEFAULT_TENANT_ID.equals(tenantId)) {
-            return TenantContext.DEFAULT_SCHEMA_NAME;
-        }
-        return "tenant_" + tenantId.toLowerCase().replaceAll("[^a-z0-9]", "_");
-    }
 
     /**
      * 기본 테넌트 정보 반환
@@ -142,9 +81,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
     private TenantInfo getDefaultTenantInfo() {
         return new TenantInfo(
             TenantContext.DEFAULT_TENANT_ID,
-            "Default Tenant",
-            TenantContext.DEFAULT_SCHEMA_NAME,
-            "ACTIVE"
+            TenantContext.DEFAULT_SCHEMA_NAME
         );
     }
 

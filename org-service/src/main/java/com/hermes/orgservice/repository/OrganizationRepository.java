@@ -16,7 +16,7 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     
     List<Organization> findByParentIsNull();
     
-    List<Organization> findByParentId(Long parentId);
+    List<Organization> findByParentOrganizationId(Long parentId);
     
     @Query("SELECT o FROM Organization o WHERE o.name LIKE %:keyword%")
     List<Organization> findByNameContaining(@Param("keyword") String keyword);

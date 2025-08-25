@@ -1,6 +1,6 @@
 package com.hermes.userservice.exception;
 
-import com.hermes.jwt.exception.BusinessException;
+import com.hermes.auth.exception.BusinessException;
 
 public class DuplicateEmailException extends BusinessException {
     

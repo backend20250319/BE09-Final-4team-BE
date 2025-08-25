@@ -1,12 +1,13 @@
 package com.hermes.userservice.service;
 
-import com.hermes.jwt.JwtTokenProvider;
-import com.hermes.jwt.service.TokenBlacklistService;
+import com.hermes.auth.JwtTokenProvider;
+import com.hermes.auth.context.Role;
+import com.hermes.auth.service.TokenBlacklistService;
 import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.InvalidCredentialsException;
 import com.hermes.userservice.exception.UserNotFoundException;
-import com.hermes.jwt.dto.TokenResponse;
+import com.hermes.auth.dto.TokenResponse;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;
@@ -47,7 +48,8 @@ public class UserService {
         }
 
         //  토큰 생성
-        String accessToken = jwtTokenProvider.createToken(user.getEmail(), user.getId(), user.getIsAdmin() ? "ADMIN" : "USER");
+        Role userRole = user.getIsAdmin() ? Role.ADMIN : Role.USER;
+        String accessToken = jwtTokenProvider.createToken(user.getEmail(), user.getId(), userRole);
         String refreshToken = jwtTokenProvider.createRefreshToken(String.valueOf(user.getId()), user.getEmail());
 
         //  RefreshToken 저장

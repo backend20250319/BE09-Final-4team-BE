@@ -36,7 +36,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
 	// 공통 JWT 모듈
-	implementation project(":libs:jwt-common")
+	implementation project(":libs:auth-starter")
 	
 
 

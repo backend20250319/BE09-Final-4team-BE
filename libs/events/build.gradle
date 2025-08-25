@@ -1,0 +1,31 @@
+plugins {
+    id 'java-library'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.hermes'
+version = '0.0.1-SNAPSHOT'
+
+dependencies {
+    // Spring Boot starter for basic functionality
+    api 'org.springframework.boot:spring-boot-starter'
+    
+    // RabbitMQ for event messaging (optional - only if events need AMQP annotations)
+    api 'org.springframework.boot:spring-boot-starter-amqp'
+    
+    // Lombok for reducing boilerplate
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    
+    // Jakarta annotations
+    api 'jakarta.annotation:jakarta.annotation-api:2.1.1'
+    
+    // Test dependencies
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+    useJUnitPlatform()
+}
