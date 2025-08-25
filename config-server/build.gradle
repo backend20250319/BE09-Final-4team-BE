@@ -40,9 +40,4 @@ tasks.named('test') {
 
 bootRun {
     mainClass = 'com.hermes.configserver.ConfigServerApplication'
-}dependencyManagement {
-	imports {
-		mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.0.0"
-	}
 }
-
