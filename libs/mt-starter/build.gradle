@@ -23,7 +23,7 @@ dependencies {
     
     // Flyway for database migration
     api 'org.flywaydb:flyway-core'
-    compileOnly 'org.flywaydb:flyway-database-postgresql'
+    implementation 'org.flywaydb:flyway-database-postgresql'
     
     // Optional dependencies that using services can include
     compileOnly 'org.springframework.boot:spring-boot-starter-web'

@@ -1,7 +1,7 @@
 package com.hermes.attendanceservice.controller;
 
 
-import com.hermes.api.common.ApiResponse;
+import com.hermes.api.common.ApiResult;
 
 import com.hermes.attendanceservice.dto.AttendanceResponse;
 import com.hermes.attendanceservice.dto.WeeklyWorkSummary;
@@ -29,50 +29,50 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
 
     @PostMapping("/check-in")
-    public ApiResponse<AttendanceResponse> checkIn(@RequestBody CheckInRequest request) {
+    public ApiResult<AttendanceResponse> checkIn(@RequestBody CheckInRequest request) {
         try {
             AttendanceResponse response = attendanceService.checkIn(request.getUserId(), request.getCheckIn());
-            return ApiResponse.success("출근 기록이 성공적으로 등록되었습니다.", response);
+            return ApiResult.success("출근 기록이 성공적으로 등록되었습니다.", response);
         } catch (Exception e) {
-            return ApiResponse.failure("출근 기록 등록에 실패했습니다: " + e.getMessage());
+            return ApiResult.failure("출근 기록 등록에 실패했습니다: " + e.getMessage());
         }
     }
 
     @PostMapping("/check-out")
-    public ApiResponse<AttendanceResponse> checkOut(@RequestBody CheckOutRequest request) {
+    public ApiResult<AttendanceResponse> checkOut(@RequestBody CheckOutRequest request) {
         try {
             AttendanceResponse response = attendanceService.checkOut(request.getUserId(), request.getCheckOut());
-            return ApiResponse.success("퇴근 기록이 성공적으로 등록되었습니다.", response);
+            return ApiResult.success("퇴근 기록이 성공적으로 등록되었습니다.", response);
         } catch (Exception e) {
-            return ApiResponse.failure("퇴근 기록 등록에 실패했습니다: " + e.getMessage());
+            return ApiResult.failure("퇴근 기록 등록에 실패했습니다: " + e.getMessage());
         }
     }
 
     /** 연차/출장/외근/재택 등 상태 기록 */
     @PostMapping("/status")
-    public ApiResponse<AttendanceResponse> markStatus(@RequestParam Long userId,
-                                         @RequestParam
+    public ApiResult<AttendanceResponse> markStatus(@RequestParam Long userId,
+                                                    @RequestParam
                                          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
                                          LocalDate date,
-                                         @RequestParam WorkStatus status,
-                                         @RequestParam(defaultValue = "true") boolean autoRecorded,
-                                         @RequestParam(required = false)
+                                                    @RequestParam WorkStatus status,
+                                                    @RequestParam(defaultValue = "true") boolean autoRecorded,
+                                                    @RequestParam(required = false)
                                          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                                          LocalDateTime checkInTime,
-                                         @RequestParam(required = false)
+                                                    @RequestParam(required = false)
                                          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                                          LocalDateTime checkOutTime) {
         try {
             AttendanceResponse response = attendanceService.markStatus(userId, date, status, autoRecorded, checkInTime, checkOutTime);
-            return ApiResponse.success("근무 상태가 성공적으로 기록되었습니다.", response);
+            return ApiResult.success("근무 상태가 성공적으로 기록되었습니다.", response);
         } catch (Exception e) {
-            return ApiResponse.failure("근무 상태 기록에 실패했습니다: " + e.getMessage());
+            return ApiResult.failure("근무 상태 기록에 실패했습니다: " + e.getMessage());
         }
     }
 
     /** 이번 주(일~토) 상세 */
     @GetMapping("/weekly/this")
-    public ApiResponse<WeeklyWorkDetail> getThisWeek(@RequestParam Long userId) {
+    public ApiResult<WeeklyWorkDetail> getThisWeek(@RequestParam Long userId) {
         try {
             WeeklyWorkSummary summary = attendanceService.getThisWeekSummary(userId);
             
@@ -83,16 +83,16 @@ public class AttendanceController {
                     .dailySummaries(summary.getDailySummaries())
                     .build();
             
-            return ApiResponse.success("이번 주 근무 상세를 성공적으로 조회했습니다.", detail);
+            return ApiResult.success("이번 주 근무 상세를 성공적으로 조회했습니다.", detail);
         } catch (Exception e) {
-            return ApiResponse.failure("이번 주 근무 상세 조회에 실패했습니다: " + e.getMessage());
+            return ApiResult.failure("이번 주 근무 상세 조회에 실패했습니다: " + e.getMessage());
         }
     }
 
     /** 임의 주(weekStart가 일요일이 아니어도 자동 보정) */
     @GetMapping("/weekly")
-    public ApiResponse<WeeklyWorkDetail> getWeek(@RequestParam Long userId,
-                                     @RequestParam
+    public ApiResult<WeeklyWorkDetail> getWeek(@RequestParam Long userId,
+                                               @RequestParam
                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
                                      LocalDate weekStart) {
         try {
@@ -105,16 +105,16 @@ public class AttendanceController {
                     .dailySummaries(summary.getDailySummaries())
                     .build();
             
-            return ApiResponse.success("주간 근무 상세를 성공적으로 조회했습니다.", detail);
+            return ApiResult.success("주간 근무 상세를 성공적으로 조회했습니다.", detail);
         } catch (Exception e) {
-            return ApiResponse.failure("주간 근무 상세 조회에 실패했습니다: " + e.getMessage());
+            return ApiResult.failure("주간 근무 상세 조회에 실패했습니다: " + e.getMessage());
         }
     }
 
     /** 주간 근무 통계 (간단한 통계 정보만) */
     @GetMapping("/weekly/stats")
-    public ApiResponse<WeeklyWorkStats> getWeeklyStats(@RequestParam Long userId,
-                                                       @RequestParam(required = false)
+    public ApiResult<WeeklyWorkStats> getWeeklyStats(@RequestParam Long userId,
+                                                     @RequestParam(required = false)
                                                        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
                                                        LocalDate weekStart) {
         try {
@@ -133,15 +133,15 @@ public class AttendanceController {
                     .vacationHours(summary.getVacationHours())
                     .build();
             
-            return ApiResponse.success("주간 근무 통계를 성공적으로 조회했습니다.", stats);
+            return ApiResult.success("주간 근무 통계를 성공적으로 조회했습니다.", stats);
         } catch (Exception e) {
-            return ApiResponse.failure("주간 근무 통계 조회에 실패했습니다: " + e.getMessage());
+            return ApiResult.failure("주간 근무 통계 조회에 실패했습니다: " + e.getMessage());
         }
     }
 
     /** 이번 주 근무 통계 (간단한 통계 정보만) */
     @GetMapping("/weekly/this/stats")
-    public ApiResponse<WeeklyWorkStats> getThisWeekStats(@RequestParam Long userId) {
+    public ApiResult<WeeklyWorkStats> getThisWeekStats(@RequestParam Long userId) {
         try {
             WeeklyWorkSummary summary = attendanceService.getThisWeekSummary(userId);
             
@@ -155,9 +155,9 @@ public class AttendanceController {
                     .vacationHours(summary.getVacationHours())
                     .build();
             
-            return ApiResponse.success("이번 주 근무 통계를 성공적으로 조회했습니다.", stats);
+            return ApiResult.success("이번 주 근무 통계를 성공적으로 조회했습니다.", stats);
         } catch (Exception e) {
-            return ApiResponse.failure("이번 주 근무 통계 조회에 실패했습니다: " + e.getMessage());
+            return ApiResult.failure("이번 주 근무 통계 조회에 실패했습니다: " + e.getMessage());
         }
     }
 }

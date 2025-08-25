@@ -1,6 +1,6 @@
 package com.hermes.companyinfoservice.integration;
 
-import com.hermes.api.common.ApiResponse;
+import com.hermes.api.common.ApiResult;
 import com.hermes.companyinfoservice.dto.CompanyInfoDto;
 import com.hermes.companyinfoservice.entity.EmployeeCount;
 import com.hermes.companyinfoservice.entity.Industry;
@@ -37,7 +37,7 @@ public class CompanyInfoIntegrationTest {
     void testHealthCheckEndpoint() {
         // 헬스 체크 엔드포인트 테스트
         String url = "http://localhost:" + port + "/api/company/health";
-        ResponseEntity<ApiResponse> response = restTemplate.getForEntity(url, ApiResponse.class);
+        ResponseEntity<ApiResult> response = restTemplate.getForEntity(url, ApiResult.class);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -64,7 +64,7 @@ public class CompanyInfoIntegrationTest {
                 .companyIntroduction("통합 테스트용 회사입니다.")
                 .build();
 
-        ResponseEntity<ApiResponse> response = restTemplate.postForEntity(url, companyInfoDto, ApiResponse.class);
+        ResponseEntity<ApiResult> response = restTemplate.postForEntity(url, companyInfoDto, ApiResult.class);
         
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -78,7 +78,7 @@ public class CompanyInfoIntegrationTest {
     void testGetAllCompanyInfosEndpoint() {
         // 전체 회사 정보 조회 API 테스트
         String url = "http://localhost:" + port + "/api/company";
-        ResponseEntity<ApiResponse> response = restTemplate.getForEntity(url, ApiResponse.class);
+        ResponseEntity<ApiResult> response = restTemplate.getForEntity(url, ApiResult.class);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -119,7 +119,7 @@ public class CompanyInfoIntegrationTest {
         
         // 애플리케이션이 정상적으로 시작되었는지 확인
         String url = "http://localhost:" + port + "/api/company/health";
-        ResponseEntity<ApiResponse> response = restTemplate.getForEntity(url, ApiResponse.class);
+        ResponseEntity<ApiResult> response = restTemplate.getForEntity(url, ApiResult.class);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
         

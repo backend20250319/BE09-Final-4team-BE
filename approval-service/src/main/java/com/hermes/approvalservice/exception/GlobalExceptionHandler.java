@@ -1,6 +1,6 @@
 package com.hermes.approvalservice.exception;
 
-import com.hermes.approvalservice.dto.ApiResponse;
+import com.hermes.api.common.ApiResult;
 import com.hermes.auth.context.AuthContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,42 +15,42 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleNotFoundException(NotFoundException e) {
+    public ResponseEntity<ApiResult<Void>> handleNotFoundException(NotFoundException e) {
         log.warn("Not found exception: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.failure(e.getMessage()));
+                .body(ApiResult.failure(e.getMessage()));
     }
 
     @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnauthorizedException(UnauthorizedException e) {
+    public ResponseEntity<ApiResult<Void>> handleUnauthorizedException(UnauthorizedException e) {
         log.warn("Unauthorized exception: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.rejected(e.getMessage()));
+                .body(ApiResult.rejected(e.getMessage()));
     }
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
+    public ResponseEntity<ApiResult<Void>> handleBusinessException(BusinessException e) {
         log.warn("Business exception: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.failure(e.getMessage()));
+                .body(ApiResult.failure(e.getMessage()));
     }
 
     @ExceptionHandler(AuthContext.AuthenticationRequiredException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAuthenticationRequiredException(AuthContext.AuthenticationRequiredException e) {
+    public ResponseEntity<ApiResult<Void>> handleAuthenticationRequiredException(AuthContext.AuthenticationRequiredException e) {
         log.warn("Authentication required: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.rejected(e.getMessage()));
+                .body(ApiResult.rejected(e.getMessage()));
     }
 
     @ExceptionHandler(AuthContext.InsufficientPermissionException.class)
-    public ResponseEntity<ApiResponse<Void>> handleInsufficientPermissionException(AuthContext.InsufficientPermissionException e) {
+    public ResponseEntity<ApiResult<Void>> handleInsufficientPermissionException(AuthContext.InsufficientPermissionException e) {
         log.warn("Insufficient permission: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.rejected(e.getMessage()));
+                .body(ApiResult.rejected(e.getMessage()));
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
-    public ResponseEntity<ApiResponse<Void>> handleValidationException(Exception e) {
+    public ResponseEntity<ApiResult<Void>> handleValidationException(Exception e) {
         String message = "입력값이 올바르지 않습니다.";
         
         if (e instanceof MethodArgumentNotValidException) {
@@ -67,13 +67,13 @@ public class GlobalExceptionHandler {
         
         log.warn("Validation exception: {}", message);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.failure(message));
+                .body(ApiResult.failure(message));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception e) {
+    public ResponseEntity<ApiResult<Void>> handleGenericException(Exception e) {
         log.error("Unexpected exception occurred", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.failure("서버 오류가 발생했습니다."));
+                .body(ApiResult.failure("서버 오류가 발생했습니다."));
     }
 }

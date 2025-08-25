@@ -1,9 +1,9 @@
 package com.hermes.communicationservice.ftp.controller;
 
-import com.hermes.api.common.ApiResponse;
+import com.hermes.api.common.ApiResult;
 import com.hermes.communicationservice.ftp.dto.FileMappingDto;
 import com.hermes.communicationservice.ftp.service.FileMappingService;
-import com.hermes.ftpstarter.dto.FtpResponseDto;
+
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,22 +22,22 @@ public class FileMappingController {
 
   // 파일 업로드
   @PostMapping("/upload")
-  public ResponseEntity<ApiResponse<List<FileMappingDto>>> uploadMultiple(
+  public ResponseEntity<ApiResult<List<FileMappingDto>>> uploadMultiple(
       @RequestParam("files") List<MultipartFile> files) {
 
     List<FileMappingDto> responses = fileMappingService.uploadFiles(files);
 
-    ApiResponse<List<FileMappingDto>> apiResponse = ApiResponse.success("업로드 성공", responses);
-    return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
+    ApiResult<List<FileMappingDto>> apiResult = ApiResult.success("업로드 성공", responses);
+    return ResponseEntity.status(HttpStatus.CREATED).body(apiResult);
   }
 
 
   // 파일 삭제
   @DeleteMapping("/delete")
-  public ResponseEntity<ApiResponse<Object>> delete(@RequestParam("id") Long id) {
+  public ResponseEntity<ApiResult<Object>> delete(@RequestParam("id") Long id) {
     fileMappingService.delete(id);
-    ApiResponse<Object> apiResponse = ApiResponse.success("삭제 성공");
-    return ResponseEntity.status(HttpStatus.NO_CONTENT).body(apiResponse);
+    ApiResult<Object> apiResult = ApiResult.success("삭제 성공");
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).body(apiResult);
   }
 
   // id로 파일 정보 조회

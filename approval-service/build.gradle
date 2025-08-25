@@ -30,6 +30,7 @@ dependencies {
 
     implementation project(":libs:auth-starter")
     implementation project(":libs:mt-starter")
+    implementation project(":libs:api-common")
 
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
@@ -47,6 +48,9 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
     implementation 'com.github.ben-manes.caffeine:caffeine'
+    
+    // Documentation
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.11'
 }
 
 dependencyManagement {

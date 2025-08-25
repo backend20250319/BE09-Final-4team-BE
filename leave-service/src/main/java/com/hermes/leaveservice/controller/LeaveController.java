@@ -1,6 +1,6 @@
 package com.hermes.leaveservice.controller;
 
-import com.hermes.api.common.ApiResponse;
+import com.hermes.api.common.ApiResult;
 import com.hermes.leaveservice.dto.CreateLeaveRequestDto;
 import com.hermes.leaveservice.dto.LeaveRequestResponseDto;
 import com.hermes.leaveservice.service.LeaveService;
@@ -26,7 +26,7 @@ public class LeaveController {
      * @return 생성된 휴가 신청 응답
      */
     @PostMapping
-    public ResponseEntity<ApiResponse<LeaveRequestResponseDto>> createLeaveRequest(
+    public ResponseEntity<ApiResult<LeaveRequestResponseDto>> createLeaveRequest(
             @Valid @RequestBody CreateLeaveRequestDto createDto) {
         try {
             log.info("휴가 신청 생성 요청: employeeId={}, leaveType={}, startDate={}, endDate={}", 
@@ -36,16 +36,16 @@ public class LeaveController {
             LeaveRequestResponseDto response = leaveService.createLeaveRequest(createDto);
             
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success("휴가 신청이 성공적으로 생성되었습니다.", response));
+                    .body(ApiResult.success("휴가 신청이 성공적으로 생성되었습니다.", response));
                     
         } catch (RuntimeException e) {
             log.error("휴가 신청 생성 실패: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.failure(e.getMessage()));
+                    .body(ApiResult.failure(e.getMessage()));
         } catch (Exception e) {
             log.error("휴가 신청 생성 중 오류 발생: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.failure("휴가 신청 생성 중 오류가 발생했습니다."));
+                    .body(ApiResult.failure("휴가 신청 생성 중 오류가 발생했습니다."));
         }
     }
     
@@ -56,7 +56,7 @@ public class LeaveController {
      * @return 수정된 휴가 신청 응답
      */
     @PutMapping("/{requestId}")
-    public ResponseEntity<ApiResponse<LeaveRequestResponseDto>> modifyLeaveRequest(
+    public ResponseEntity<ApiResult<LeaveRequestResponseDto>> modifyLeaveRequest(
             @PathVariable Long requestId,
             @Valid @RequestBody CreateLeaveRequestDto createDto) {
         try {
@@ -66,16 +66,16 @@ public class LeaveController {
             LeaveRequestResponseDto response = leaveService.modifyLeaveRequest(requestId, createDto);
             
             return ResponseEntity.ok()
-                    .body(ApiResponse.success("휴가 신청이 성공적으로 수정되었습니다.", response));
+                    .body(ApiResult.success("휴가 신청이 성공적으로 수정되었습니다.", response));
                     
         } catch (RuntimeException e) {
             log.error("휴가 신청 수정 실패: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.failure(e.getMessage()));
+                    .body(ApiResult.failure(e.getMessage()));
         } catch (Exception e) {
             log.error("휴가 신청 수정 중 오류 발생: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.failure("휴가 신청 수정 중 오류가 발생했습니다."));
+                    .body(ApiResult.failure("휴가 신청 수정 중 오류가 발생했습니다."));
         }
     }
     
@@ -85,7 +85,7 @@ public class LeaveController {
      * @return 휴가 신청 상세 정보
      */
     @GetMapping("/{requestId}")
-    public ResponseEntity<ApiResponse<LeaveRequestResponseDto>> getLeaveRequest(
+    public ResponseEntity<ApiResult<LeaveRequestResponseDto>> getLeaveRequest(
             @PathVariable Long requestId) {
         try {
             log.info("휴가 신청 조회 요청: requestId={}", requestId);
@@ -97,16 +97,16 @@ public class LeaveController {
             }
             
             return ResponseEntity.ok()
-                    .body(ApiResponse.success("휴가 신청 조회가 완료되었습니다.", response));
+                    .body(ApiResult.success("휴가 신청 조회가 완료되었습니다.", response));
                     
         } catch (RuntimeException e) {
             log.error("휴가 신청 조회 실패: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.failure(e.getMessage()));
+                    .body(ApiResult.failure(e.getMessage()));
         } catch (Exception e) {
             log.error("휴가 신청 조회 중 오류 발생: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.failure("휴가 신청 조회 중 오류가 발생했습니다."));
+                    .body(ApiResult.failure("휴가 신청 조회 중 오류가 발생했습니다."));
         }
     }
     
@@ -116,7 +116,7 @@ public class LeaveController {
      * @return 휴가 신청 목록
      */
     @GetMapping("/employee/{employeeId}")
-    public ResponseEntity<ApiResponse<List<LeaveRequestResponseDto>>> getLeaveRequestsByEmployee(
+    public ResponseEntity<ApiResult<List<LeaveRequestResponseDto>>> getLeaveRequestsByEmployee(
             @PathVariable Long employeeId) {
         try {
             log.info("직원 휴가 신청 목록 조회 요청: employeeId={}", employeeId);
@@ -125,20 +125,20 @@ public class LeaveController {
             
             if (response == null) {
                 return ResponseEntity.ok()
-                        .body(ApiResponse.success("휴가 신청 내역이 없습니다.", List.of()));
+                        .body(ApiResult.success("휴가 신청 내역이 없습니다.", List.of()));
             }
             
             return ResponseEntity.ok()
-                    .body(ApiResponse.success("직원 휴가 신청 목록 조회가 완료되었습니다.", response));
+                    .body(ApiResult.success("직원 휴가 신청 목록 조회가 완료되었습니다.", response));
                     
         } catch (RuntimeException e) {
             log.error("직원 휴가 신청 목록 조회 실패: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.failure(e.getMessage()));
+                    .body(ApiResult.failure(e.getMessage()));
         } catch (Exception e) {
             log.error("직원 휴가 신청 목록 조회 중 오류 발생: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.failure("직원 휴가 신청 목록 조회 중 오류가 발생했습니다."));
+                    .body(ApiResult.failure("직원 휴가 신청 목록 조회 중 오류가 발생했습니다."));
         }
     }
     
@@ -148,7 +148,7 @@ public class LeaveController {
      * @return 삭제 결과
      */
     @DeleteMapping("/{requestId}")
-    public ResponseEntity<ApiResponse<Void>> deleteLeaveRequest(
+    public ResponseEntity<ApiResult<Void>> deleteLeaveRequest(
             @PathVariable Long requestId) {
         try {
             log.info("휴가 신청 삭제 요청: requestId={}", requestId);
@@ -156,16 +156,16 @@ public class LeaveController {
             leaveService.deleteLeaveRequest(requestId);
             
             return ResponseEntity.ok()
-                    .body(ApiResponse.success("휴가 신청이 성공적으로 삭제되었습니다."));
+                    .body(ApiResult.success("휴가 신청이 성공적으로 삭제되었습니다."));
                     
         } catch (RuntimeException e) {
             log.error("휴가 신청 삭제 실패: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.failure(e.getMessage()));
+                    .body(ApiResult.failure(e.getMessage()));
         } catch (Exception e) {
             log.error("휴가 신청 삭제 중 오류 발생: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.failure("휴가 신청 삭제 중 오류가 발생했습니다."));
+                    .body(ApiResult.failure("휴가 신청 삭제 중 오류가 발생했습니다."));
         }
     }
     
@@ -175,7 +175,7 @@ public class LeaveController {
      * @return 계산된 휴가 시간
      */
     @PostMapping("/calculate-hours")
-    public ResponseEntity<ApiResponse<Double>> calculateTotalHours(
+    public ResponseEntity<ApiResult<Double>> calculateTotalHours(
             @Valid @RequestBody CreateLeaveRequestDto createDto) {
         try {
             log.info("휴가 시간 계산 요청: startDate={}, endDate={}, startTime={}, endTime={}", 
@@ -185,16 +185,16 @@ public class LeaveController {
             double totalHours = leaveService.calculateTotalHours(createDto);
             
             return ResponseEntity.ok()
-                    .body(ApiResponse.success("휴가 시간 계산이 완료되었습니다.", totalHours));
+                    .body(ApiResult.success("휴가 시간 계산이 완료되었습니다.", totalHours));
                     
         } catch (RuntimeException e) {
             log.error("휴가 시간 계산 실패: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.failure(e.getMessage()));
+                    .body(ApiResult.failure(e.getMessage()));
         } catch (Exception e) {
             log.error("휴가 시간 계산 중 오류 발생: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.failure("휴가 시간 계산 중 오류가 발생했습니다."));
+                    .body(ApiResult.failure("휴가 시간 계산 중 오류가 발생했습니다."));
         }
     }
 } 
