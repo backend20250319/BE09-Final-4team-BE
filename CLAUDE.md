@@ -222,7 +222,27 @@ Hermes provides centralized API documentation through Gateway integration:
 ### Adding Swagger to New Services
 
 **1. Add Dependencies:**
+```gradle
+dependencies {
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.11'
+}
+```
+
 **2. Create OpenApiConfig:**
+```java
+@Configuration
+@OpenAPIDefinition(
+    info = @Info(
+        title = "Service Name API",
+        description = "Service description",
+        version = "1.0.0"
+    )
+)
+public class OpenApiConfig {
+    // Configuration if needed
+}
+```
+
 **3. Gateway Integration:**
 - Add service group to `GatewayOpenApiConfig.java`
 - Add API docs routing to `gateway-server/application.yml`

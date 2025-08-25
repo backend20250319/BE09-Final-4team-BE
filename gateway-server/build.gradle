@@ -39,7 +39,7 @@ dependencies {
 	implementation project(":libs:auth-starter")
 	
 	// Documentation
-	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.2.0'
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.11'
 
 	// 테스트
 	testImplementation 'io.projectreactor:reactor-test'
