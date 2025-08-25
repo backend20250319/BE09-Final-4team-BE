@@ -74,20 +74,8 @@ public class User {
     @Column(length = 500)
     private String profileImage;  // Profile image URL
 
-    // @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private WorkHourPolicy workHourPolicy;  // 근무 정책
-
-    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<LeaveRecord> leaveRecords = new ArrayList<>();  // 휴가 이력
-
-    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<WorkSchedule> workSchedules = new ArrayList<>();  // 근무 일정
-
-    // @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private DefaultWorkSchedule defaultWorkSchedule;  // 기본 근무 일정
-
-    // @ManyToMany(mappedBy = "recipients", fetch = FetchType.LAZY)
-    // private List<Notification> notifications = new ArrayList<>();  // 알림 목록
+    @Column(name = "work_policy_id") // 근무 정책
+    private Long workPolicyId;
 
     @Column(columnDefinition = "TEXT")
     private String selfIntroduction;  // Self introduction

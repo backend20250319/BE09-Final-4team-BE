@@ -114,4 +114,30 @@ public class UserService {
     public void logout(Long userId, String accessToken) {
         logout(userId, accessToken, null);
     }
+
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+    }
+
+    public User updateUserWorkPolicy(Long userId, Long workPolicyId) {
+        User user = getUserById(userId);
+        user.setWorkPolicyId(workPolicyId);
+        return userRepository.save(user);
+    }
+
+    public User createUser(String name, String email, String password, Long workPolicyId) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new RuntimeException("이미 존재하는 이메일입니다: " + email);
+        }
+        
+        User user = new User();
+        user.setName(name);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setWorkPolicyId(workPolicyId);
+        user.setIsAdmin(false); // 기본값은 일반 사용자임 ㅎㅎㅎ
+        
+        return userRepository.save(user);
+    }
 }
