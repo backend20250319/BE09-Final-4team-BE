@@ -29,6 +29,61 @@ spring:
               uri: lb://communication-service
               predicates:
                 - Path=/api/communication/**
+            # API 문서 라우팅
+            - id: user-service-docs
+              uri: lb://user-service
+              predicates:
+                - Path=/v3/api-docs/user-service
+              filters:
+                - RewritePath=/v3/api-docs/user-service, /v3/api-docs
+            - id: approval-service-docs
+              uri: lb://approval-service
+              predicates:
+                - Path=/v3/api-docs/approval-service
+              filters:
+                - RewritePath=/v3/api-docs/approval-service, /v3/api-docs
+            - id: tenant-service-docs
+              uri: lb://tenant-service
+              predicates:
+                - Path=/v3/api-docs/tenant-service
+              filters:
+                - RewritePath=/v3/api-docs/tenant-service, /v3/api-docs
+            - id: org-service-docs
+              uri: lb://org-service
+              predicates:
+                - Path=/v3/api-docs/org-service
+              filters:
+                - RewritePath=/v3/api-docs/org-service, /v3/api-docs
+            - id: attendance-service-docs
+              uri: lb://attendance-service
+              predicates:
+                - Path=/v3/api-docs/attendance-service
+              filters:
+                - RewritePath=/v3/api-docs/attendance-service, /v3/api-docs
+            - id: news-service-docs
+              uri: lb://news-crawler-service
+              predicates:
+                - Path=/v3/api-docs/news-service
+              filters:
+                - RewritePath=/v3/api-docs/news-service, /v3/api-docs
+            - id: leave-service-docs
+              uri: lb://leave-service
+              predicates:
+                - Path=/v3/api-docs/leave-service
+              filters:
+                - RewritePath=/v3/api-docs/leave-service, /v3/api-docs
+            - id: companyinfo-service-docs
+              uri: lb://companyinfo-service
+              predicates:
+                - Path=/v3/api-docs/companyinfo-service
+              filters:
+                - RewritePath=/v3/api-docs/companyinfo-service, /v3/api-docs
+            - id: communication-service-docs
+              uri: lb://communication-service
+              predicates:
+                - Path=/v3/api-docs/communication-service
+              filters:
+                - RewritePath=/v3/api-docs/communication-service, /v3/api-docs
 
 eureka:
   client:
