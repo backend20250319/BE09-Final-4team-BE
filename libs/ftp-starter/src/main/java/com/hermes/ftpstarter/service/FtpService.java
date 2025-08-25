@@ -17,9 +17,12 @@ import java.util.UUID;
 public class FtpService {
 
   private final FtpProperties ftpProperties;
+  private final String baseUrl;
 
   public FtpService(FtpProperties ftpProperties) {
     this.ftpProperties = ftpProperties;
+    this.baseUrl = "http://" + ftpProperties.getHost() + ":"
+        + ftpProperties.getDownloadPort() + ftpProperties.getBaseDir();
   }
 
   // 업로드
@@ -85,8 +88,7 @@ public class FtpService {
 
   // URL 조회
   public String getFileUrl(String storedName) {
-    return "http://" + ftpProperties.getHost() + ":" + ftpProperties.getDownloadPort()
-        + ftpProperties.getBaseDir() + "/" + storedName;
+    return baseUrl + "/" + storedName;
   }
 
   // 파일 존재 여부 확인
