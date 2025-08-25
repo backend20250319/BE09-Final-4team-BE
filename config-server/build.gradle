@@ -15,31 +15,18 @@ java {
 
 repositories {
     mavenCentral()
-    maven { url = "https://repo.spring.io/release" }
-    maven { url = "https://repo1.maven.org/maven2" }
 }
 
-
+ext {
+    springCloudVersion = "2025.0.0"
+}
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.cloud:spring-cloud-config-server'
-
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
-
-    implementation 'com.sun.jersey:jersey-client:1.19.4'
-    implementation 'com.sun.jersey:jersey-core:1.19.4'
-    implementation 'com.sun.jersey:jersey-servlet:1.19.4'
-    implementation 'com.sun.jersey.contribs:jersey-apache-client4:1.19.4'
-
-
-
     implementation 'com.github.ben-manes.caffeine:caffeine'
 }
-
-
-
-
 
 dependencyManagement {
     imports {
