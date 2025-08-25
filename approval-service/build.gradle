@@ -30,6 +30,7 @@ dependencies {
 
     implementation project(":libs:auth-starter")
     implementation project(":libs:mt-starter")
+    implementation project(":libs:api-common")
 
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
