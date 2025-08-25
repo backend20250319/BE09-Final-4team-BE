@@ -29,7 +29,8 @@ public class FtpService {
     }
 
     String originalName = file.getOriginalFilename();
-    String storedName = UUID.randomUUID().toString();
+    String ext = originalName.substring(originalName.lastIndexOf(".") + 1); // 확장자 추출
+    String storedName = UUID.randomUUID().toString() + "." + ext;
 
     try (CloseableFTPClient ftpClient = new CloseableFTPClient();
         InputStream inputStream = file.getInputStream()) {
