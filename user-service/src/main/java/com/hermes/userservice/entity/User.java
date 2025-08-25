@@ -39,7 +39,7 @@ public class User {
 
     @Column (nullable = false)
     private Boolean isAdmin = false;  // Admin flag
-    
+
     @Column
     private Boolean needsPasswordReset = false;  // Password reset required flag
 
@@ -61,16 +61,16 @@ public class User {
 
     @Column(length = 100)
     private String role;  // Role (direct input)
-    
+
     @Column
     private LocalDateTime lastLoginAt;  // Last login time
-    
+
     @Column
     private LocalDateTime createdAt;  // Created time
-    
+
     @Column
     private LocalDateTime updatedAt;  // Updated time
-    
+
     @Column(length = 500)
     private String profileImage;  // Profile image URL
 
@@ -79,13 +79,13 @@ public class User {
 
     @Column(columnDefinition = "TEXT")
     private String selfIntroduction;  // Self introduction
-    
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
-    
+
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
@@ -94,5 +94,5 @@ public class User {
     public void updateLastLogin() {
         this.lastLoginAt = LocalDateTime.now();
     }
-    
+
 }
