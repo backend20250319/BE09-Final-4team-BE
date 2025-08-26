@@ -1,7 +1,7 @@
 package com.hermes.userservice.service;
 
 import com.hermes.auth.JwtProperties;
-import com.hermes.auth.context.Role;
+import com.hermes.auth.enums.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;

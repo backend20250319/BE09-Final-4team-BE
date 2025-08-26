@@ -10,6 +10,7 @@ import com.hermes.approvalservice.enums.DocumentStatus;
 import com.hermes.approvalservice.exception.NotFoundException;
 import com.hermes.approvalservice.exception.UnauthorizedException;
 import com.hermes.approvalservice.repository.*;
+import com.hermes.auth.principal.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,13 +39,13 @@ public class ApprovalDocumentService {
                 .map(this::convertToSummaryResponse);
     }
 
-    public DocumentResponse getDocumentById(Long id, Long userId) {
+    public DocumentResponse getDocumentById(Long id, Long userId, UserPrincipal user) {
         ApprovalDocument document = documentRepository.findByIdWithDetails(id);
         if (document == null) {
             throw new NotFoundException("문서를 찾을 수 없습니다.");
         }
 
-        if (!permissionService.canViewDocument(document, userId)) {
+        if (!permissionService.canViewDocument(document, userId, user)) {
             throw new UnauthorizedException("문서 조회 권한이 없습니다.");
         }
 
@@ -76,11 +77,11 @@ public class ApprovalDocumentService {
     }
 
     @Transactional
-    public DocumentResponse updateDocument(Long id, UpdateDocumentRequest request, Long userId) {
+    public DocumentResponse updateDocument(Long id, UpdateDocumentRequest request, Long userId, UserPrincipal user) {
         ApprovalDocument document = documentRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
 
-        if (!permissionService.canEditDocument(document, userId)) {
+        if (!permissionService.canEditDocument(document, userId, user)) {
             throw new UnauthorizedException("문서 수정 권한이 없습니다.");
         }
 

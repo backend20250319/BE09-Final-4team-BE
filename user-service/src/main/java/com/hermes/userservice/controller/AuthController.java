@@ -6,7 +6,7 @@ import com.hermes.auth.dto.TokenResponse;
 import com.hermes.auth.dto.RefreshRequest;
 import com.hermes.userservice.service.UserService;
 import com.hermes.auth.principal.UserPrincipal;
-import com.hermes.auth.context.Role;
+import com.hermes.auth.enums.Role;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;

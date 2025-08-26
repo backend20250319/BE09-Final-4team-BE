@@ -75,7 +75,7 @@ public class ApprovalDocumentController {
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id) {
         Long userId = user.getUserId();
-        DocumentResponse document = documentService.getDocumentById(id, userId);
+        DocumentResponse document = documentService.getDocumentById(id, userId, user);
         return ResponseEntity.ok(ApiResult.success("문서를 조회했습니다.", document));
     }
 
@@ -110,7 +110,7 @@ public class ApprovalDocumentController {
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "문서 수정 요청 정보", required = true) @Valid @RequestBody UpdateDocumentRequest request) {
         Long userId = user.getUserId();
-        DocumentResponse document = documentService.updateDocument(id, request, userId);
+        DocumentResponse document = documentService.updateDocument(id, request, userId, user);
         return ResponseEntity.ok(ApiResult.success("문서를 수정했습니다.", document));
     }
 
@@ -148,7 +148,7 @@ public class ApprovalDocumentController {
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "승인 처리 요청 정보") @RequestBody ApprovalActionRequest request) {
         Long userId = user.getUserId();
-        approvalProcessService.approveDocument(id, userId, request);
+        approvalProcessService.approveDocument(id, userId, user, request);
         return ResponseEntity.ok(ApiResult.success("문서를 승인했습니다."));
     }
 
@@ -168,7 +168,7 @@ public class ApprovalDocumentController {
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "반려 처리 요청 정보", required = true) @RequestBody ApprovalActionRequest request) {
         Long userId = user.getUserId();
-        approvalProcessService.rejectDocument(id, userId, request);
+        approvalProcessService.rejectDocument(id, userId, user, request);
         return ResponseEntity.ok(ApiResult.success("문서를 반려했습니다."));
     }
 }

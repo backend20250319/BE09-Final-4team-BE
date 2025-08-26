@@ -1,7 +1,7 @@
 package com.hermes.userservice.service;
 
-import com.hermes.auth.context.Role;
-import com.hermes.auth.principal.UserPrincipal;
+import com.hermes.auth.enums.Role;
+import com.hermes.auth.dto.TokenResponse;
 import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.dto.UserCreateDto;
 import com.hermes.userservice.dto.UserResponseDto;

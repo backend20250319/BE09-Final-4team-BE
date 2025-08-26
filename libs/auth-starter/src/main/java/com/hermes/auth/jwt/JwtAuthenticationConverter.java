@@ -1,6 +1,6 @@
 package com.hermes.auth.jwt;
 
-import com.hermes.auth.context.Role;
+import com.hermes.auth.enums.Role;
 import com.hermes.auth.principal.UserPrincipal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;

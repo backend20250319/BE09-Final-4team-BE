@@ -1,6 +1,6 @@
 package com.hermes.auth.principal;
 
-import com.hermes.auth.context.Role;
+import com.hermes.auth.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

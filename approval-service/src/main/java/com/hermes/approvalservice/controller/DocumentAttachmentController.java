@@ -60,7 +60,7 @@ public class DocumentAttachmentController {
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
         
-        if (!permissionService.canViewDocument(document, userId)) {
+        if (!permissionService.canViewDocument(document, userId, user)) {
             return ResponseEntity.status(403).body(ApiResult.rejected("문서 조회 권한이 없습니다."));
         }
 
@@ -91,7 +91,7 @@ public class DocumentAttachmentController {
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
         
-        if (!permissionService.canEditDocument(document, userId)) {
+        if (!permissionService.canEditDocument(document, userId, user)) {
             return ResponseEntity.status(403).body(ApiResult.rejected("파일 업로드 권한이 없습니다."));
         }
 
@@ -150,7 +150,7 @@ public class DocumentAttachmentController {
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
         
-        if (!permissionService.canViewDocument(document, userId)) {
+        if (!permissionService.canViewDocument(document, userId, user)) {
             return ResponseEntity.status(403).build();
         }
 

@@ -9,6 +9,7 @@ import com.hermes.approvalservice.enums.DocumentStatus;
 import com.hermes.approvalservice.exception.NotFoundException;
 import com.hermes.approvalservice.exception.UnauthorizedException;
 import com.hermes.approvalservice.repository.ApprovalDocumentRepository;
+import com.hermes.auth.principal.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,13 +25,13 @@ public class ApprovalProcessService {
     private final DocumentPermissionService permissionService;
     private final DocumentActivityService activityService;
 
-    public void approveDocument(Long documentId, Long userId, ApprovalActionRequest request) {
+    public void approveDocument(Long documentId, Long userId, UserPrincipal user, ApprovalActionRequest request) {
         ApprovalDocument document = documentRepository.findByIdWithDetails(documentId);
         if (document == null) {
             throw new NotFoundException("문서를 찾을 수 없습니다.");
         }
 
-        if (!permissionService.canApproveDocument(document, userId, document.getCurrentStage())) {
+        if (!permissionService.canApproveDocument(document, userId, document.getCurrentStage(), user)) {
             throw new UnauthorizedException("승인 권한이 없습니다.");
         }
 
@@ -75,13 +76,13 @@ public class ApprovalProcessService {
         }
     }
 
-    public void rejectDocument(Long documentId, Long userId, ApprovalActionRequest request) {
+    public void rejectDocument(Long documentId, Long userId, UserPrincipal user, ApprovalActionRequest request) {
         ApprovalDocument document = documentRepository.findByIdWithDetails(documentId);
         if (document == null) {
             throw new NotFoundException("문서를 찾을 수 없습니다.");
         }
 
-        if (!permissionService.canApproveDocument(document, userId, document.getCurrentStage())) {
+        if (!permissionService.canApproveDocument(document, userId, document.getCurrentStage(), user)) {
             throw new UnauthorizedException("반려 권한이 없습니다.");
         }
 

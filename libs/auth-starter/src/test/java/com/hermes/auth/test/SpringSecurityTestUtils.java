@@ -1,6 +1,6 @@
 package com.hermes.auth.test;
 
-import com.hermes.auth.context.Role;
+import com.hermes.auth.enums.Role;
 import com.hermes.auth.principal.UserPrincipal;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;

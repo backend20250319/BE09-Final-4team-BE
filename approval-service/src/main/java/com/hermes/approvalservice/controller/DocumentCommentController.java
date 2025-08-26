@@ -50,7 +50,7 @@ public class DocumentCommentController {
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
         
-        if (!permissionService.canViewDocument(document, userId)) {
+        if (!permissionService.canViewDocument(document, userId, user)) {
             return ResponseEntity.status(403).body(ApiResult.rejected("문서 조회 권한이 없습니다."));
         }
 
@@ -81,7 +81,7 @@ public class DocumentCommentController {
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
         
-        if (!permissionService.canViewDocument(document, userId)) {
+        if (!permissionService.canViewDocument(document, userId, user)) {
             return ResponseEntity.status(403).body(ApiResult.rejected("댓글 작성 권한이 없습니다."));
         }
 
