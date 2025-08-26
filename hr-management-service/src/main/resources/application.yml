@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: hr-management-service
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+# Server Configuration
+server:
+  port: 8088
+
+# Logging Configuration
+logging:
+  level:
+    com.hermes.hrmanagementservice: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.cloud.config: DEBUG
+    org.springframework.boot.autoconfigure: DEBUG
+
+# Attendance Service Configuration
+attendance:
+  start-time: "09:00"
+  end-time: "18:00"
+
+# Leave Service Configuration
+leave:
+  max-annual-leave: 15
+  max-sick-leave: 10
+
+# Work Policy Service Configuration
+workpolicy:
+  default-work-hours: 8
+  default-work-minutes: 0
+  max-weekly-hours: 40
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
