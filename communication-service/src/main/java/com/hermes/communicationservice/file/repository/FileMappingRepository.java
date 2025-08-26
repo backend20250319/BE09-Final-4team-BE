@@ -1,6 +1,7 @@
-package com.hermes.communicationservice.ftp.repository;
+package com.hermes.communicationservice.file.repository;
 
-import com.hermes.communicationservice.ftp.entity.FileMapping;
+
+import com.hermes.communicationservice.file.entity.FileMapping;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;

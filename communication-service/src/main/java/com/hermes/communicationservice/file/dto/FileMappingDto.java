@@ -1,14 +1,12 @@
-package com.hermes.communicationservice.ftp.dto;
+package com.hermes.communicationservice.file.dto;
 
-import com.hermes.communicationservice.ftp.entity.FileMapping;
+import com.hermes.communicationservice.file.entity.FileMapping;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,6 +22,13 @@ public class FileMappingDto {
         .originalName(fileMapping.getOriginalName())
         .storedName(fileMapping.getStoredName())
         .url(url)
+        .build();
+  }
+
+  public static FileMapping toEntity(FileMappingDto dto) {
+    return FileMapping.builder()
+        .originalName(dto.getOriginalName())
+        .storedName(dto.getStoredName())
         .build();
   }
 }

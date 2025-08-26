@@ -1,17 +1,20 @@
-package com.hermes.communicationservice.ftp.service;
+package com.hermes.communicationservice.file.service;
 
-import com.hermes.communicationservice.ftp.entity.FileMapping;
-import com.hermes.communicationservice.ftp.exception.FileMappingNotFoundException;
-import com.hermes.communicationservice.ftp.exception.FileMappingNotFoundException.Key;
-import com.hermes.communicationservice.ftp.exception.FileMappingSaveException;
-import com.hermes.communicationservice.ftp.repository.FileMappingRepository;
-import com.hermes.communicationservice.ftp.dto.FileMappingDto;
+
+import com.hermes.communicationservice.announcement.entity.Announcement;
+import com.hermes.communicationservice.announcement.repository.AnnouncementRepository;
+import com.hermes.communicationservice.file.entity.FileMapping;
+import com.hermes.communicationservice.file.exception.FileMappingNotFoundException;
+import com.hermes.communicationservice.file.exception.FileMappingNotFoundException.Key;
+import com.hermes.communicationservice.file.exception.FileMappingSaveException;
+import com.hermes.communicationservice.file.repository.FileMappingRepository;
+import com.hermes.communicationservice.file.dto.FileMappingDto;
 import com.hermes.ftpstarter.dto.FtpResponseDto;
 import com.hermes.ftpstarter.exception.FtpException;
 import com.hermes.ftpstarter.service.FtpService;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,7 @@ public class FileMappingService {
 
   private final FtpService ftpService;
   private final FileMappingRepository fileMappingRepository;
+  private final AnnouncementRepository announcementRepository;
 
   // 파일 업로드 + 매핑 테이블 저장
   @Transactional
@@ -84,9 +88,32 @@ public class FileMappingService {
     FileMapping fileMapping = fileMappingRepository.findById(id)
         .orElseThrow(() -> new FileMappingNotFoundException(Key.ID, String.valueOf(id)));
 
+    return entityToDto(fileMapping);
+  }
+
+  // 공지사항 id로 조회
+  @Transactional(readOnly = true)
+  public List<FileMappingDto> getFilesByAnnouncementId(Long announcementId) {
+    Announcement announcement = announcementRepository.findById(announcementId)
+        .orElseThrow(() -> new RuntimeException(announcementId + ": 공지사항 찾을 수 없음"));
+
+    return entitiesToDtos(announcement.getAttachments());
+  }
+
+
+  // List<FileMapings> -> List<FileMappingDtos>
+  public List<FileMappingDto> entitiesToDtos(List<FileMapping> fileMappings) {
+    return fileMappings.stream()
+        .map(this::entityToDto)
+        .collect(Collectors.toList());
+  }
+
+
+  public FileMappingDto entityToDto(FileMapping fileMapping) {
     String url = ftpService.getFileUrl(fileMapping.getStoredName());
     return FileMappingDto.fromEntity(fileMapping, url);
   }
+
 
   // 저장된 파일명(unique함)으로 파일 정보 조회
   @Transactional(readOnly = true)
@@ -96,6 +123,10 @@ public class FileMappingService {
 
     String url = ftpService.getFileUrl(fileMapping.getStoredName());
     return FileMappingDto.fromEntity(fileMapping, url);
+  }
+
+  public String getFileUrl(String storedName) {
+    return ftpService.getFileUrl(storedName);
   }
 
 }

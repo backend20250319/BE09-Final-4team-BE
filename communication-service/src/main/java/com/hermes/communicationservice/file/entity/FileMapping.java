@@ -1,4 +1,4 @@
-package com.hermes.communicationservice.ftp.entity;
+package com.hermes.communicationservice.file.entity;
 
 
 import jakarta.persistence.*;

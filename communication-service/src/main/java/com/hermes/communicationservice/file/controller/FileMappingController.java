@@ -1,9 +1,8 @@
-package com.hermes.communicationservice.ftp.controller;
+package com.hermes.communicationservice.file.controller;
 
 import com.hermes.api.common.ApiResult;
-import com.hermes.communicationservice.ftp.dto.FileMappingDto;
-import com.hermes.communicationservice.ftp.service.FileMappingService;
-
+import com.hermes.communicationservice.file.dto.FileMappingDto;
+import com.hermes.communicationservice.file.service.FileMappingService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -27,8 +26,8 @@ public class FileMappingController {
 
     List<FileMappingDto> responses = fileMappingService.uploadFiles(files);
 
-    ApiResult<List<FileMappingDto>> apiResult = ApiResult.success("업로드 성공", responses);
-    return ResponseEntity.status(HttpStatus.CREATED).body(apiResult);
+    ApiResult<List<FileMappingDto>> apiResponse = ApiResult.success("업로드 성공", responses);
+    return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
   }
 
 
@@ -36,8 +35,8 @@ public class FileMappingController {
   @DeleteMapping("/delete")
   public ResponseEntity<ApiResult<Object>> delete(@RequestParam("id") Long id) {
     fileMappingService.delete(id);
-    ApiResult<Object> apiResult = ApiResult.success("삭제 성공");
-    return ResponseEntity.status(HttpStatus.NO_CONTENT).body(apiResult);
+    ApiResult<Object> apiResponse = ApiResult.success("삭제 성공");
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).body(apiResponse);
   }
 
   // id로 파일 정보 조회

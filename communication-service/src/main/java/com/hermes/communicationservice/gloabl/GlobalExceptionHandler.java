@@ -1,8 +1,9 @@
 package com.hermes.communicationservice.gloabl;
 
+
 import com.hermes.api.common.ApiResult;
-import com.hermes.communicationservice.ftp.exception.FileMappingNotFoundException;
-import com.hermes.communicationservice.ftp.exception.FileMappingSaveException;
+import com.hermes.communicationservice.file.exception.FileMappingNotFoundException;
+import com.hermes.communicationservice.file.exception.FileMappingSaveException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

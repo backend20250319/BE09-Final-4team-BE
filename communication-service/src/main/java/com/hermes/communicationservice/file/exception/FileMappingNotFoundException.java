@@ -1,4 +1,4 @@
-package com.hermes.communicationservice.ftp.exception;
+package com.hermes.communicationservice.file.exception;
 
 public class FileMappingNotFoundException extends RuntimeException {
   public enum Key { ORIGINAL_NAME, STORED_NAME, ID }
