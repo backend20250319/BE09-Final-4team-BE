@@ -84,25 +84,13 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader,
+            @AuthenticationPrincipal UserPrincipal user,
             @RequestBody RefreshRequest request) {
 
-        log.info(" [Auth Controller] /refresh 요청");
+        log.info(" [Auth Controller] /refresh 요청 - userId: {}", user.getUserId());
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Authorization 헤더가 없거나 형식이 잘못되었습니다.");
-        }
-
-        String token = authHeader.substring(7);
-
-        UserPrincipal userPrincipal = jwtTokenService.getUserFromToken(token);
-        
-        if (userPrincipal.getUserId() == null || userPrincipal.getEmail() == null) {
-            throw new RuntimeException("JWT에서 필수 사용자 정보를 추출할 수 없습니다.");
-        }
-        
-        Long userId = userPrincipal.getUserId();
-        String email = userPrincipal.getEmail();
+        Long userId = user.getUserId();
+        String email = user.getEmail();
 
         RefreshToken saved = refreshTokenRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("RefreshToken not found"));
@@ -122,10 +110,10 @@ public class AuthController {
             throw new RuntimeException("만료된 RefreshToken입니다.");
         }
 
-        com.hermes.userservice.entity.User user = userRepository.findById(userId)
+        com.hermes.userservice.entity.User userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         
-        Role userRole = user.getIsAdmin() ? Role.ADMIN : Role.USER;
+        Role userRole = userEntity.getIsAdmin() ? Role.ADMIN : Role.USER;
         String newAccessToken = jwtTokenService.createAccessToken(email, userId, userRole, null);
 
         log.info(" [Auth Controller] 토큰 갱신 성공: userId={}", userId);

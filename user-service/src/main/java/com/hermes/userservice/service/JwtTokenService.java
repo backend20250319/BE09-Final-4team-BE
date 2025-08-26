@@ -2,7 +2,6 @@ package com.hermes.userservice.service;
 
 import com.hermes.auth.JwtProperties;
 import com.hermes.auth.context.Role;
-import com.hermes.auth.principal.UserPrincipal;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -68,34 +67,6 @@ public class JwtTokenService {
                 .compact();
     }
 
-    /**
-     * 토큰에서 사용자 정보 추출 (로그아웃 처리용)
-     */
-    public UserPrincipal getUserFromToken(String token) {
-        try {
-            Claims claims = Jwts.parser()
-                    .verifyWith(getSigningKey())
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-
-            String email = claims.getSubject();
-            Object userIdObj = claims.get("userId");
-            Long userId = userIdObj instanceof Integer 
-                ? ((Integer) userIdObj).longValue() 
-                : (Long) userIdObj;
-            
-            String roleStr = (String) claims.get("role");
-            Role role = Role.fromString(roleStr);
-            String tenantId = (String) claims.get("tenantId");
-
-            return new UserPrincipal(userId, email, role, tenantId);
-            
-        } catch (JwtException e) {
-            log.warn("토큰 파싱 실패: {}", e.getMessage());
-            return null;
-        }
-    }
 
     /**
      * 액세스 토큰 만료 시간 반환
