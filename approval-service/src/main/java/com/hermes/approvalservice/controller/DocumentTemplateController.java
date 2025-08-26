@@ -6,7 +6,8 @@ import com.hermes.approvalservice.dto.request.UpdateTemplateRequest;
 import com.hermes.approvalservice.dto.response.TemplateResponse;
 import com.hermes.approvalservice.dto.response.TemplatesByCategoryResponse;
 import com.hermes.approvalservice.service.DocumentTemplateService;
-import com.hermes.auth.context.AuthContext;
+import com.hermes.auth.principal.UserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -34,13 +35,15 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "403", description = "권한 없음")
     })
     public ResponseEntity<ApiResult<List<TemplateResponse>>> getTemplates(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 ID (선택사항)") @RequestParam(required = false) Long categoryId) {
         List<TemplateResponse> templates;
+        boolean isAdmin = user.isAdmin();
         
         if (categoryId != null) {
-            templates = templateService.getTemplatesByCategory(categoryId, AuthContext.isCurrentUserAdmin());
+            templates = templateService.getTemplatesByCategory(categoryId, isAdmin);
         } else {
-            templates = templateService.getAllTemplates(AuthContext.isCurrentUserAdmin());
+            templates = templateService.getAllTemplates(isAdmin);
         }
         
         return ResponseEntity.ok(ApiResult.success("템플릿 목록을 조회했습니다.", templates));
@@ -51,8 +54,9 @@ public class DocumentTemplateController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "카테고리별 템플릿 목록 조회 성공")
     })
-    public ResponseEntity<ApiResult<List<TemplatesByCategoryResponse>>> getTemplatesByCategory() {
-        List<TemplatesByCategoryResponse> templates = templateService.getTemplatesByCategory(AuthContext.isCurrentUserAdmin());
+    public ResponseEntity<ApiResult<List<TemplatesByCategoryResponse>>> getTemplatesByCategory(
+            @AuthenticationPrincipal UserPrincipal user) {
+        List<TemplatesByCategoryResponse> templates = templateService.getTemplatesByCategory(user.isAdmin());
         return ResponseEntity.ok(ApiResult.success("카테고리별 템플릿 목록을 조회했습니다.", templates));
     }
 
@@ -76,8 +80,9 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "403", description = "관리자 권한 필요")
     })
     public ResponseEntity<ApiResult<TemplateResponse>> createTemplate(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 생성 요청", required = true) @Valid @RequestBody CreateTemplateRequest request) {
-        if (!AuthContext.isCurrentUserAdmin()) {
+        if (!user.isAdmin()) {
             return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 템플릿을 생성할 수 있습니다."));
         }
         
@@ -94,9 +99,10 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
     })
     public ResponseEntity<ApiResult<TemplateResponse>> updateTemplate(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 ID", required = true) @PathVariable Long id,
             @Parameter(description = "템플릿 수정 요청", required = true) @Valid @RequestBody UpdateTemplateRequest request) {
-        if (!AuthContext.isCurrentUserAdmin()) {
+        if (!user.isAdmin()) {
             return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 템플릿을 수정할 수 있습니다."));
         }
         
@@ -112,9 +118,10 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
     })
     public ResponseEntity<ApiResult<Void>> updateTemplateVisibility(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 ID", required = true) @PathVariable Long id,
             @Parameter(description = "숨김 여부", required = true) @RequestParam boolean isHidden) {
-        if (!AuthContext.isCurrentUserAdmin()) {
+        if (!user.isAdmin()) {
             return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 템플릿 숨김 처리를 할 수 있습니다."));
         }
         
@@ -131,8 +138,9 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
     })
     public ResponseEntity<ApiResult<Void>> deleteTemplate(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 ID", required = true) @PathVariable Long id) {
-        if (!AuthContext.isCurrentUserAdmin()) {
+        if (!user.isAdmin()) {
             return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 템플릿을 삭제할 수 있습니다."));
         }
         

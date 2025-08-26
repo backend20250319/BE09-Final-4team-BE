@@ -8,7 +8,8 @@ import com.hermes.approvalservice.exception.NotFoundException;
 import com.hermes.approvalservice.repository.ApprovalDocumentRepository;
 import com.hermes.approvalservice.repository.DocumentAttachmentRepository;
 import com.hermes.approvalservice.service.DocumentPermissionService;
-import com.hermes.auth.context.AuthContext;
+import com.hermes.auth.principal.UserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -52,8 +53,9 @@ public class DocumentAttachmentController {
     })
     @GetMapping
     public ResponseEntity<ApiResult<List<DocumentAttachmentResponse>>> getAttachments(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long documentId) {
-        Long userId = AuthContext.getCurrentUserId();
+        Long userId = user.getUserId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
@@ -81,9 +83,10 @@ public class DocumentAttachmentController {
     })
     @PostMapping
     public ResponseEntity<ApiResult<DocumentAttachmentResponse>> uploadAttachment(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long documentId,
             @Parameter(description = "업로드할 파일", required = true) @RequestParam("file") MultipartFile file) {
-        Long userId = AuthContext.getCurrentUserId();
+        Long userId = user.getUserId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
@@ -139,9 +142,10 @@ public class DocumentAttachmentController {
     })
     @GetMapping("/{fileId}")
     public ResponseEntity<Resource> downloadAttachment(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long documentId,
             @Parameter(description = "파일 ID", required = true) @PathVariable Long fileId) {
-        Long userId = AuthContext.getCurrentUserId();
+        Long userId = user.getUserId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));

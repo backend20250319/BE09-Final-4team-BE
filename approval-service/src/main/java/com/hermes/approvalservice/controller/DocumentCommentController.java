@@ -9,7 +9,8 @@ import com.hermes.approvalservice.exception.NotFoundException;
 import com.hermes.approvalservice.repository.ApprovalDocumentRepository;
 import com.hermes.approvalservice.repository.DocumentCommentRepository;
 import com.hermes.approvalservice.service.DocumentPermissionService;
-import com.hermes.auth.context.AuthContext;
+import com.hermes.auth.principal.UserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -42,8 +43,9 @@ public class DocumentCommentController {
     })
     @GetMapping
     public ResponseEntity<ApiResult<List<DocumentCommentResponse>>> getComments(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long documentId) {
-        Long userId = AuthContext.getCurrentUserId();
+        Long userId = user.getUserId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
@@ -71,9 +73,10 @@ public class DocumentCommentController {
     })
     @PostMapping
     public ResponseEntity<ApiResult<DocumentCommentResponse>> createComment(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long documentId,
             @Parameter(description = "댓글 작성 요청 정보", required = true) @Valid @RequestBody CreateCommentRequest request) {
-        Long userId = AuthContext.getCurrentUserId();
+        Long userId = user.getUserId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
