@@ -4,14 +4,15 @@ package com.hermes.communicationservice.file.service;
 import com.hermes.communicationservice.announcement.entity.Announcement;
 import com.hermes.communicationservice.announcement.repository.AnnouncementRepository;
 import com.hermes.communicationservice.file.entity.FileMapping;
+import com.hermes.communicationservice.file.enums.OwnerType;
 import com.hermes.communicationservice.file.exception.FileMappingNotFoundException;
-import com.hermes.communicationservice.file.exception.FileMappingNotFoundException.Key;
 import com.hermes.communicationservice.file.exception.FileMappingSaveException;
 import com.hermes.communicationservice.file.repository.FileMappingRepository;
 import com.hermes.communicationservice.file.dto.FileMappingDto;
 import com.hermes.ftpstarter.dto.FtpResponseDto;
 import com.hermes.ftpstarter.exception.FtpException;
 import com.hermes.ftpstarter.service.FtpService;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -73,7 +74,7 @@ public class FileMappingService {
   @Transactional
   public void delete(Long id) {
     FileMapping fileMapping = fileMappingRepository.findById(id)
-        .orElseThrow(() -> new FileMappingNotFoundException(Key.ID, String.valueOf(id)));
+        .orElseThrow(() -> new FileMappingNotFoundException(id));
 
     // FTP에서 파일 삭제
     ftpService.deleteFile(fileMapping.getStoredName());
@@ -86,7 +87,7 @@ public class FileMappingService {
   @Transactional(readOnly = true)
   public FileMappingDto getFileById(Long id) {
     FileMapping fileMapping = fileMappingRepository.findById(id)
-        .orElseThrow(() -> new FileMappingNotFoundException(Key.ID, String.valueOf(id)));
+        .orElseThrow(() -> new FileMappingNotFoundException(id));
 
     return entityToDto(fileMapping);
   }
@@ -96,8 +97,8 @@ public class FileMappingService {
   public List<FileMappingDto> getFilesByAnnouncementId(Long announcementId) {
     Announcement announcement = announcementRepository.findById(announcementId)
         .orElseThrow(() -> new RuntimeException(announcementId + ": 공지사항 찾을 수 없음"));
-
-    return entitiesToDtos(announcement.getAttachments());
+    List<FileMapping> fileMappings = fileMappingRepository.findByOwnerTypeAndOwnerId(OwnerType.ANNOUNCEMENT, announcementId);
+    return entitiesToDtos(fileMappings);
   }
 
 
@@ -110,17 +111,6 @@ public class FileMappingService {
 
 
   public FileMappingDto entityToDto(FileMapping fileMapping) {
-    String url = ftpService.getFileUrl(fileMapping.getStoredName());
-    return FileMappingDto.fromEntity(fileMapping, url);
-  }
-
-
-  // 저장된 파일명(unique함)으로 파일 정보 조회
-  @Transactional(readOnly = true)
-  public FileMappingDto getFileByStoredName(String storedName) {
-    FileMapping fileMapping = fileMappingRepository.findByStoredName(storedName)
-        .orElseThrow(() -> new FileMappingNotFoundException(Key.STORED_NAME, storedName));
-
     String url = ftpService.getFileUrl(fileMapping.getStoredName());
     return FileMappingDto.fromEntity(fileMapping, url);
   }

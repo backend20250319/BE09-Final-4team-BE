@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class AnnouncementController {
 
   private final AnnouncementService announcementService;
-  private final FileMappingService fileMappingService;
+  // private final FileMappingService fileMappingService;
 
   // 공지사항 생성
   @PostMapping
@@ -39,10 +39,7 @@ public class AnnouncementController {
   @GetMapping("/{id}")
   public ResponseEntity<ApiResult<AnnouncementResponseDto>> getAnnouncement(@PathVariable Long id) {
     log.info("GET /announcements/{} 호출", id);
-
-    List<FileMappingDto> attachments = fileMappingService.getFilesByAnnouncementId(id);
-    AnnouncementResponseDto response = announcementService.getAnnouncement(id, attachments);
-
+    AnnouncementResponseDto response = announcementService.getAnnouncement(id);
     return ResponseEntity.ok(ApiResult.success("공지사항 조회 완료", response));
   }
 
@@ -59,19 +56,11 @@ public class AnnouncementController {
   public ResponseEntity<ApiResult<AnnouncementResponseDto>> updateAnnouncement(
       @PathVariable Long id,
       @ModelAttribute AnnouncementUpdateRequestDto request) {
+
     log.info("PATCH /announcements/{} 호출", id);
-
-    // 삭제할 파일
-    request.getFilesToDelete().forEach(fileMappingService::delete);
-
-    // 새로 업로드할 파일
-    List<FileMappingDto> uploadedFiles = new ArrayList<>();
-    if (!request.getFilesToUpload().isEmpty()) {
-      uploadedFiles = fileMappingService.uploadFiles(request.getFilesToUpload());
-    }
-
-    AnnouncementResponseDto updated = announcementService.updateAnnouncement(request, uploadedFiles);
+    AnnouncementResponseDto updated = announcementService.updateAnnouncement(request);
     return ResponseEntity.ok(ApiResult.success("공지사항 수정 완료", updated));
+
   }
 
   // 공지사항 삭제

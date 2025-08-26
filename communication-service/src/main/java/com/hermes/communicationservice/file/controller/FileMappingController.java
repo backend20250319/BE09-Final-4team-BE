@@ -46,11 +46,4 @@ public class FileMappingController {
     return ResponseEntity.ok(response);
   }
 
-  // 저장된 이름으로 파일 정보 조회
-  @GetMapping("/storedName/{storedName}")
-  public ResponseEntity<FileMappingDto> getFileByStoredName(@PathVariable String storedName) {
-    FileMappingDto response = fileMappingService.getFileByStoredName(storedName);
-    return ResponseEntity.ok(response);
-  }
-
 }

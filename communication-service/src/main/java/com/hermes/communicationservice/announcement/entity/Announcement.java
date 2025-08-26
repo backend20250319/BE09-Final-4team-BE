@@ -42,8 +42,6 @@ public class Announcement {
 
   private String displayAuthor; // 화면에 공지 작성자로 표시될 이름
 
-  @Lob
-  @Column(columnDefinition = "text")
   private String content;
 
   @CreatedDate
@@ -51,12 +49,12 @@ public class Announcement {
 
   private int views; // 조회수
 
-  @OneToMany(mappedBy = "targetAnnouncement", cascade = CascadeType.REMOVE, orphanRemoval = true)
+  @OneToMany(mappedBy = "announcement", cascade = CascadeType.REMOVE, orphanRemoval = true)
   private List<Comment> comments = new ArrayList<>(); // 읽기 전용 리스트
 
   // orphanRemoval은 컬렉션(attachments)에서 삭제 시, db에 바로 반영한다.
-  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-  @JoinColumn(name = "announcement_id") // 자식 테이블(파일)에 생성할 fk 칼럼명
-  private List<FileMapping> attachments = new ArrayList<>();
+  // @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+  // @JoinColumn(name = "announcement_id") // 자식 테이블(파일)에 생성할 fk 칼럼명
+  // private List<FileMapping> attachments = new ArrayList<>();
 
 }

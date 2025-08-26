@@ -3,6 +3,7 @@ package com.hermes.communicationservice.file.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.hermes.communicationservice.file.enums.OwnerType;
 
 @Entity
 @Getter
@@ -23,5 +24,14 @@ public class FileMapping {
   // 실제 저장된 UUID 파일명
   @Column(nullable = false)
   private String storedName;
+
+  // 파일 소유자 타입
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private OwnerType ownerType;
+
+  // 파일 소유자 ID(공지사항ID, 문서ID 등)
+  @Column(nullable = false)
+  private Long ownerId;
 
 }

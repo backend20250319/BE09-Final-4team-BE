@@ -11,7 +11,6 @@ import com.hermes.communicationservice.file.exception.FileMappingSaveException;
 import com.hermes.communicationservice.file.repository.FileMappingRepository;
 import com.hermes.communicationservice.file.service.FileMappingService;
 import com.hermes.ftpstarter.dto.FtpResponseDto;
-import com.hermes.ftpstarter.exception.FtpException;
 import com.hermes.ftpstarter.service.FtpService;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
@@ -25,7 +24,10 @@ import java.util.List;
 import com.hermes.communicationservice.file.dto.FileMappingDto;
 import com.hermes.communicationservice.file.entity.FileMapping;
 import org.springframework.web.multipart.MultipartFile;
-
+import com.hermes.communicationservice.announcement.dto.FileResponseDto;
+import com.hermes.communicationservice.announcement.exception.AnnouncementNotFoundException;
+import com.hermes.communicationservice.file.exception.FileMappingNotFoundException;
+import com.hermes.communicationservice.file.enums.OwnerType;
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -41,63 +43,111 @@ public class AnnouncementService {
   // 생성
   @Transactional
   public AnnouncementResponseDto createAnnouncement(AnnouncementCreateRequestDto request) {
+    // 1. 공지사항 저장
+    Announcement announcement = Announcement.builder()
+        .title(request.getTitle())
+        .authorId(request.getAuthorId())
+        .displayAuthor(request.getDisplayAuthor())
+        .content(request.getContent())
+        .build();
+    Announcement saved = announcementRepository.save(announcement);
+
+    // 2. 파일 저장 및 FileMapping 생성 (FTP 업로드 보상 로직 포함)
     List<FileMapping> fileMappings = new ArrayList<>();
-    List<FileMappingDto> fileMappingDtos = new ArrayList<>();
-
+    List<String> uploadedStoredNames = new ArrayList<>();
+    System.out.println("before");
     try {
-      // 1. 파일 업로드 (빈 파일 제외)
-      List<MultipartFile> files = request.getMultipartFiles() != null
-          ? request.getMultipartFiles().stream()
-          .filter(f -> f != null && !f.isEmpty())
-          .toList()
-          : List.of();
-
-      for (MultipartFile file : files) {
-        FtpResponseDto ftpResponse = ftpService.uploadFile(file);
-        FileMapping fileMapping = FileMapping.builder()
-            .originalName(file.getOriginalFilename())
-            .storedName(ftpResponse.getStoredName())
-            .build();
-        fileMappings.add(fileMapping);
+    System.out.println("start");
+      for (MultipartFile file : request.getMultipartFiles()) {
+        if (file == null || file.isEmpty()) {
+        System.out.println("skip");
+          log.warn("skip empty file");
+          continue;
+        }
+        if (file != null && !file.isEmpty()) {
+          FtpResponseDto ftpResponse = ftpService.uploadFile(file);
+          uploadedStoredNames.add(ftpResponse.getStoredName());
+          FileMapping fileMapping = FileMapping.builder()
+              .originalName(file.getOriginalFilename())
+              .storedName(ftpResponse.getStoredName())
+              .ownerType(OwnerType.ANNOUNCEMENT)
+              .ownerId(saved.getId())
+              .build();
+          fileMappings.add(fileMapping);
+          System.out.println(fileMapping);
+        }
       }
-
-      // 2. Announcement 엔터티 생성 (파일 매핑 포함)
-      Announcement announcement = request.toEntity(fileMappings);
-      Announcement saved = announcementRepository.save(announcement);
-
-      // 3. DTO 변환
-      for (FileMapping fileMapping : fileMappings) {
-        FileMappingDto dto = FileMappingDto.fromEntity(fileMapping, ftpService.getFileUrl(fileMapping.getStoredName()));
-        fileMappingDtos.add(dto);
+      if (!fileMappings.isEmpty()) {
+        log.info("saving fileMappings - count={}", fileMappings.size());
+        fileMappingRepository.saveAll(fileMappings);
+        log.info("saved fileMappings");
       }
-
-      log.info("공지사항 생성 완료 - id: {}", saved.getId());
-      return AnnouncementResponseDto.fromEntity(saved, fileMappingDtos);
-
     } catch (Exception e) {
-      // FTP 업로드 롤백
-      for (FileMapping f : fileMappings) {
+      // FTP 업로드 실패 시 보상: 이미 업로드된 파일들 삭제 시도
+      for (String storedName : uploadedStoredNames) {
         try {
-          ftpService.deleteFile(f.getStoredName());
-        } catch (Exception ignored) {}
+          ftpService.deleteFile(storedName);
+        } catch (Exception ignore) {
+        }
       }
-      throw new FileMappingSaveException("공지사항 생성 실패 - 파일 롤백", e);
+      throw new FileMappingSaveException("공지사항 생성 실패 - 파일 업로드 중 오류", e);
     }
+
+    // 3. 파일 응답 DTO 변환
+    List<FileResponseDto> fileDtos = fileMappings.stream()
+        .map(f -> FileResponseDto.builder()
+            .id(f.getId())
+            .originalName(f.getOriginalName())
+            .storedName(f.getStoredName())
+            .url(ftpService.getFileUrl(f.getStoredName()))
+            .build())
+        .collect(Collectors.toList());
+
+    // 4. 공지사항 응답 DTO 반환
+    return AnnouncementResponseDto.builder()
+        .id(saved.getId())
+        .title(saved.getTitle())
+        .displayAuthor(saved.getDisplayAuthor())
+        .content(saved.getContent())
+        .createdAt(saved.getCreatedAt())
+        .files(fileDtos)
+        .build();
   }
-
-
-
-
 
   // 단건 조회
   @Transactional
-  public AnnouncementResponseDto getAnnouncement(Long id, List<FileMappingDto> attachments) {
+  public AnnouncementResponseDto getAnnouncement(Long id) {
+    // 1. 조회수 원자적 증가
+    announcementRepository.increaseViews(id);
+    
+    // 2. 공지사항 엔터티 조회
     Announcement announcement = announcementRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 공지입니다."));
-    // 조회수 증가
-    announcement.setViews(announcement.getViews() + 1);
+        .orElseThrow(() -> new AnnouncementNotFoundException(id));
+    
+    // 3. 파일 리스트 조회 (ownerType/ownerId로)
+    List<FileMapping> fileMappings = fileMappingRepository.findByOwnerTypeAndOwnerId(OwnerType.ANNOUNCEMENT, id);
+    
+    // 4. 파일 리스트를 FileResponseDto로 변환
+    List<FileResponseDto> fileDtos = fileMappings.stream()
+        .map(f -> FileResponseDto.builder()
+            .id(f.getId())
+            .originalName(f.getOriginalName())
+            .storedName(f.getStoredName())
+            .url(ftpService.getFileUrl(f.getStoredName()))
+            .build())
+        .collect(Collectors.toList());
+    
+    announcementRepository.increaseViews(id);
 
-    return AnnouncementResponseDto.fromEntity(announcement, attachments);
+    // 5. 응답 DTO 조립
+    return AnnouncementResponseDto.builder()
+        .id(announcement.getId())
+        .title(announcement.getTitle())
+        .displayAuthor(announcement.getDisplayAuthor())
+        .content(announcement.getContent())
+        .createdAt(announcement.getCreatedAt())
+        .files(fileDtos)
+        .build();
   }
 
   // 전체 조회
@@ -107,81 +157,123 @@ public class AnnouncementService {
   }
 
 
-  // PATCH 수정
+  // PATCH 수정 ->
   @Transactional
-  public AnnouncementResponseDto updateAnnouncement(AnnouncementUpdateRequestDto request,
-      List<FileMappingDto> uploadedFiles) {
-
+  public AnnouncementResponseDto updateAnnouncement(AnnouncementUpdateRequestDto request) {
+    // 1) 공지 로드
     Announcement announcement = announcementRepository.findById(request.getId())
-        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 공지입니다."));
+        .orElseThrow(() -> new AnnouncementNotFoundException(request.getId()));
 
-    boolean updated = false;
-
+    // 2) 공지 필드 부분 수정
     if (request.getTitle() != null) {
       announcement.setTitle(request.getTitle());
-      updated = true;
-    }
-    if (request.getDisplayAuthor() != null) {
-      announcement.setDisplayAuthor(request.getDisplayAuthor());
-      updated = true;
-    }
-    if (request.getAuthorId() != null) {
-      announcement.setAuthorId(request.getAuthorId());
-      updated = true;
     }
     if (request.getContent() != null) {
       announcement.setContent(request.getContent());
-      updated = true;
     }
-    if (uploadedFiles != null && !uploadedFiles.isEmpty()) {
-      announcement.setAttachments(
-          uploadedFiles.stream()
-              .map(FileMappingDto::toEntity)
-              .collect(Collectors.toList())
-      );
-      updated = true;
+    if (request.getDisplayAuthor() != null) {
+      announcement.setDisplayAuthor(request.getDisplayAuthor());
+    }
+    if (request.getAuthorId() != null) {
+      announcement.setAuthorId(request.getAuthorId());
+    }
+    announcementRepository.save(announcement);
+
+    // 3) 파일 삭제 (FTP best-effort + DB 삭제)
+    if (request.getFilesToDelete() != null && !request.getFilesToDelete().isEmpty()) {
+      for (Long fileId : request.getFilesToDelete()) {
+        FileMapping fm = fileMappingRepository.findById(fileId)
+            .orElseThrow(() -> new FileMappingNotFoundException(fileId));
+        try {
+          ftpService.deleteFile(fm.getStoredName()); // 실패해도 계속 진행
+        } catch (Exception ex) {
+          log.error("FTP 파일 삭제 실패 storedName={}", fm.getStoredName(), ex);
+        }
+        fileMappingRepository.delete(fm);
+      }
     }
 
-    if (updated) {
-      Announcement saved = announcementRepository.save(announcement);
+    // 4) 파일 업로드 (보상 로직 포함) + DB 저장
+    List<String> uploadedStoredNames = new ArrayList<>();
+    List<FileMapping> newFileMappings = new ArrayList<>();
+    try {
+      if (request.getFilesToUpload() != null && !request.getFilesToUpload().isEmpty()) {
+        for (MultipartFile file : request.getFilesToUpload()) {
+          if (file == null || file.isEmpty()) continue;
+          FtpResponseDto uploaded = ftpService.uploadFile(file); // 실패 시 예외
+          uploadedStoredNames.add(uploaded.getStoredName());
 
-      log.info(
-          "공지사항 수정 - id: {}, title: {}, displayAuthor: {}, content: {}, 첨부파일: {}, 작성자ID: {}",
-          saved.getId(),
-          saved.getTitle(),
-          saved.getDisplayAuthor(),
-          saved.getContent(),
-          uploadedFiles,
-          request.getAuthorId()
-      );
-
-      return AnnouncementResponseDto.fromEntity(saved, uploadedFiles);
-    } else {
-      log.info("공지사항 변경 사항 없음 - id: {}", announcement.getId());
-      return AnnouncementResponseDto.fromEntity(announcement, uploadedFiles);
+          FileMapping fm = FileMapping.builder()
+              .originalName(file.getOriginalFilename())
+              .storedName(uploaded.getStoredName())
+              .ownerType(OwnerType.ANNOUNCEMENT)
+              .ownerId(announcement.getId())
+              .build();
+          newFileMappings.add(fm);
+        }
+        if (!newFileMappings.isEmpty()) {
+          fileMappingRepository.saveAll(newFileMappings);
+        }
+      }
+    } catch (Exception e) {
+      // 보상: 이미 업로드된 파일들 삭제
+      for (String storedName : uploadedStoredNames) {
+        try {
+          ftpService.deleteFile(storedName);
+        } catch (Exception ignore) { }
+      }
+      throw new FileMappingSaveException("파일 업로드 중 오류로 수정 중단", e);
     }
+
+    // 5) 최신 파일 목록 조회 → DTO 변환
+    List<FileMapping> fileMappings =
+        fileMappingRepository.findByOwnerTypeAndOwnerId(OwnerType.ANNOUNCEMENT, announcement.getId());
+
+    List<FileResponseDto> files = fileMappings.stream()
+        .map(f -> FileResponseDto.builder()
+            .id(f.getId())
+            .originalName(f.getOriginalName())
+            .storedName(f.getStoredName())
+            .url(ftpService.getFileUrl(f.getStoredName()))
+            .build())
+        .collect(Collectors.toList());
+
+    // 6) 응답 DTO 조립
+    return AnnouncementResponseDto.builder()
+        .id(announcement.getId())
+        .title(announcement.getTitle())
+        .displayAuthor(announcement.getDisplayAuthor())
+        .content(announcement.getContent())
+        .createdAt(announcement.getCreatedAt())
+        .files(files)
+        .build();
   }
 
   // 삭제
   @Transactional
   public void deleteAnnouncement(Long id) {
     Announcement announcement = announcementRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 공지입니다."));
+        .orElseThrow(() -> new AnnouncementNotFoundException(id));
 
-    // 1. FTP 파일 삭제 -> DB 삭제
-    announcement.getAttachments().forEach(file -> {
-      try {
-        fileMappingService.delete(file.getId());
-      } catch (Exception e) {
-        log.error("FTP 파일 삭제 실패 - id: {}", file.getId(), e);
-      }
-    });
+    // 1) 파일 목록 조회 (ownerType/ownerId)
+    List<FileMapping> files = fileMappingRepository.findByOwnerTypeAndOwnerId(OwnerType.ANNOUNCEMENT, id);
 
-    // 2. DB에서 공지 삭제 (첨부파일 매핑도 cascade 삭제)
+    // 2) DB 삭제 (파일 → 공지 순서 권장)
+    if (!files.isEmpty()) {
+      fileMappingRepository.deleteAll(files);
+    }
     announcementRepository.delete(announcement);
 
-    log.info("공지사항 삭제 완료 - id: {}", id);
+    // 3) FTP 삭제 (best-effort)
+    for (FileMapping f : files) {
+      try {
+        ftpService.deleteFile(f.getStoredName());
+      } catch (Exception e) {
+        log.error("FTP 파일 삭제 실패 - id: {}", f.getId(), e);
+      }
+    }
 
+    log.info("공지사항 삭제 완료 - id: {}, files: {}", id, files.size());
   }
 
 }

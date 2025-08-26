@@ -15,7 +15,7 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
       "from Announcement a" + " order by a.id asc")
   List<AnnouncementSummaryDto> findAllAnnouncementSummary();
 
-  @Modifying
-  @Query("update Announcement a set a.views = a.views + 1 where a.id = :id") // 동시성 이슈로 db에서 직접 가져오기
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query("update Announcement a set a.views = a.views + 1 where a.id = :id")
   int increaseViews(@Param("id") Long id);
 }
