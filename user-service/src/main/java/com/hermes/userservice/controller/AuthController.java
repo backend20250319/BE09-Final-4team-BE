@@ -7,6 +7,7 @@ import com.hermes.auth.dto.RefreshRequest;
 import com.hermes.userservice.service.UserService;
 import com.hermes.auth.JwtTokenProvider;
 import com.hermes.auth.context.UserInfo;
+import com.hermes.auth.context.AuthContext;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;
@@ -42,14 +43,19 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Map<String, String>>> logout(@RequestHeader(value = "X-User-Id", required = false) String userId,
-                                                                   @RequestHeader(value = "X-User-Email", required = false) String email,
-                                                                   @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
-        log.info(" [Auth Controller] /logout 요청 - userId: {}, email: {}", userId, email);
-
-        if (userId == null) {
-            throw new IllegalArgumentException("X-User-Id 헤더가 누락되었습니다. Gateway에서 JWT 검증이 실패했거나 헤더 주입이 되지 않았습니다.");
+    public ResponseEntity<ApiResponse<Map<String, String>>> logout(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
+        
+        // AuthContext에서 사용자 정보 가져오기
+        UserInfo userInfo = AuthContext.getCurrentUser();
+        if (userInfo == null) {
+            throw new IllegalArgumentException("인증된 사용자 정보를 찾을 수 없습니다.");
         }
+        
+        Long userId = userInfo.getUserId();
+        String email = userInfo.getEmail();
+        
+        log.info(" [Auth Controller] /logout 요청 - userId: {}, email: {}", userId, email);
 
         String accessToken = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -59,11 +65,10 @@ public class AuthController {
             log.warn("⚠ [Auth Controller] Authorization 헤더가 없거나 형식이 잘못됨 - userId: {}", userId);
         }
 
-        // refreshToken도 함께 전달하여 완전한 로그아웃 처리
-        userService.logout(Long.valueOf(userId), accessToken);
+        userService.logoutUser(accessToken);
 
         Map<String, String> result = new HashMap<>();
-        result.put("userId", userId);
+        result.put("userId", String.valueOf(userId));
         result.put("email", email != null ? email : "unknown");
         result.put("message", "로그아웃이 성공적으로 처리되었습니다. 모든 토큰이 삭제되었습니다.");
 
@@ -83,7 +88,6 @@ public class AuthController {
 
         String token = authHeader.substring(7);
 
-        // JWT에서 사용자 정보 추출 (유효성 검증 포함)
         UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
         
         if (userInfo.getUserId() == null || userInfo.getEmail() == null) {
@@ -93,7 +97,7 @@ public class AuthController {
         Long userId = userInfo.getUserId();
         String email = userInfo.getEmail();
 
-        RefreshToken saved = refreshTokenRepository.findById(userId)
+        RefreshToken saved = refreshTokenRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("RefreshToken not found"));
 
         if (!saved.getToken().equals(request.getRefreshToken())) {
@@ -104,7 +108,6 @@ public class AuthController {
             throw new RuntimeException("로그아웃된 Refresh Token입니다.");
         }
 
-        // 만료 시간 확인
         Instant now = Instant.now();
         Instant expiration = saved.getExpiration().atZone(ZoneId.systemDefault()).toInstant();
 
@@ -112,7 +115,6 @@ public class AuthController {
             throw new RuntimeException("만료된 RefreshToken입니다.");
         }
 
-        // 사용자 정보를 조회하여 실제 권한을 확인
         com.hermes.userservice.entity.User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         
