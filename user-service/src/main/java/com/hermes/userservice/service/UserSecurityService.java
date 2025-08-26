@@ -54,8 +54,8 @@ public class UserSecurityService {
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new InvalidCredentialsException("현재 비밀번호가 일치하지 않습니다.");
         }
-        
-        user.setPassword(passwordEncoder.encode(newPassword));
+
+        user.updatePassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         log.info("Password changed for user: {}", user.getEmail());
     }

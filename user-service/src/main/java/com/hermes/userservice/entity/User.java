@@ -5,94 +5,179 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "users")
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;   // User ID (PK)
+    private Long id;
 
     @Column(nullable = false, length = 100)
-    private String name;  // Name
+    private String name;
 
     @Column(nullable = false, unique = true, length = 100)
-    private String email;  // Email
+    private String email;
 
     @Column(nullable = false, length = 255)
-    private String password; // Password (hashed)
+    private String password;
 
-    @Column(nullable = false, length = 100)
-    private String phone; // Phone number
+    @Column(length = 100)
+    private String phone;
 
-    @Column(nullable = false, length = 100)
-    private String address; // Address
+    @Column(length = 100)
+    private String address;
 
     @Column(nullable = false)
-    private LocalDate joinDate = LocalDate.now(); // Join date
+    private LocalDate joinDate;
 
-    @Column (nullable = false)
-    private Boolean isAdmin = false;  // Admin flag
+    @Column(nullable = false)
+    private Boolean isAdmin;
 
     @Column
-    private Boolean needsPasswordReset = false;  // Password reset required flag
+    private Boolean needsPasswordReset;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employment_type_wid")
-    private EmploymentType employmentType;  // Employment type
+    private EmploymentType employmentType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rank_id")
-    private Rank rank;  // Rank
+    private Rank rank;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_id")
-    private Position position;  // Position
+    private Position position;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_id")
-    private Job job;  // Job
+    private Job job;
 
     @Column(length = 100)
-    private String role;  // Role (direct input)
-
-    @Column
-    private LocalDateTime lastLoginAt;  // Last login time
-
-    @Column
-    private LocalDateTime createdAt;  // Created time
-
-    @Column
-    private LocalDateTime updatedAt;  // Updated time
+    private String role;
 
     @Column(length = 500)
-    private String profileImage;  // Profile image URL
+    private String profileImageUrl;
 
-    @Column(name = "work_policy_id") // 근무 정책
+    @Column(name = "work_policy_id")
     private Long workPolicyId;
 
     @Column(columnDefinition = "TEXT")
-    private String selfIntroduction;  // Self introduction
+    private String selfIntroduction;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+    @Column
+    private LocalDateTime lastLoginAt;
+
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    public void updateInfo(String name, String phone, String address, String profileImageUrl, String selfIntroduction) {
+        this.name = name;
+        this.phone = phone;
+        this.address = address;
+        this.profileImageUrl = profileImageUrl;
+        this.selfIntroduction = selfIntroduction;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    public void updateWorkInfo(EmploymentType employmentType, Rank rank, Position position, Job job, String role, Long workPolicyId) {
+        this.employmentType = employmentType;
+        this.rank = rank;
+        this.position = position;
+        this.job = job;
+        this.role = role;
+        this.workPolicyId = workPolicyId;
     }
 
     public void updateLastLogin() {
         this.lastLoginAt = LocalDateTime.now();
     }
 
+    public void updatePassword(String newHashedPassword) {
+        this.password = newHashedPassword;
+        this.needsPasswordReset = false;
+    }
+
+    public void updateEmail(String newEmail) {
+        this.email = newEmail;
+    }
+
+    public void updateAdminStatus(Boolean isAdmin) {
+        this.isAdmin = isAdmin;
+    }
+
+    public void updatePasswordResetFlag(Boolean needsPasswordReset) {
+        this.needsPasswordReset = needsPasswordReset;
+    }
+
+    public void updateName(String name) {
+        this.name = name;
+    }
+
+    public void updatePhone(String phone) {
+        this.phone = phone;
+    }
+
+    public void updateAddress(String address) {
+        this.address = address;
+    }
+
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public void updateSelfIntroduction(String selfIntroduction) {
+        this.selfIntroduction = selfIntroduction;
+    }
+
+    public void updateEmploymentType(EmploymentType employmentType) {
+        this.employmentType = employmentType;
+    }
+
+    public void updateRank(Rank rank) {
+        this.rank = rank;
+    }
+
+    public void updatePosition(Position position) {
+        this.position = position;
+    }
+
+    public void updateJob(Job job) {
+        this.job = job;
+    }
+
+    public void updateRole(String role) {
+        this.role = role;
+    }
+
+    public void updateWorkPolicyId(Long workPolicyId) {
+        this.workPolicyId = workPolicyId;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.joinDate == null) {
+            this.joinDate = LocalDate.now();
+        }
+        if (this.isAdmin == null) {
+            this.isAdmin = false;
+        }
+        if (this.needsPasswordReset == null) {
+            this.needsPasswordReset = false;
+        }
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }
