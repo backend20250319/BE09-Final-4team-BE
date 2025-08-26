@@ -1,10 +1,10 @@
 package com.hermes.attendanceservice.service;
 
-import com.hermes.attendanceservice.dto.AttendanceResponse;
-import com.hermes.attendanceservice.dto.WeeklyWorkSummary;
-import com.hermes.attendanceservice.dto.DailyWorkSummary;
-import com.hermes.attendanceservice.entity.Attendance;
-import com.hermes.attendanceservice.entity.WorkStatus;
+import com.hermes.attendanceservice.dto.attendance.AttendanceResponse;
+import com.hermes.attendanceservice.dto.attendance.WeeklyWorkSummary;
+import com.hermes.attendanceservice.dto.attendance.DailyWorkSummary;
+import com.hermes.attendanceservice.entity.attendance.Attendance;
+import com.hermes.attendanceservice.entity.attendance.WorkStatus;
 import com.hermes.attendanceservice.repository.AttendanceRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -63,11 +63,11 @@ public class AttendanceServiceImpl implements AttendanceService {
                         .isAutoRecorded(false)
                         .build());
 
-        if (a.getCheckIn() != null) throw new IllegalStateException("이미 출근 처리된 사용자입니다.");
+        if (a.getCheckIn() != null) throw new IllegalStateException("이미 출근 처리가 완료되었습니다.");
 
         a.setCheckIn(effective);
 
-        // 휴가/출장 등은 markStatus로 따로 기록된다고 가정
+        // 휴가/출장 등은 markStatus로 기록하는 것이 맞다면?
         if (a.getStatus() == WorkStatus.NOT_CLOCKIN || a.getStatus() == WorkStatus.REGULAR || a.getStatus() == WorkStatus.LATE) {
             a.setStatus(effective.toLocalTime().isAfter(startTime()) ? WorkStatus.LATE : WorkStatus.REGULAR);
         }
@@ -85,7 +85,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         Attendance a = attendanceRepository.findByUserIdAndDate(userId, date)
                 .orElseThrow(() -> new IllegalStateException("출근 기록이 존재하지 않습니다."));
 
-        if (a.getCheckOut() != null) throw new IllegalStateException("이미 퇴근 처리된 사용자입니다.");
+        if (a.getCheckOut() != null) throw new IllegalStateException("이미 퇴근 처리가 완료되었습니다.");
 
         a.setCheckOut(effective);
 
@@ -132,7 +132,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     @Transactional(readOnly = true)
     public WeeklyWorkSummary getWeekSummary(Long userId, LocalDate weekStartSunday) {
-        // 전달된 값이 일요일이 아니어도 자동 보정
+        // 입력값이 요일이 아니어도 자동 보정
         LocalDate weekStart = weekStartSunday.with(TemporalAdjusters.previousOrSame(SUNDAY));
         LocalDate weekEnd   = weekStart.with(TemporalAdjusters.nextOrSame(SATURDAY));
 
@@ -237,4 +237,4 @@ public class AttendanceServiceImpl implements AttendanceService {
         long m = minutes % 60;
         return h + "시간 " + m + "분";
     }
-}
+} 

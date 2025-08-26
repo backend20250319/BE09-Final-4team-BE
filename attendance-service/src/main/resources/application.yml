@@ -18,7 +18,7 @@ spring:
 
 # Server Configuration
 server:
-  port: 8082
+  port: 8088
 
 # Logging Configuration
 logging:
@@ -34,6 +34,17 @@ logging:
 attendance:
   start-time: "09:00"
   end-time: "18:00"
+
+# Leave Service Configuration
+leave:
+  max-annual-leave: 15
+  max-sick-leave: 10
+
+# Work Policy Service Configuration
+workpolicy:
+  default-work-hours: 8
+  default-work-minutes: 0
+  max-weekly-hours: 40
 
 # Eureka Client Configuration
 eureka:

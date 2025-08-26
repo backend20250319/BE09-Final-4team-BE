@@ -1,25 +1,19 @@
 package com.hermes.attendanceservice.controller;
 
-
 import com.hermes.api.common.ApiResult;
-
-import com.hermes.attendanceservice.dto.AttendanceResponse;
-import com.hermes.attendanceservice.dto.WeeklyWorkSummary;
-import com.hermes.attendanceservice.dto.WeeklyWorkDetail;
-import com.hermes.attendanceservice.dto.WeeklyWorkStats;
-import com.hermes.attendanceservice.dto.CheckInRequest;
-import com.hermes.attendanceservice.dto.CheckOutRequest;
-import com.hermes.attendanceservice.entity.WorkStatus;
+import com.hermes.attendanceservice.dto.attendance.AttendanceResponse;
+import com.hermes.attendanceservice.dto.attendance.WeeklyWorkSummary;
+import com.hermes.attendanceservice.dto.attendance.WeeklyWorkDetail;
+import com.hermes.attendanceservice.dto.attendance.CheckInRequest;
+import com.hermes.attendanceservice.dto.attendance.CheckOutRequest;
+import com.hermes.attendanceservice.entity.attendance.WorkStatus;
 import com.hermes.attendanceservice.service.AttendanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.temporal.TemporalAdjusters;
 
 @RestController
 @RequiredArgsConstructor
@@ -48,7 +42,7 @@ public class AttendanceController {
         }
     }
 
-    /** 연차/출장/외근/재택 등 상태 기록 */
+    /** 휴가/출장/재택/택시 근무 상태 기록 */
     @PostMapping("/status")
     public ApiResult<AttendanceResponse> markStatus(@RequestParam Long userId,
                                                     @RequestParam
@@ -70,7 +64,7 @@ public class AttendanceController {
         }
     }
 
-    /** 이번 주(일~토) 상세 */
+    /** 이번 주 근무 상세 */
     @GetMapping("/weekly/this")
     public ApiResult<WeeklyWorkDetail> getThisWeek(@RequestParam Long userId) {
         try {
@@ -89,7 +83,7 @@ public class AttendanceController {
         }
     }
 
-    /** 임의 주(weekStart가 일요일이 아니어도 자동 보정) */
+    /** 특정 주 (weekStart가 요일이 아니어도 자동 보정) */
     @GetMapping("/weekly")
     public ApiResult<WeeklyWorkDetail> getWeek(@RequestParam Long userId,
                                                @RequestParam
@@ -110,54 +104,4 @@ public class AttendanceController {
             return ApiResult.failure("주간 근무 상세 조회에 실패했습니다: " + e.getMessage());
         }
     }
-
-    /** 주간 근무 통계 (간단한 통계 정보만) */
-    @GetMapping("/weekly/stats")
-    public ApiResult<WeeklyWorkStats> getWeeklyStats(@RequestParam Long userId,
-                                                     @RequestParam(required = false)
-                                                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                                                       LocalDate weekStart) {
-        try {
-            LocalDate targetWeekStart = weekStart != null ? weekStart : 
-                LocalDate.now(ZoneId.of("Asia/Seoul")).with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-            
-            WeeklyWorkSummary summary = attendanceService.getWeekSummary(userId, targetWeekStart);
-            
-            WeeklyWorkStats stats = WeeklyWorkStats.builder()
-                    .totalWorkHours(summary.getTotalWorkHours())
-                    .totalWorkMinutes(summary.getTotalWorkMinutes())
-                    .workDays(summary.getWorkDays())
-                    .regularWorkHours(summary.getRegularWorkHours())
-                    .lateWorkHours(summary.getLateWorkHours())
-                    .overtimeHours(summary.getOvertimeHours())
-                    .vacationHours(summary.getVacationHours())
-                    .build();
-            
-            return ApiResult.success("주간 근무 통계를 성공적으로 조회했습니다.", stats);
-        } catch (Exception e) {
-            return ApiResult.failure("주간 근무 통계 조회에 실패했습니다: " + e.getMessage());
-        }
-    }
-
-    /** 이번 주 근무 통계 (간단한 통계 정보만) */
-    @GetMapping("/weekly/this/stats")
-    public ApiResult<WeeklyWorkStats> getThisWeekStats(@RequestParam Long userId) {
-        try {
-            WeeklyWorkSummary summary = attendanceService.getThisWeekSummary(userId);
-            
-            WeeklyWorkStats stats = WeeklyWorkStats.builder()
-                    .totalWorkHours(summary.getTotalWorkHours())
-                    .totalWorkMinutes(summary.getTotalWorkMinutes())
-                    .workDays(summary.getWorkDays())
-                    .regularWorkHours(summary.getRegularWorkHours())
-                    .lateWorkHours(summary.getLateWorkHours())
-                    .overtimeHours(summary.getOvertimeHours())
-                    .vacationHours(summary.getVacationHours())
-                    .build();
-            
-            return ApiResult.success("이번 주 근무 통계를 성공적으로 조회했습니다.", stats);
-        } catch (Exception e) {
-            return ApiResult.failure("이번 주 근무 통계 조회에 실패했습니다: " + e.getMessage());
-        }
-    }
-}
+} 
