@@ -2,6 +2,7 @@ package com.hermes.auth.principal;
 
 import com.hermes.auth.context.Role;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,6 +17,7 @@ import java.util.List;
  * JWT 토큰에서 추출한 사용자 정보를 Spring Security에서 사용할 수 있도록 래핑합니다.
  */
 @Data
+@Builder
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class UserPrincipal implements UserDetails {
