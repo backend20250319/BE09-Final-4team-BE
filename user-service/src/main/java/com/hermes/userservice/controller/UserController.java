@@ -1,16 +1,23 @@
 package com.hermes.userservice.controller;
 
 import com.hermes.auth.dto.ApiResponse;
+import com.hermes.userservice.dto.UserCreateDto;
+import com.hermes.userservice.dto.UserDetailResponseDto;
+import com.hermes.userservice.dto.UserResponseDto;
+import com.hermes.userservice.dto.UserUpdateDto;
 import com.hermes.userservice.entity.User;
+import com.hermes.userservice.mapper.UserMapper;
 import com.hermes.userservice.service.UserService;
 import com.hermes.userservice.service.WorkPolicyIntegrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -20,104 +27,67 @@ public class UserController {
 
     private final UserService userService;
     private final WorkPolicyIntegrationService workPolicyIntegrationService;
+    private final UserMapper userMapper;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<User>> createUser(@RequestBody Map<String, Object> request) {
-        log.info("사용자 생성 요청: {}", request);
+    public ResponseEntity<ApiResponse<UserResponseDto>> createUser(@Valid @RequestBody UserCreateDto userCreateDto) {
+        log.info("사용자 생성 요청 (이메일): {}", userCreateDto.getEmail());
+
+        User createdUser = userService.createUser(userCreateDto);
+        UserResponseDto userResponseDto = userMapper.toResponseDto(createdUser);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("사용자 생성 성공", userResponseDto));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<UserResponseDto>>> getAllUsers() {
+        log.info("전체 사용자 목록 조회 요청");
         
-        try {
-            String name = (String) request.get("name");
-            String email = (String) request.get("email");
-            String password = (String) request.get("password");
-            Long workPolicyId = request.get("workPolicyId") != null ? 
-                    Long.valueOf(request.get("workPolicyId").toString()) : null;
-            
-            User createdUser = userService.createUser(name, email, password, workPolicyId);
-            
-            return ResponseEntity.ok(ApiResponse.success("사용자 생성 성공", createdUser));
-            
-        } catch (Exception e) {
-            log.error("사용자 생성 실패: error={}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("사용자 생성 실패: " + e.getMessage()));
-        }
+        List<User> users = userService.getAllUsers();
+        List<UserResponseDto> userResponseDtos = users.stream()
+                .map(userMapper::toResponseDto)
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(ApiResponse.success("사용자 목록 조회 성공", userResponseDtos));
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getUser(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<UserDetailResponseDto>> getUser(@PathVariable Long userId) {
         log.info("사용자 조회 요청: userId={}", userId);
-        
-        try {
-            User user = userService.getUserById(userId);
-            Map<String, Object> workPolicy = workPolicyIntegrationService.getUserWorkPolicy(userId);
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("user", user);
-            result.put("workPolicy", workPolicy);
-            
-            return ResponseEntity.ok(ApiResponse.success("사용자 조회 성공", result));
-            
-        } catch (Exception e) {
-            log.error("사용자 조회 실패: userId={}, error={}", userId, e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("사용자 조회 실패: " + e.getMessage()));
-        }
+
+        User user = userService.getUserById(userId);
+        var workPolicy = workPolicyIntegrationService.getUserWorkPolicy(userId);
+
+        UserResponseDto userResponseDto = userMapper.toResponseDto(user);
+
+        UserDetailResponseDto result = UserDetailResponseDto.builder()
+                .user(userResponseDto)
+                .workPolicy(workPolicy)
+                .build();
+
+        return ResponseEntity.ok(ApiResponse.success("사용자 조회 성공", result));
     }
 
-    @PutMapping("/{userId}/work-policy")
-    public ResponseEntity<ApiResponse<User>> updateUserWorkPolicy(
+    @PatchMapping("/{userId}")
+    public ResponseEntity<ApiResponse<UserResponseDto>> patchUser(
             @PathVariable Long userId,
-            @RequestBody Map<String, Object> request) {
+            @Valid @RequestBody UserUpdateDto userUpdateDto) {
+
+        log.info("사용자 정보 부분 업데이트 요청: userId={}", userId);
+
+        User updatedUser = userService.updateUser(userId, userUpdateDto);
+        UserResponseDto userResponseDto = userMapper.toResponseDto(updatedUser);
         
-        log.info("사용자 근무정책 업데이트 요청: userId={}, workPolicyId={}", 
-                userId, request.get("workPolicyId"));
-        
-        try {
-            Long workPolicyId = Long.valueOf(request.get("workPolicyId").toString());
-            User updatedUser = userService.updateUserWorkPolicy(userId, workPolicyId);
-            
-            return ResponseEntity.ok(ApiResponse.success("근무정책 업데이트 성공", updatedUser));
-            
-        } catch (Exception e) {
-            log.error("근무정책 업데이트 실패: userId={}, error={}", userId, e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("근무정책 업데이트 실패: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success("사용자 정보 업데이트 성공", userResponseDto));
     }
 
-    @PatchMapping("/{userId}/work-policy")
-    public ResponseEntity<ApiResponse<User>> patchUserWorkPolicy(
-            @PathVariable Long userId,
-            @RequestBody Map<String, Object> request) {
-        
-        log.info("사용자 근무정책 부분 업데이트 요청: userId={}, workPolicyId={}", 
-                userId, request.get("workPolicyId"));
-        
-        try {
-            Long workPolicyId = Long.valueOf(request.get("workPolicyId").toString());
-            User updatedUser = userService.updateUserWorkPolicy(userId, workPolicyId);
-            
-            return ResponseEntity.ok(ApiResponse.success("근무정책 부분 업데이트 성공", updatedUser));
-            
-        } catch (Exception e) {
-            log.error("근무정책 부분 업데이트 실패: userId={}, error={}", userId, e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("근무정책 부분 업데이트 실패: " + e.getMessage()));
-        }
-    }
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long userId) {
+        log.info("사용자 삭제 요청: userId={}", userId);
 
-    @GetMapping("/{userId}/work-policy")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getUserWorkPolicy(@PathVariable Long userId) {
-        log.info("사용자 근무정책 조회 요청: userId={}", userId);
-        
-        try {
-            Map<String, Object> workPolicy = workPolicyIntegrationService.getUserWorkPolicy(userId);
-            return ResponseEntity.ok(ApiResponse.success("근무정책 조회 성공", workPolicy));
-            
-        } catch (Exception e) {
-            log.error("근무정책 조회 실패: userId={}, error={}", userId, e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("근무정책 조회 실패: " + e.getMessage()));
-        }
+        userService.deleteUser(userId);
+
+        return ResponseEntity.ok(ApiResponse.success("사용자 삭제 성공", null));
     }
 }

@@ -18,6 +18,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.HashMap;
@@ -36,7 +38,7 @@ public class AuthController {
     private final TokenBlacklistService tokenBlacklistService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<TokenResponse>> login(@RequestBody LoginRequestDto loginDto) {
+    public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequestDto loginDto) {
         log.info(" [Auth Controller] /login 요청 - email: {}", loginDto.getEmail());
         TokenResponse tokenResponse = userService.login(loginDto);
         return ResponseEntity.ok(ApiResponse.success("로그인이 성공했습니다.", tokenResponse));
@@ -65,7 +67,12 @@ public class AuthController {
             log.warn("⚠ [Auth Controller] Authorization 헤더가 없거나 형식이 잘못됨 - userId: {}", userId);
         }
 
-        userService.logoutUser(accessToken);
+        // RefreshToken을 DB에서 가져오기
+        String refreshToken = refreshTokenRepository.findByUserId(userId)
+                .map(RefreshToken::getToken)
+                .orElse(null);
+
+        userService.logout(userId, accessToken, refreshToken);
 
         Map<String, String> result = new HashMap<>();
         result.put("userId", String.valueOf(userId));
