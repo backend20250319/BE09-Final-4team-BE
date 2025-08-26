@@ -2,27 +2,34 @@ package com.hermes.userservice.service;
 
 import com.hermes.auth.JwtTokenProvider;
 import com.hermes.auth.context.Role;
-import com.hermes.auth.context.UserInfo;
 import com.hermes.auth.service.TokenBlacklistService;
+import com.hermes.auth.dto.TokenResponse;
 import com.hermes.userservice.dto.LoginRequestDto;
+import com.hermes.userservice.dto.UserCreateDto;
+import com.hermes.userservice.dto.UserResponseDto;
+import com.hermes.userservice.dto.UserUpdateDto;
+import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.entity.User;
+import com.hermes.userservice.exception.DuplicateEmailException;
 import com.hermes.userservice.exception.InvalidCredentialsException;
 import com.hermes.userservice.exception.UserNotFoundException;
-import com.hermes.auth.dto.TokenResponse;
-import com.hermes.userservice.entity.RefreshToken;
+import com.hermes.userservice.mapper.UserMapper;
 import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserService {
 
     private final UserRepository userRepository;
@@ -30,22 +37,18 @@ public class UserService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenBlacklistService tokenBlacklistService;
+    private final UserMapper userMapper;
 
     public TokenResponse login(LoginRequestDto loginDto) {
-
         User user = userRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("해당 이메일로 등록된 사용자가 없습니다."));
 
         if (!passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
-            // 기존 평문 비밀번호와 비교
-            if (!loginDto.getPassword().equals(user.getPassword())) {
-                throw new InvalidCredentialsException("비밀번호가 일치하지 않습니다.");
-            }
-
-            String encodedPassword = passwordEncoder.encode(loginDto.getPassword());
-            user.setPassword(encodedPassword);
-            userRepository.save(user);
+            throw new InvalidCredentialsException("비밀번호가 일치하지 않습니다.");
         }
+
+        user.updateLastLogin();
+        userRepository.save(user);
 
         Role userRole = user.getIsAdmin() ? Role.ADMIN : Role.USER;
         String accessToken = jwtTokenProvider.createToken(user.getEmail(), user.getId(), userRole);
@@ -62,82 +65,114 @@ public class UserService {
         return new TokenResponse(accessToken, refreshToken);
     }
 
-    public void logoutUser(String token) {
-        log.info("로그아웃 시작 - 토큰: {}", token != null ? token.substring(0, Math.min(20, token.length())) + "..." : "null");
-        
-        try {
-            UserInfo userInfo = jwtTokenProvider.getUserInfoFromToken(token);
-            if (userInfo != null) {
-                log.info("사용자 정보 추출 성공: {} (ID: {})", userInfo.getEmail(), userInfo.getUserId());
-                
-                Optional<RefreshToken> tokenOpt = refreshTokenRepository.findByUserId(userInfo.getUserId());
-                if (tokenOpt.isPresent()) {
-                    refreshTokenRepository.delete(tokenOpt.get());
-                    log.info("사용자 {}의 Refresh Token을 삭제했습니다.", userInfo.getEmail());
-                }
-                
-                tokenBlacklistService.logoutUser(userInfo.getUserId(), token, null);
-                log.info("사용자 {}의 Access Token을 블랙리스트에 추가했습니다.", userInfo.getEmail());
-                
-            } else {
-                log.warn("토큰에서 사용자 정보를 추출할 수 없습니다.");
-            }
-        } catch (Exception e) {
-            log.error("로그아웃 처리 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("로그아웃 처리 중 오류가 발생했습니다: " + e.getMessage());
-        }
-        
-        log.info("사용자 로그아웃 완료");
-    }
-
     public void logout(Long userId, String accessToken, String refreshToken) {
-        log.info(" [User Service] 로그아웃 처리 시작 - userId: {}", userId);
+        log.info("[User Service] 로그아웃 처리 시작 - userId: {}", userId);
 
         try {
-
             refreshTokenRepository.deleteById(userId);
-            log.info("[User Service] RefreshToken 삭제 완료 - userId: {}", userId);
-
             tokenBlacklistService.logoutUser(userId, accessToken, refreshToken);
-            log.info(" [User Service] 모든 토큰 완전 삭제 완료 - userId: {}", userId);
-
+            log.info("[User Service] 모든 토큰 완전 삭제 완료 - userId: {}", userId);
         } catch (Exception e) {
             log.error("[User Service] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage(), e);
             throw new RuntimeException("로그아웃 처리 중 오류가 발생했습니다.", e);
         }
     }
 
-    public void logout(Long userId) {
-        logout(userId, null, null);
-    }
-
-    public void logout(Long userId, String accessToken) {
-        logout(userId, accessToken, null);
-    }
-
+    @Transactional(readOnly = true)
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
     }
 
-    public User updateUserWorkPolicy(Long userId, Long workPolicyId) {
-        User user = getUserById(userId);
-        user.setWorkPolicyId(workPolicyId);
+    public User createUser(UserCreateDto userCreateDto) {
+        if (userRepository.findByEmail(userCreateDto.getEmail()).isPresent()) {
+            throw new DuplicateEmailException("이미 존재하는 이메일입니다: " + userCreateDto.getEmail());
+        }
+
+        User user = userMapper.toEntity(userCreateDto);
         return userRepository.save(user);
     }
 
-    public User createUser(String name, String email, String password, Long workPolicyId) {
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("이미 존재하는 이메일입니다: " + email);
+    public User updateUser(Long userId, UserUpdateDto userUpdateDto) {
+        User user = getUserById(userId);
+
+        if (userUpdateDto.getEmail() != null && !Objects.equals(user.getEmail(), userUpdateDto.getEmail())) {
+            if (userRepository.findByEmail(userUpdateDto.getEmail()).isPresent()) {
+                throw new DuplicateEmailException("이미 존재하는 이메일입니다: " + userUpdateDto.getEmail());
+            }
+            user.updateEmail(userUpdateDto.getEmail());
         }
-        
-        User user = new User();
-        user.setName(name);
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(password));
-        user.setWorkPolicyId(workPolicyId);
-        user.setIsAdmin(false); // 기본값은 일반 사용자임 ㅎㅎㅎ
-        
+
+        if (userUpdateDto.getPassword() != null) {
+            user.updatePassword(passwordEncoder.encode(userUpdateDto.getPassword()));
+        }
+
+        if (userUpdateDto.getName() != null) {
+            user.updateName(userUpdateDto.getName());
+        }
+        if (userUpdateDto.getPhone() != null) {
+            user.updatePhone(userUpdateDto.getPhone());
+        }
+        if (userUpdateDto.getAddress() != null) {
+            user.updateAddress(userUpdateDto.getAddress());
+        }
+        if (userUpdateDto.getProfileImageUrl() != null) {
+            user.updateProfileImageUrl(userUpdateDto.getProfileImageUrl());
+        }
+        if (userUpdateDto.getSelfIntroduction() != null) {
+            user.updateSelfIntroduction(userUpdateDto.getSelfIntroduction());
+        }
+
+        if (userUpdateDto.getEmploymentType() != null) {
+            user.updateEmploymentType(userUpdateDto.getEmploymentType());
+        }
+        if (userUpdateDto.getRank() != null) {
+            user.updateRank(userUpdateDto.getRank());
+        }
+        if (userUpdateDto.getPosition() != null) {
+            user.updatePosition(userUpdateDto.getPosition());
+        }
+        if (userUpdateDto.getJob() != null) {
+            user.updateJob(userUpdateDto.getJob());
+        }
+        if (userUpdateDto.getRole() != null) {
+            user.updateRole(userUpdateDto.getRole());
+        }
+        if (userUpdateDto.getWorkPolicyId() != null) {
+            user.updateWorkPolicyId(userUpdateDto.getWorkPolicyId());
+        }
+
+        if (userUpdateDto.getIsAdmin() != null) {
+            user.updateAdminStatus(userUpdateDto.getIsAdmin());
+        }
+        if (userUpdateDto.getNeedsPasswordReset() != null) {
+            user.updatePasswordResetFlag(userUpdateDto.getNeedsPasswordReset());
+        }
+
+        return userRepository.save(user);
+    }
+
+    public void deleteUser(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException("삭제할 사용자를 찾을 수 없습니다: " + userId);
+        }
+        userRepository.deleteById(userId);
+        log.info("사용자 삭제 완료: userId={}", userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    @Deprecated
+    public UserResponseDto convertToUserResponseDto(User user) {
+        return userMapper.toResponseDto(user);
+    }
+
+    public User updateUserWorkPolicy(Long userId, Long workPolicyId) {
+        User user = getUserById(userId);
+        user.updateWorkPolicyId(workPolicyId);
         return userRepository.save(user);
     }
 }
