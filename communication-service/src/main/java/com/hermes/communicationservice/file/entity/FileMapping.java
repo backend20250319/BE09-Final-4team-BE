@@ -21,6 +21,7 @@ public class FileMapping {
   private String originalName;
 
   // 실제 저장된 UUID 파일명
-  @Column(nullable = false, unique = true)
+  @Column(nullable = false)
   private String storedName;
+
 }
