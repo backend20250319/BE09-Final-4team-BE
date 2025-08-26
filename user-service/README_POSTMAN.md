@@ -11,7 +11,7 @@
 
 ### 1. 로그인
 ```http
-POST http://localhost:8081/api/v1/auth/login
+POST http://localhost:8081/api/auth/login
 Content-Type: application/json
 
 {
@@ -34,7 +34,7 @@ Content-Type: application/json
 
 ### 2. 로그아웃
 ```http
-POST http://localhost:8081/api/v1/auth/logout
+POST http://localhost:8081/api/auth/logout
 Authorization: Bearer {accessToken}
 ```
 
@@ -53,7 +53,7 @@ Authorization: Bearer {accessToken}
 
 ### 3. 토큰 갱신
 ```http
-POST http://localhost:8081/api/v1/auth/refresh
+POST http://localhost:8081/api/auth/refresh
 Authorization: Bearer {accessToken}
 Content-Type: application/json
 
@@ -80,7 +80,7 @@ Content-Type: application/json
 
 ### 1. 사용자 생성 (Create)
 ```http
-POST http://localhost:8081/api/v1/users
+POST http://localhost:8081/api/users
 Content-Type: application/json
 
 {
@@ -123,7 +123,7 @@ Content-Type: application/json
 
 ### 2. 전체 사용자 목록 조회 (Read All)
 ```http
-GET http://localhost:8081/api/v1/users
+GET http://localhost:8081/api/users
 ```
 
 **예상 응답 (200 OK):**
@@ -159,7 +159,7 @@ GET http://localhost:8081/api/v1/users
 
 ### 3. 개별 사용자 조회 (Read One)
 ```http
-GET http://localhost:8081/api/v1/users/1
+GET http://localhost:8081/api/users/1
 ```
 
 **예상 응답 (200 OK):**
@@ -200,7 +200,7 @@ GET http://localhost:8081/api/v1/users/1
 
 ### 4. 사용자 정보 수정 (Update)
 ```http
-PATCH http://localhost:8081/api/v1/users/1
+PATCH http://localhost:8081/api/users/1
 Content-Type: application/json
 
 {
@@ -241,7 +241,7 @@ Content-Type: application/json
 
 ### 5. 사용자 삭제 (Delete)
 ```http
-DELETE http://localhost:8081/api/v1/users/1
+DELETE http://localhost:8081/api/users/1
 ```
 
 **예상 응답 (200 OK):**
@@ -258,21 +258,21 @@ DELETE http://localhost:8081/api/v1/users/1
 ## 🧪 테스트 시나리오
 
 ### 시나리오 1: 기본 CRUD 테스트
-1. **사용자 생성** → POST `/api/v1/users`
-2. **사용자 목록 조회** → GET `/api/v1/users`
-3. **개별 사용자 조회** → GET `/api/v1/users/{id}`
-4. **사용자 정보 수정** → PATCH `/api/v1/users/{id}`
-5. **사용자 삭제** → DELETE `/api/v1/users/{id}`
+1. **사용자 생성** → POST `/api/users`
+2. **사용자 목록 조회** → GET `/api/users`
+3. **개별 사용자 조회** → GET `/api/users/{id}`
+4. **사용자 정보 수정** → PATCH `/api/users/{id}`
+5. **사용자 삭제** → DELETE `/api/users/{id}`
 
 ### 시나리오 2: 인증 테스트
-1. **로그인** → POST `/api/v1/auth/login`
-2. **토큰 갱신** → POST `/api/v1/auth/refresh`
-3. **로그아웃** → POST `/api/v1/auth/logout`
+1. **로그인** → POST `/api/auth/login`
+2. **토큰 갱신** → POST `/api/auth/refresh`
+3. **로그아웃** → POST `/api/auth/logout`
 
 ### 시나리오 3: 에러 케이스 테스트
-1. **존재하지 않는 사용자 조회** → GET `/api/v1/users/999`
-2. **중복 이메일로 사용자 생성** → POST `/api/v1/users`
-3. **잘못된 비밀번호로 로그인** → POST `/api/v1/auth/login`
+1. **존재하지 않는 사용자 조회** → GET `/api/users/999`
+2. **중복 이메일로 사용자 생성** → POST `/api/users`
+3. **잘못된 비밀번호로 로그인** → POST `/api/auth/login`
 
 ---
 

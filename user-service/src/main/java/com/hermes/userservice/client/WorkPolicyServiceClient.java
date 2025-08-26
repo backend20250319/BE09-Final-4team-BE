@@ -9,15 +9,15 @@ import org.springframework.web.bind.annotation.*;
 @FeignClient(name = "workpolicy-service", fallback = WorkPolicyServiceClientFallback.class)
 public interface WorkPolicyServiceClient {
 
-    @GetMapping("/api/v1/work-policies/{id}")
+    @GetMapping("/api/work-policies/{id}")
     WorkPolicyResponseDto getWorkPolicy(@PathVariable("id") Long id);
 
-    @PostMapping("/api/v1/work-policies")
+    @PostMapping("/api/work-policies")
     WorkPolicyResponseDto createWorkPolicy(@RequestBody WorkPolicyRequestDto request);
 
-    @PutMapping("/api/v1/work-policies/{id}")
+    @PutMapping("/api/work-policies/{id}")
     WorkPolicyResponseDto updateWorkPolicy(@PathVariable("id") Long id, @RequestBody WorkPolicyUpdateDto request);
 
-    @DeleteMapping("/api/v1/work-policies/{id}")
+    @DeleteMapping("/api/work-policies/{id}")
     void deleteWorkPolicy(@PathVariable("id") Long id);
 }
