@@ -13,7 +13,7 @@ include 'user-service'
 include 'org-service'
 include 'news-crawler-service'
 include 'companyinfo-service'
-include 'hr-management-service'
+include 'attendance-service'
 
 include 'tenant-service'
 include 'approval-service'
