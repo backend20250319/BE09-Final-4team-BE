@@ -12,7 +12,7 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
 
   @Query("select new com.hermes.communicationservice.announcement.dto.AnnouncementSummaryDto(" +
       "a.id, a.title, a.displayAuthor, a.views, size(a.comments), a.createdAt) " +
-      "from Announcement a")
+      "from Announcement a" + " order by a.id asc")
   List<AnnouncementSummaryDto> findAllAnnouncementSummary();
 
   @Modifying
