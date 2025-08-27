@@ -1,7 +1,6 @@
 package com.hermes.newscrawler.util;
 
 import com.hermes.newscrawler.dto.NewsDetail;
-import com.hermes.newscrawler.entity.NewsArticle;
 import com.hermes.newscrawler.service.NewsArticleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,11 +17,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -32,82 +27,67 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 @Slf4j
 public class DatabaseCrawler implements CommandLineRunner {
-    
+
     private final NewsArticleService newsArticleService;
 
     private final Map<String, List<NewsDetail>> sessionNewsMap = new ConcurrentHashMap<>();
-    
+
     @Override
     public void run(String... args) throws Exception {
-        log.info("=== 서비스 시작 시 초기 크롤링 실행 ===");
         try {
+            newsArticleService.deleteAllNews();
             String initialSessionId = "initial-" + System.currentTimeMillis();
             performCrawlingForLogin(initialSessionId);
-            log.info(" 초기 크롤링 완료");
         } catch (Exception e) {
-            log.error(" 초기 크롤링 실패: {}", e.getMessage(), e);
-            // ✅ 서비스 시작 실패를 방지하기 위해 예외를 다시 던지지 않음
+            log.error("초기 크롤링 실패: {}", e.getMessage(), e);
         }
     }
 
     private static final Map<Integer, String> CATEGORIES = Map.of(
-        105, "IT/과학",
-        100, "정치",
-        101, "경제", 
-        102, "사회",
-        103, "생활/문화",
-        104, "세계"
+            105, "IT/과학",
+            100, "정치",
+            101, "경제",
+            102, "사회",
+            103, "생활/문화",
+            104, "세계"
     );
 
     public List<NewsDetail> performCrawlingForLogin(String sessionId) throws Exception {
-        log.info("=== 로그인 시 뉴스 크롤링 시작 - Session: {} ===", sessionId);
-
         ChromeOptions options = createChromeOptions();
-        
         WebDriver driver = new ChromeDriver(options);
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(3));
-        
-        int targetCountPerCategory = 2;
-        List<NewsDetail> completeNewsList = new ArrayList<>();
-        
-        try {
-            log.info("=== 네이버 뉴스 전체 카테고리 크롤링 시작 (최대 10개) ===");
 
+        int targetCountPerCategory = 2;
+        int maxTotalArticles = 12;
+        List<NewsDetail> completeNewsList = new ArrayList<>();
+
+        try {
             for (Map.Entry<Integer, String> category : CATEGORIES.entrySet()) {
                 int categoryId = category.getKey();
                 String categoryName = category.getValue();
 
-                if (completeNewsList.size() >= 10) {
-                    log.info(" 최대 10개 수집 완료!");
+                if (completeNewsList.size() >= maxTotalArticles) {
                     break;
                 }
-                
-                log.info("\n [{}] {} 카테고리 크롤링 시작", categoryId, categoryName);
-                
+
                 List<NewsDetail> categoryNews = crawlCategory(driver, wait, categoryId, categoryName, targetCountPerCategory);
                 completeNewsList.addAll(categoryNews);
-                
-                log.info(" [{}] 카테고리 완료: {}개 수집", categoryName, categoryNews.size());
             }
-            
-            log.info("\n 전체 카테고리 크롤링 완료!");
-            log.info("총 수집된 기사 수: {}", completeNewsList.size());
+
+            if (completeNewsList.size() > maxTotalArticles) {
+                completeNewsList = completeNewsList.subList(0, maxTotalArticles);
+            }
 
             sessionNewsMap.put(sessionId, completeNewsList);
-            log.info(" 세션별 뉴스 데이터 메모리 저장 완료 - Session: {}", sessionId);
 
             try {
-                List<NewsArticle> savedArticles = newsArticleService.saveNewsArticles(completeNewsList);
-                log.info(" 데이터베이스 저장 완료: {}개 기사", savedArticles.size());
+                newsArticleService.saveNewsArticles(completeNewsList);
             } catch (Exception e) {
-                log.error(" 데이터베이스 저장 실패: {}", e.getMessage(), e);
+                log.error("데이터베이스 저장 실패: {}", e.getMessage(), e);
             }
 
-            saveToCsv(completeNewsList, sessionId);
-            log.info(" CSV 저장 완료");
-            
             return completeNewsList;
-            
+
         } catch (Exception e) {
             log.error("크롤링 중 오류 발생", e);
             throw e;
@@ -123,72 +103,13 @@ public class DatabaseCrawler implements CommandLineRunner {
     }
 
     public void clearSessionData(String sessionId) {
-        List<NewsDetail> removed = sessionNewsMap.remove(sessionId);
-        if (removed != null) {
-            log.info(" 세션 데이터 삭제 완료 - Session: {}, 삭제된 뉴스: {}개", sessionId, removed.size());
-        }
+        sessionNewsMap.remove(sessionId);
     }
 
     public void clearAllSessionData() {
-        int totalSessions = sessionNewsMap.size();
         sessionNewsMap.clear();
-        log.info(" 모든 세션 데이터 삭제 완료 - 총 세션: {}개", totalSessions);
     }
 
-    private void saveToCsv(List<NewsDetail> newsList, String sessionId) {
-        try {
-            DateTimeFormatter fileNameFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss", Locale.ENGLISH);
-            String formattedTime = LocalDateTime.now().format(fileNameFormatter);
-            String fileName = "naver_news_session_" + sessionId + "_" + formattedTime + ".csv";
-
-            File directory = new File("news-crawler-service/src/main/resources/static");
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-            File file = new File(directory, fileName);
-            
-            try (
-                FileOutputStream fos = new FileOutputStream(file, false);
-                OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
-                BufferedWriter bw = new BufferedWriter(osw);
-                PrintWriter writer = new PrintWriter(bw)
-            ) {
-                writer.println("\"category_id\",\"category_name\",\"press\",\"title\",\"content\",\"reporter\",\"date\",\"link\",\"timestamp\",\"session_id\"");
-                
-                DateTimeFormatter timestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-                
-                for (NewsDetail detail : newsList) {
-                    String timestamp = LocalDateTime.now().format(timestampFormatter);
-                    writer.printf("\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%n",
-                            detail.getCategoryId(),
-                            detail.getCategoryName(),
-                            escape(detail.getPress()),
-                            escape(detail.getTitle()),
-                            escape(detail.getContent()),
-                            escape(detail.getReporter()),
-                            escape(detail.getDate()),
-                            escape(detail.getLink()),
-                            timestamp,
-                            sessionId);
-                }
-                
-                log.info("CSV 저장 완료: {}", file.getAbsolutePath());
-                
-            } catch (Exception e) {
-                log.error("CSV 저장 실패: {}", e.getMessage());
-            }
-            
-        } catch (Exception e) {
-            log.error("CSV 저장 중 오류 발생: {}", e.getMessage());
-        }
-    }
-
-    private String escape(String text) {
-        if (text == null) return "";
-        return text.replace("\"", "\"\"");
-    }
-    
-    // Chrome 옵션 설정 메서드 (설정 외부화)
     private ChromeOptions createChromeOptions() {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless");
@@ -207,29 +128,27 @@ public class DatabaseCrawler implements CommandLineRunner {
     private List<NewsDetail> crawlCategory(WebDriver driver, WebDriverWait wait, int categoryId, String categoryName, int targetCount) {
         List<NewsDetail> categoryNews = new ArrayList<>();
         Set<String> collectedLinks = new HashSet<>();
-        
+
         try {
             String categoryUrl = "https://news.naver.com/section/" + categoryId;
             driver.get(categoryUrl);
             Thread.sleep(1000);
-            
+
             while (collectedLinks.size() < targetCount) {
                 List<WebElement> articles = driver.findElements(
-                    By.cssSelector("#newsct > div.section_latest > div > div.section_latest_article._CONTENT_LIST._PERSIST_META > div > ul > li")
+                        By.cssSelector("#newsct > div.section_latest > div > div.section_latest_article._CONTENT_LIST._PERSIST_META > div > ul > li")
                 );
-                
+
                 for (WebElement article : articles) {
                     if (collectedLinks.size() >= targetCount) break;
-                    
+
                     try {
                         NewsDetail detail = extractArticleDetail(article, categoryId, categoryName);
                         if (detail != null && !collectedLinks.contains(detail.getLink())) {
                             collectedLinks.add(detail.getLink());
                             categoryNews.add(detail);
-                            log.debug(" [{}] {} - {}", categoryId, categoryName, detail.getTitle());
                         }
                     } catch (Exception e) {
-                        log.warn(" 기사 파싱 실패: {}", e.getMessage());
                     }
                 }
 
@@ -237,11 +156,10 @@ public class DatabaseCrawler implements CommandLineRunner {
                     break;
                 }
             }
-            
+
         } catch (Exception e) {
-            log.error(" [{}] {} 카테고리 크롤링 실패: {}", categoryId, categoryName, e.getMessage());
         }
-        
+
         return categoryNews;
     }
 
@@ -249,7 +167,7 @@ public class DatabaseCrawler implements CommandLineRunner {
         try {
             WebElement titleElement = article.findElement(By.cssSelector("div.sa_text > a"));
             WebElement pressElement = article.findElement(By.cssSelector("div.sa_text_info > div.sa_text_info_left > div.sa_text_press"));
-            
+
             String title = titleElement.getText();
             String link = titleElement.getAttribute("href");
             String press = pressElement.getText();
@@ -259,18 +177,17 @@ public class DatabaseCrawler implements CommandLineRunner {
             }
 
             return crawlNewsDetailFast(link, title, press, categoryName, categoryId);
-            
+
         } catch (Exception e) {
-            log.warn("⚠ 기사 상세 정보 추출 실패: {}", e.getMessage());
             return null;
         }
     }
 
     private boolean isAllowedPress(String press) {
         Set<String> allowedPresses = Set.of(
-            "연합뉴스", "동아일보", "중앙일보", "한겨레", "경향신문", 
-            "MBC", "파이낸셜뉴스", "국민일보", "서울경제", "한국일보",
-            "헤럴드경제", "YTN", "문화일보", "오마이뉴스", "SBS", "KBS"
+                "연합뉴스", "동아일보", "중앙일보", "한겨레", "경향신문",
+                "MBC", "파이낸셜뉴스", "국민일보", "서울경제", "한국일보",
+                "헤럴드경제", "YTN", "문화일보", "오마이뉴스", "SBS", "KBS"
         );
         return allowedPresses.stream().anyMatch(p -> p.equalsIgnoreCase(press.trim()));
     }
@@ -278,13 +195,12 @@ public class DatabaseCrawler implements CommandLineRunner {
     private boolean clickMoreButton(WebDriver driver, WebDriverWait wait) {
         try {
             WebElement moreBtn = wait.until(ExpectedConditions.elementToBeClickable(
-                By.cssSelector("#newsct > div.section_latest > div > div.section_more > a")
+                    By.cssSelector("#newsct > div.section_latest > div > div.section_more > a")
             ));
             moreBtn.click();
             Thread.sleep(500);
             return true;
         } catch (Exception e) {
-            log.debug("더보기 버튼 없음 또는 클릭 실패");
             return false;
         }
     }
@@ -312,18 +228,18 @@ public class DatabaseCrawler implements CommandLineRunner {
                 int searchWindowSize = 100;
                 int startIndex = Math.max(0, content.length() - searchWindowSize);
                 String searchArea = content.substring(startIndex);
-                
+
                 Pattern pattern = Pattern.compile("([가-힣]{2,5}\\s*(기자|특파원|객원기자|통신원))");
                 Matcher matcher = pattern.matcher(searchArea);
-                
+
                 String foundReporter = "";
                 int matchPosInSearchArea = -1;
-                
+
                 while (matcher.find()) {
                     foundReporter = matcher.group(1).trim();
                     matchPosInSearchArea = matcher.start();
                 }
-                
+
                 if (!foundReporter.isEmpty()) {
                     reporter = foundReporter;
                     int originalIndex = startIndex + matchPosInSearchArea;
@@ -336,11 +252,10 @@ public class DatabaseCrawler implements CommandLineRunner {
             if (dateElement != null) {
                 date = dateElement.attr("data-date-time");
             }
-            
+
             return new NewsDetail(title, content, reporter, date, url, press, categoryId, categoryName);
-            
+
         } catch (Exception e) {
-            log.error("상세 크롤링 실패: {}", e.getMessage());
             return null;
         }
     }
@@ -351,35 +266,29 @@ public class DatabaseCrawler implements CommandLineRunner {
         long freeMemory = runtime.freeMemory();
         long usedMemory = totalMemory - freeMemory;
         long maxMemory = runtime.maxMemory();
-        
-        log.info(" 메모리 사용량 - 사용: {}MB, 여유: {}MB, 최대: {}MB, 세션수: {}",
-            usedMemory / 1024 / 1024,
-            freeMemory / 1024 / 1024,
-            maxMemory / 1024 / 1024,
-            sessionNewsMap.size());
+
+        log.info("메모리 사용량 - 사용: {}MB, 여유: {}MB, 최대: {}MB, 세션수: {}",
+                usedMemory / 1024 / 1024,
+                freeMemory / 1024 / 1024,
+                maxMemory / 1024 / 1024,
+                sessionNewsMap.size());
     }
 
-    private final Map<String, Long> sessionTimestamps = new ConcurrentHashMap<>();
-    private static final long SESSION_TIMEOUT = 30 * 60 * 1000; // 30분
-    
     public void cleanupExpiredSessions() {
         long currentTime = System.currentTimeMillis();
-        List<String> expiredSessions = new ArrayList<>();
-        
-        sessionTimestamps.forEach((sessionId, timestamp) -> {
-            if (currentTime - timestamp > SESSION_TIMEOUT) {
-                expiredSessions.add(sessionId);
-            }
-        });
-        
-        expiredSessions.forEach(sessionId -> {
-            clearSessionData(sessionId);
-            sessionTimestamps.remove(sessionId);
-            log.info(" 만료된 세션 정리: {}", sessionId);
-        });
-        
-        if (!expiredSessions.isEmpty()) {
-            log.info(" 만료된 세션 {}개 정리 완료", expiredSessions.size());
-        }
+        long sessionTimeout = 24 * 60 * 60 * 1000;
+
+        List<String> expiredSessions = sessionNewsMap.keySet().stream()
+                .filter(sessionId -> {
+                    try {
+                        long sessionTime = Long.parseLong(sessionId.split("-")[1]);
+                        return currentTime - sessionTime > sessionTimeout;
+                    } catch (Exception e) {
+                        return true;
+                    }
+                })
+                .toList();
+
+        expiredSessions.forEach(sessionNewsMap::remove);
     }
 }

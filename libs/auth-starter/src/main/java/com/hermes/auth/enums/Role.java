@@ -1,4 +1,4 @@
-package com.hermes.auth.context;
+package com.hermes.auth.enums;
 
 import lombok.Getter;
 

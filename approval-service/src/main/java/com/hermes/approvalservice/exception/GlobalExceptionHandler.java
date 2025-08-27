@@ -1,7 +1,6 @@
 package com.hermes.approvalservice.exception;
 
 import com.hermes.api.common.ApiResult;
-import com.hermes.auth.context.AuthContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,19 +34,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResult.failure(e.getMessage()));
     }
 
-    @ExceptionHandler(AuthContext.AuthenticationRequiredException.class)
-    public ResponseEntity<ApiResult<Void>> handleAuthenticationRequiredException(AuthContext.AuthenticationRequiredException e) {
-        log.warn("Authentication required: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResult.rejected(e.getMessage()));
-    }
-
-    @ExceptionHandler(AuthContext.InsufficientPermissionException.class)
-    public ResponseEntity<ApiResult<Void>> handleInsufficientPermissionException(AuthContext.InsufficientPermissionException e) {
-        log.warn("Insufficient permission: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResult.rejected(e.getMessage()));
-    }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
     public ResponseEntity<ApiResult<Void>> handleValidationException(Exception e) {

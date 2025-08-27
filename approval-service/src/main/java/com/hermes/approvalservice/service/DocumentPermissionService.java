@@ -2,7 +2,8 @@ package com.hermes.approvalservice.service;
 
 import com.hermes.approvalservice.entity.ApprovalDocument;
 import com.hermes.approvalservice.entity.DocumentApprovalTarget;
-import com.hermes.auth.context.AuthContext;
+import com.hermes.auth.principal.UserPrincipal;
+import com.hermes.auth.enums.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -10,14 +11,14 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class DocumentPermissionService {
 
-    public boolean canViewDocument(ApprovalDocument document, Long userId) {
+    public boolean canViewDocument(ApprovalDocument document, Long userId, UserPrincipal user) {
         // 작성자는 항상 조회 가능
         if (document.getAuthorId().equals(userId)) {
             return true;
         }
 
         // 관리자는 항상 조회 가능
-        if (AuthContext.isCurrentUserAdmin()) {
+        if (user.getRole() == Role.ADMIN) {
             return true;
         }
 
@@ -29,12 +30,22 @@ public class DocumentPermissionService {
                 .anyMatch(target -> isTargetUser(target, userId));
     }
 
-    public boolean canEditDocument(ApprovalDocument document, Long userId) {
+    public boolean canEditDocument(ApprovalDocument document, Long userId, UserPrincipal user) {
+        // 관리자는 항상 수정 가능
+        if (user.getRole() == Role.ADMIN) {
+            return true;
+        }
+        
         // 작성자만 수정 가능 (임시저장 상태일 때)
         return document.getAuthorId().equals(userId);
     }
 
-    public boolean canApproveDocument(ApprovalDocument document, Long userId, Integer stageOrder) {
+    public boolean canApproveDocument(ApprovalDocument document, Long userId, Integer stageOrder, UserPrincipal user) {
+        // 관리자는 항상 승인 가능
+        if (user.getRole() == Role.ADMIN) {
+            return true;
+        }
+        
         // 해당 단계의 승인 대상자인지 확인
         return document.getApprovalStages().stream()
                 .filter(stage -> stage.getStageOrder().equals(stageOrder))

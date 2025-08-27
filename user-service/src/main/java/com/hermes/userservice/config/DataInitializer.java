@@ -2,7 +2,7 @@
 //
 //import com.hermes.userservice.entity.User;
 //import com.hermes.userservice.repository.UserRepository;
-//import com.hermes.auth.context.Role;
+//import com.hermes.auth.enums.Role;
 //import lombok.RequiredArgsConstructor;
 //import lombok.extern.slf4j.Slf4j;
 //import org.springframework.boot.CommandLineRunner;

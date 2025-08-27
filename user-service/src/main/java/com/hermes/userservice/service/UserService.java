@@ -1,8 +1,6 @@
 package com.hermes.userservice.service;
 
-import com.hermes.auth.JwtTokenProvider;
-import com.hermes.auth.context.Role;
-import com.hermes.auth.service.TokenBlacklistService;
+import com.hermes.auth.enums.Role;
 import com.hermes.auth.dto.TokenResponse;
 import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.dto.UserCreateDto;
@@ -33,7 +31,7 @@ import java.util.Objects;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtTokenService jwtTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenBlacklistService tokenBlacklistService;
@@ -51,14 +49,14 @@ public class UserService {
         userRepository.save(user);
 
         Role userRole = user.getIsAdmin() ? Role.ADMIN : Role.USER;
-        String accessToken = jwtTokenProvider.createToken(user.getEmail(), user.getId(), userRole);
-        String refreshToken = jwtTokenProvider.createRefreshToken(String.valueOf(user.getId()), user.getEmail());
+        String accessToken = jwtTokenService.createAccessToken(user.getEmail(), user.getId(), userRole, null);
+        String refreshToken = jwtTokenService.createRefreshToken(String.valueOf(user.getId()), user.getEmail());
 
         refreshTokenRepository.save(
                 RefreshToken.builder()
                         .userId(user.getId())
                         .token(refreshToken)
-                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenProvider.getRefreshExpiration() / 1000))
+                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenExpiration() / 1000))
                         .build()
         );
 
