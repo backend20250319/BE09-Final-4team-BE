@@ -5,6 +5,7 @@ include 'libs:events'
 include 'libs:mt-starter'
 include 'libs:api-common'
 include 'libs:ftp-starter'
+include 'libs:api-client:user-service-client'
 
 include 'config-server'
 include 'discovery-server'

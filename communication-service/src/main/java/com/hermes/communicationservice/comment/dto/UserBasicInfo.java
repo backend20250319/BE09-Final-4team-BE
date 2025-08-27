@@ -1,4 +1,4 @@
-package com.hermes.ftpstarter.dto;
+package com.hermes.communicationservice.comment.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FtpResponseDto {
-  private String originalName;
-  private String storedName;
-  private String url;
+public class UserBasicInfo {
+    private Long id;
+    private String name;
+    private String profileUrl;
 }

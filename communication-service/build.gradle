@@ -32,6 +32,7 @@ dependencies {
     // 모듈 의존성
     implementation project(':libs:ftp-starter')
     implementation project(':libs:api-common')
+    implementation project(':libs:api-client:user-service-client')
 
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -44,6 +45,7 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
     // Database
     runtimeOnly 'org.postgresql:postgresql'
@@ -51,6 +53,10 @@ dependencies {
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    
+    // MapStruct
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
     // 개발용
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
