@@ -30,24 +30,22 @@ dependencyManagement {
 }
 
 dependencies {
-    // 웹 및 데이터 관련
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    // Spring Cloud
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
-    // JWT 공통 모듈 사용
-    implementation project(":libs:auth-starter")
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
 
-    // 데이터베이스
     runtimeOnly 'mysql:mysql-connector-java:8.0.33'
 
-    // 크롤링 관련
     implementation 'org.jsoup:jsoup:1.17.2'
     implementation 'org.seleniumhq.selenium:selenium-java:4.20.0'
 
-    // 개발 도구
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 }
 
