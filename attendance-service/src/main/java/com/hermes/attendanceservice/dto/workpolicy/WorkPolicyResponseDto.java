@@ -44,4 +44,34 @@ public class WorkPolicyResponseDto {
     private Boolean isShiftWork;
     private Boolean isFlexibleWork;
     private Boolean isFixedWork;
+    
+    public static WorkPolicyResponseDto from(com.hermes.attendanceservice.entity.workpolicy.WorkPolicy workPolicy) {
+        return WorkPolicyResponseDto.builder()
+                .id(workPolicy.getId())
+                .name(workPolicy.getName())
+                .type(workPolicy.getType())
+                .workCycle(workPolicy.getWorkCycle())
+                .startDayOfWeek(workPolicy.getStartDayOfWeek())
+                .workCycleStartDay(workPolicy.getWorkCycleStartDay())
+                .workDays(workPolicy.getWorkDays())
+                .weeklyWorkingDays(workPolicy.getWeeklyWorkingDays())
+                .startTime(workPolicy.getStartTime())
+                .startTimeEnd(workPolicy.getStartTimeEnd())
+                .workHours(workPolicy.getWorkHours())
+                .workMinutes(workPolicy.getWorkMinutes())
+                .coreTimeStart(workPolicy.getCoreTimeStart())
+                .coreTimeEnd(workPolicy.getCoreTimeEnd())
+                .breakStartTime(workPolicy.getBreakStartTime())
+                .avgWorkTime(workPolicy.getAvgWorkTime())
+                .totalRequiredMinutes(workPolicy.getTotalRequiredMinutes())
+                .createdAt(workPolicy.getCreatedAt())
+                .updatedAt(workPolicy.getUpdatedAt())
+                .totalWorkMinutes(workPolicy.getTotalWorkMinutes())
+                .isCompliantWithLaborLaw(workPolicy.isCompliantWithLaborLaw())
+                .isOptionalWork(workPolicy.isOptionalWork())
+                .isShiftWork(workPolicy.isShiftWork())
+                .isFlexibleWork(workPolicy.isFlexibleWork())
+                .isFixedWork(workPolicy.isFixedWork())
+                .build();
+    }
 } 

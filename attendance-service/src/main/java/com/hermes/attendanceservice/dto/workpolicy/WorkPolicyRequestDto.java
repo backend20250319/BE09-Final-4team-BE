@@ -53,14 +53,14 @@ public class WorkPolicyRequestDto {
     @Max(value = 59, message = "근무 분은 59 이하여야 합니다.")
     private Integer workMinutes;
     
-    private LocalTime coreTimeStart; // 탄력 근무 용도
+    private LocalTime coreTimeStart; // 선택 근무 용도
     
-    private LocalTime coreTimeEnd; // 탄력 근무 용도
+    private LocalTime coreTimeEnd; // 선택 근무 용도
     
     @NotNull(message = "휴게 시작 시간은 필수입니다.")
     private LocalTime breakStartTime;
     
-    private LocalTime avgWorkTime; // 탄력 근무 용도
+    private LocalTime avgWorkTime; // 선택 근무 용도
     
     @NotNull(message = "총 필요 분은 필수입니다.")
     @Min(value = 1, message = "총 필요 분은 1 이상이어야 합니다.")

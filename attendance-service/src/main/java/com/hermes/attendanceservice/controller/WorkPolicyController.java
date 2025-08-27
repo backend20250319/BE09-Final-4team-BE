@@ -1,149 +1,94 @@
 package com.hermes.attendanceservice.controller;
 
-import com.hermes.attendanceservice.dto.workpolicy.*;
-import com.hermes.attendanceservice.service.WorkPolicyService;
 import com.hermes.api.common.ApiResult;
+import com.hermes.attendanceservice.dto.workpolicy.WorkPolicyRequestDto;
+import com.hermes.attendanceservice.dto.workpolicy.WorkPolicyResponseDto;
+import com.hermes.attendanceservice.entity.workpolicy.WorkPolicy;
+import com.hermes.attendanceservice.entity.workpolicy.WorkType;
+import com.hermes.attendanceservice.repository.WorkPolicyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
-@RestController
-@RequestMapping("/api/work-policies")
-@RequiredArgsConstructor
 @Slf4j
-@Validated
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/workpolicy")
 public class WorkPolicyController {
     
-    private final WorkPolicyService workPolicyService;
+    private final WorkPolicyRepository workPolicyRepository;
     
     /**
      * 근무 정책 생성
      */
     @PostMapping
-    public ApiResult<WorkPolicyResponseDto> createWorkPolicy(
-            @Valid @RequestBody WorkPolicyRequestDto requestDto) {
-        log.info("근무 정책 생성 요청: {}", requestDto.getName());
-        
+    public ApiResult<WorkPolicyResponseDto> createWorkPolicy(@Valid @RequestBody WorkPolicyRequestDto requestDto) {
         try {
-            WorkPolicyResponseDto responseDto = workPolicyService.createWorkPolicy(requestDto);
+            log.info("Creating work policy: {}", requestDto.getName());
             
-            return ApiResult.success("근무 정책이 성공적으로 생성되었습니다.", responseDto);
-                            
-        } catch (IllegalArgumentException e) {
-            log.warn("근무 정책 생성 실패: {}", e.getMessage());
-            return ApiResult.failure(e.getMessage());
+            // OPTIONAL 타입일 때 코어 타임 검증
+            if (requestDto.getType() == WorkType.OPTIONAL) {
+                if (requestDto.getCoreTimeStart() == null || requestDto.getCoreTimeEnd() == null) {
+                    return ApiResult.failure("선택 근무(OPTIONAL) 타입은 코어 타임 시작/종료 시간이 필수입니다.");
+                }
+                if (requestDto.getCoreTimeStart().isAfter(requestDto.getCoreTimeEnd())) {
+                    return ApiResult.failure("코어 타임 시작 시간은 종료 시간보다 빨라야 합니다.");
+                }
+            }
+            
+            WorkPolicy workPolicy = WorkPolicy.builder()
+                    .name(requestDto.getName())
+                    .type(requestDto.getType())
+                    .workCycle(requestDto.getWorkCycle())
+                    .startDayOfWeek(requestDto.getStartDayOfWeek())
+                    .workCycleStartDay(requestDto.getWorkCycleStartDay())
+                    .workDays(requestDto.getWorkDays())
+                    .weeklyWorkingDays(requestDto.getWeeklyWorkingDays())
+                    .startTime(requestDto.getStartTime())
+                    .startTimeEnd(requestDto.getStartTimeEnd())
+                    .workHours(requestDto.getWorkHours())
+                    .workMinutes(requestDto.getWorkMinutes())
+                    .coreTimeStart(requestDto.getCoreTimeStart())
+                    .coreTimeEnd(requestDto.getCoreTimeEnd())
+                    .breakStartTime(requestDto.getBreakStartTime())
+                    .avgWorkTime(requestDto.getAvgWorkTime())
+                    .totalRequiredMinutes(requestDto.getTotalRequiredMinutes())
+                    .build();
+            
+            WorkPolicy savedWorkPolicy = workPolicyRepository.save(workPolicy);
+            WorkPolicyResponseDto response = WorkPolicyResponseDto.from(savedWorkPolicy);
+            
+            return ApiResult.success("근무 정책이 성공적으로 생성되었습니다.", response);
+            
         } catch (Exception e) {
-            log.error("근무 정책 생성 예외 발생", e);
-            return ApiResult.failure("서버 내부 오류가 발생했습니다.");
+            log.error("Error creating work policy: {}", requestDto.getName(), e);
+            return ApiResult.failure("근무 정책 생성에 실패했습니다: " + e.getMessage());
         }
     }
     
     /**
-     * 근무 정책 조회 (ID로)
+     * WorkPolicy ID로 근무 정책 정보 조회
      */
-    @GetMapping("/{id}")
-    public ApiResult<WorkPolicyResponseDto> getWorkPolicyById(@PathVariable Long id) {
-        log.info("근무 정책 조회 요청: ID={}", id);
-        
+    @GetMapping("/{workPolicyId}")
+    public ApiResult<WorkPolicyResponseDto> getWorkPolicyById(@PathVariable Long workPolicyId) {
         try {
-            WorkPolicyResponseDto responseDto = workPolicyService.getWorkPolicyById(id);
+            log.info("Get work policy by id: {}", workPolicyId);
             
-            return ApiResult.success("근무 정책 조회 성공", responseDto);
-                            
-        } catch (IllegalArgumentException e) {
-            log.warn("근무 정책 조회 실패: {}", e.getMessage());
-            return ApiResult.failure("근무 정책을 찾을 수 없습니다.");
-        } catch (Exception e) {
-            log.error("근무 정책 조회 예외 발생", e);
-            return ApiResult.failure("서버 내부 오류가 발생했습니다.");
-        }
-    }
-    
-    /**
-     * 근무 정책 조회 (이름으로)
-     */
-    @GetMapping("/name/{name}")
-    public ApiResult<WorkPolicyResponseDto> getWorkPolicyByName(@PathVariable String name) {
-        log.info("근무 정책 조회 요청: 이름={}", name);
-        
-        try {
-            WorkPolicyResponseDto responseDto = workPolicyService.getWorkPolicyByName(name);
+            WorkPolicy workPolicy = workPolicyRepository.findById(workPolicyId)
+                    .orElse(null);
             
-            return ApiResult.success("근무 정책 조회 성공", responseDto);
-                            
-        } catch (IllegalArgumentException e) {
-            log.warn("근무 정책 조회 실패: {}", e.getMessage());
-            return ApiResult.failure("근무 정책을 찾을 수 없습니다.");
-        } catch (Exception e) {
-            log.error("근무 정책 조회 예외 발생", e);
-            return ApiResult.failure("서버 내부 오류가 발생했습니다.");
-        }
-    }
-    
-    /**
-     * 근무 정책 목록 조회 (페이징)
-     */
-    @GetMapping
-    public ApiResult<Page<WorkPolicyListResponseDto>> getWorkPolicyList(
-            @ModelAttribute WorkPolicySearchDto searchDto) {
-        log.info("근무 정책 목록 조회 요청: {}", searchDto);
-        
-        try {
-            Page<WorkPolicyListResponseDto> responseDto = workPolicyService.getWorkPolicyList(searchDto);
+            if (workPolicy == null) {
+                return ApiResult.failure("근무 정책을 찾을 수 없습니다: " + workPolicyId);
+            }
             
-            return ApiResult.success("근무 정책 목록 조회 성공", responseDto);
-                            
-        } catch (Exception e) {
-            log.error("근무 정책 목록 조회 예외 발생", e);
-            return ApiResult.failure("서버 내부 오류가 발생했습니다.");
-        }
-    }
-    
-    /**
-     * 근무 정책 수정
-     */
-    @PutMapping("/{id}")
-    public ApiResult<WorkPolicyResponseDto> updateWorkPolicy(
-            @PathVariable Long id,
-            @Valid @RequestBody WorkPolicyUpdateDto updateDto) {
-        log.info("근무 정책 수정 요청: ID={}", id);
-        
-        try {
-            WorkPolicyResponseDto responseDto = workPolicyService.updateWorkPolicy(id, updateDto);
+            WorkPolicyResponseDto response = WorkPolicyResponseDto.from(workPolicy);
+            return ApiResult.success("근무 정책 정보를 성공적으로 조회했습니다.", response);
             
-            return ApiResult.success("근무 정책이 성공적으로 수정되었습니다.", responseDto);
-                            
-        } catch (IllegalArgumentException e) {
-            log.warn("근무 정책 수정 실패: {}", e.getMessage());
-            return ApiResult.failure(e.getMessage());
         } catch (Exception e) {
-            log.error("근무 정책 수정 예외 발생", e);
-            return ApiResult.failure("서버 내부 오류가 발생했습니다.");
-        }
-    }
-    
-    /**
-     * 근무 정책 삭제
-     */
-    @DeleteMapping("/{id}")
-    public ApiResult<Void> deleteWorkPolicy(@PathVariable Long id) {
-        log.info("근무 정책 삭제 요청: ID={}", id);
-        
-        try {
-            workPolicyService.deleteWorkPolicy(id);
-            
-            return ApiResult.success("근무 정책이 성공적으로 삭제되었습니다.", null);
-                            
-        } catch (IllegalArgumentException e) {
-            log.warn("근무 정책 삭제 실패: {}", e.getMessage());
-            return ApiResult.failure(e.getMessage());
-        } catch (Exception e) {
-            log.error("근무 정책 삭제 예외 발생", e);
-            return ApiResult.failure("서버 내부 오류가 발생했습니다.");
+            log.error("Error getting work policy by id: {}", workPolicyId, e);
+            return ApiResult.failure("근무 정책 조회에 실패했습니다: " + e.getMessage());
         }
     }
 } 
