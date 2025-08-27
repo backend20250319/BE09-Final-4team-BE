@@ -61,55 +61,6 @@ public class WorkPolicyIntegrationService {
         }
     }
 
-    public WorkPolicyResponseDto createWorkPolicy(WorkPolicyRequestDto request) {
-        log.info("근무 정책 생성 요청: {}", request);
-        try {
-            ApiResult<WorkPolicyResponseDto> result = workPolicyServiceClient.createWorkPolicy(request);
-            if ("SUCCESS".equals(result.getStatus())) {
-                return result.getData();
-            } else {
-                log.error("근무 정책 생성 실패: {}", result.getMessage());
-                return null;
-            }
-        } catch (Exception e) {
-            log.error("근무 정책 생성 중 오류 발생", e);
-            return null;
-        }
-    }
-
-    public WorkPolicyResponseDto updateWorkPolicy(Long workPolicyId, WorkPolicyUpdateDto request) {
-        log.info("근무 정책 업데이트 요청: workPolicyId={}", workPolicyId);
-        try {
-            ApiResult<WorkPolicyResponseDto> result = workPolicyServiceClient.updateWorkPolicy(workPolicyId, request);
-            if ("SUCCESS".equals(result.getStatus())) {
-                return result.getData();
-            } else {
-                log.error("근무 정책 업데이트 실패: {}", result.getMessage());
-                return null;
-            }
-        } catch (Exception e) {
-            log.error("근무 정책 업데이트 중 오류 발생", e);
-            return null;
-        }
-    }
-
-    public void deleteWorkPolicy(Long workPolicyId) {
-        log.info("근무 정책 삭제 요청: workPolicyId={}", workPolicyId);
-        try {
-            ApiResult<Void> result = workPolicyServiceClient.deleteWorkPolicy(workPolicyId);
-            if ("SUCCESS".equals(result.getStatus())) {
-                log.info("근무 정책 삭제 성공: workPolicyId={}", workPolicyId);
-            } else {
-                log.error("근무 정책 삭제 실패: {}", result.getMessage());
-            }
-        } catch (FeignException.NotFound e) {
-            log.warn("삭제하려는 근무 정책을 찾을 수 없습니다. workPolicyId={}", workPolicyId, e);
-        } catch (FeignException e) {
-            log.error("근무 정책 삭제 중 FeignClient 오류 발생: workPolicyId={}, status={}", workPolicyId, e.status(), e);
-            throw new RuntimeException("근무 정책 삭제 중 오류가 발생했습니다.", e);
-        }
-    }
-
     @Transactional(readOnly = true)
     public List<User> getAllUsers() {
         return userRepository.findAll();
