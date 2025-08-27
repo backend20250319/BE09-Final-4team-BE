@@ -43,12 +43,12 @@ public class UserController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserResponseDto>>> getAllUsers() {
         log.info("전체 사용자 목록 조회 요청");
-        
+
         List<User> users = userService.getAllUsers();
         List<UserResponseDto> userResponseDtos = users.stream()
                 .map(userMapper::toResponseDto)
                 .collect(Collectors.toList());
-        
+
         return ResponseEntity.ok(ApiResponse.success("사용자 목록 조회 성공", userResponseDtos));
     }
 
@@ -78,7 +78,7 @@ public class UserController {
 
         User updatedUser = userService.updateUser(userId, userUpdateDto);
         UserResponseDto userResponseDto = userMapper.toResponseDto(updatedUser);
-        
+
         return ResponseEntity.ok(ApiResponse.success("사용자 정보 업데이트 성공", userResponseDto));
     }
 
