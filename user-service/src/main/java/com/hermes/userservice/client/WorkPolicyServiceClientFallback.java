@@ -16,22 +16,4 @@ public class WorkPolicyServiceClientFallback implements WorkPolicyServiceClient 
         log.warn("attendance-service call failed - getWorkPolicy: {}", id);
         return ApiResult.failure("Service Unavailable");
     }
-
-    @Override
-    public ApiResult<WorkPolicyResponseDto> createWorkPolicy(WorkPolicyRequestDto request) {
-        log.warn("attendance-service call failed - createWorkPolicy");
-        return ApiResult.failure("Service Unavailable");
-    }
-
-    @Override
-    public ApiResult<WorkPolicyResponseDto> updateWorkPolicy(Long id, WorkPolicyUpdateDto request) {
-        log.warn("attendance-service call failed - updateWorkPolicy: {}", id);
-        return ApiResult.failure("Service Unavailable");
-    }
-
-    @Override
-    public ApiResult<Void> deleteWorkPolicy(Long id) {
-        log.warn("attendance-service call failed - deleteWorkPolicy: {}", id);
-        return ApiResult.failure("Service Unavailable");
-    }
 }

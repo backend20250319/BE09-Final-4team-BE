@@ -12,13 +12,4 @@ public interface WorkPolicyServiceClient {
 
     @GetMapping("/api/work-policies/{id}")
     ApiResult<WorkPolicyResponseDto> getWorkPolicy(@PathVariable("id") Long id);
-
-    @PostMapping("/api/work-policies")
-    ApiResult<WorkPolicyResponseDto> createWorkPolicy(@RequestBody WorkPolicyRequestDto request);
-
-    @PutMapping("/api/work-policies/{id}")
-    ApiResult<WorkPolicyResponseDto> updateWorkPolicy(@PathVariable("id") Long id, @RequestBody WorkPolicyUpdateDto request);
-
-    @DeleteMapping("/api/work-policies/{id}")
-    ApiResult<Void> deleteWorkPolicy(@PathVariable("id") Long id);
 }
