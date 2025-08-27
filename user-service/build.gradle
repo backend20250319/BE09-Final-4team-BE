@@ -36,6 +36,7 @@ dependencies {
 
     implementation 'org.postgresql:postgresql'
 
+    implementation project(':libs:api-common')
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.11'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
