@@ -1,5 +1,6 @@
 package com.hermes.userservice.client;
 
+import com.hermes.api.common.ApiResult;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyRequestDto;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyUpdateDto;
@@ -11,33 +12,8 @@ import org.springframework.stereotype.Component;
 public class WorkPolicyServiceClientFallback implements WorkPolicyServiceClient {
 
     @Override
-    public WorkPolicyResponseDto getWorkPolicy(Long id) {
-        log.warn("workpolicy-service call failed - getWorkPolicy: {}", id);
-        return WorkPolicyResponseDto.builder()
-                .id(id)
-                .name("Service Unavailable")
-                .build();
-    }
-
-    @Override
-    public WorkPolicyResponseDto createWorkPolicy(WorkPolicyRequestDto request) {
-        log.warn("workpolicy-service call failed - createWorkPolicy");
-        return WorkPolicyResponseDto.builder()
-                .name("Service Unavailable")
-                .build();
-    }
-
-    @Override
-    public WorkPolicyResponseDto updateWorkPolicy(Long id, WorkPolicyUpdateDto request) {
-        log.warn("workpolicy-service call failed - updateWorkPolicy: {}", id);
-        return WorkPolicyResponseDto.builder()
-                .id(id)
-                .name("Service Unavailable")
-                .build();
-    }
-
-    @Override
-    public void deleteWorkPolicy(Long id) {
-        log.warn("workpolicy-service call failed - deleteWorkPolicy: {}", id);
+    public ApiResult<WorkPolicyResponseDto> getWorkPolicy(Long id) {
+        log.warn("attendance-service call failed - getWorkPolicy: {}", id);
+        return ApiResult.failure("Service Unavailable");
     }
 }

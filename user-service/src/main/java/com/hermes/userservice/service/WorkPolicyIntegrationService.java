@@ -18,6 +18,8 @@ import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.stream.Collectors;
+import com.hermes.api.common.ApiResult;
+import org.springframework.stereotype.Component;
 
 @Slf4j
 @Service
@@ -43,35 +45,19 @@ public class WorkPolicyIntegrationService {
     public WorkPolicyResponseDto getWorkPolicy(Long workPolicyId) {
         log.info("근무 정책 조회: workPolicyId={}", workPolicyId);
         try {
-            return workPolicyServiceClient.getWorkPolicy(workPolicyId);
+            ApiResult<WorkPolicyResponseDto> result = workPolicyServiceClient.getWorkPolicy(workPolicyId);
+            if ("SUCCESS".equals(result.getStatus())) {
+                return result.getData();
+            } else {
+                log.error("근무 정책 조회 실패: {}", result.getMessage());
+                return null;
+            }
         } catch (FeignException.NotFound e) {
             log.error("근무 정책을 찾을 수 없습니다. workPolicyId={}", workPolicyId, e);
-            throw new IllegalArgumentException("존재하지 않는 근무 정책입니다: " + workPolicyId, e);
+            return null;
         } catch (FeignException e) {
             log.warn("근무 정책 서비스가 사용 불가능합니다. workPolicyId={}, status={}", workPolicyId, e.status());
             return null; 
-        }
-    }
-
-    public WorkPolicyResponseDto createWorkPolicy(WorkPolicyRequestDto request) {
-        log.info("근무 정책 생성 요청: {}", request);
-        return workPolicyServiceClient.createWorkPolicy(request);
-    }
-
-    public WorkPolicyResponseDto updateWorkPolicy(Long workPolicyId, WorkPolicyUpdateDto request) {
-        log.info("근무 정책 업데이트 요청: workPolicyId={}", workPolicyId);
-        return workPolicyServiceClient.updateWorkPolicy(workPolicyId, request);
-    }
-
-    public void deleteWorkPolicy(Long workPolicyId) {
-        log.info("근무 정책 삭제 요청: workPolicyId={}", workPolicyId);
-        try {
-            workPolicyServiceClient.deleteWorkPolicy(workPolicyId);
-        } catch (FeignException.NotFound e) {
-            log.warn("삭제하려는 근무 정책을 찾을 수 없습니다. workPolicyId={}", workPolicyId, e);
-        } catch (FeignException e) {
-            log.error("근무 정책 삭제 중 FeignClient 오류 발생: workPolicyId={}, status={}", workPolicyId, e.status(), e);
-            throw new RuntimeException("근무 정책 삭제 중 오류가 발생했습니다.", e);
         }
     }
 
