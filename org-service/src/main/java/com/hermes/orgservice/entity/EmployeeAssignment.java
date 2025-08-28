@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "employee_assignment")
+@Table(name = "employee_assignment", uniqueConstraints = @UniqueConstraint(columnNames = {"employee_id", "organization_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -41,4 +41,5 @@ public class EmployeeAssignment {
     protected void onCreate() {
         assignedAt = LocalDateTime.now();
     }
+    
 }
