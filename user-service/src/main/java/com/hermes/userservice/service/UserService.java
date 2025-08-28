@@ -6,6 +6,7 @@ import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.dto.UserCreateDto;
 import com.hermes.userservice.dto.UserResponseDto;
 import com.hermes.userservice.dto.UserUpdateDto;
+import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.DuplicateEmailException;
@@ -39,6 +40,7 @@ public class UserService {
     private final TokenBlacklistService tokenBlacklistService;
     private final UserMapper userMapper;
     private final OrganizationIntegrationService organizationIntegrationService;
+        private final WorkPolicyIntegrationService workPolicyIntegrationService;
 
     public TokenResponse login(LoginRequestDto loginDto) {
         User user = userRepository.findByEmail(loginDto.getEmail())
@@ -87,13 +89,17 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponseDto getUserById(Long userId) {
+        log.info("사용자 상세 조회 요청 (근무정책 및 조직 정보 포함): userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         
         // 원격 DB에서 조직 정보 가져오기
         List<Map<String, Object>> remoteOrganizations = organizationIntegrationService.getUserOrganizations(userId);
         
-        return userMapper.toResponseDto(user, remoteOrganizations);
+        // 근무정책 정보 가져오기
+        WorkPolicyResponseDto workPolicy = workPolicyIntegrationService.getWorkPolicyById(user.getWorkPolicyId());
+        
+        return userMapper.toResponseDto(user, remoteOrganizations, workPolicy);
     }
 
     public UserResponseDto createUser(UserCreateDto userCreateDto) {
@@ -139,6 +145,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public List<UserResponseDto> getAllUsers() {
+        log.info("전체 사용자 목록 조회 요청 (근무정책 및 조직 정보 포함)");
         List<User> users = userRepository.findAll();
         
         // N+1 문제 해결: 모든 사용자의 조직 정보를 한 번에 가져오기
@@ -147,7 +154,11 @@ public class UserService {
         return users.stream()
                 .map(user -> {
                     List<Map<String, Object>> userOrganizations = allOrganizations.getOrDefault(user.getId(), List.of());
-                    return userMapper.toResponseDto(user, userOrganizations);
+                    
+                    // 근무정책 정보 가져오기 (N+1 문제 발생 - 추후 개선 필요)
+                    WorkPolicyResponseDto workPolicy = workPolicyIntegrationService.getWorkPolicyById(user.getWorkPolicyId());
+                    
+                    return userMapper.toResponseDto(user, userOrganizations, workPolicy);
                 })
                 .collect(Collectors.toList());
     }
