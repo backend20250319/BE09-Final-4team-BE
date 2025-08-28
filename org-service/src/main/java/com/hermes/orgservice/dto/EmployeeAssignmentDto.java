@@ -13,6 +13,7 @@ public class EmployeeAssignmentDto {
     
     private Long assignmentId;
     private Long employeeId;
+    private String employeeName;
     private Long organizationId;
     private String organizationName;
     private Boolean isPrimary;

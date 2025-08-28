@@ -11,8 +11,11 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
+    api 'org.springframework.boot:spring-boot-starter-security'
+    api 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     api 'org.springframework:spring-web'
     api 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    api project(':libs:api-common')
 
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
@@ -21,4 +24,6 @@ dependencies {
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-test'
 }

@@ -16,15 +16,19 @@ import java.util.Optional;
 @Slf4j
 @Transactional
 public class NewsArticleService {
-    
+
     private final NewsArticleRepository newsArticleRepository;
 
     public NewsArticle saveNewsArticle(NewsDetail newsDetail) {
-        if (newsArticleRepository.existsByLink(newsDetail.getLink())) {
-            log.info("이미 존재하는 뉴스 링크: {}", newsDetail.getLink());
+        if (newsDetail.getLink() == null || newsDetail.getLink().trim().isEmpty()) {
             return null;
         }
-        
+
+        String normalizedLink = normalizeLink(newsDetail.getLink());
+        if (newsArticleRepository.existsByLink(normalizedLink)) {
+            return null;
+        }
+
         NewsArticle newsArticle = NewsArticle.builder()
                 .categoryId(newsDetail.getCategoryId())
                 .categoryName(newsDetail.getCategoryName())
@@ -33,12 +37,10 @@ public class NewsArticleService {
                 .content(newsDetail.getContent())
                 .reporter(newsDetail.getReporter())
                 .date(newsDetail.getDate())
-                .link(newsDetail.getLink())
+                .link(normalizedLink)
                 .build();
-        
-        NewsArticle saved = newsArticleRepository.save(newsArticle);
-        log.info("뉴스 기사 저장 완료: {}", saved.getTitle());
-        return saved;
+
+        return newsArticleRepository.save(newsArticle);
     }
 
     public List<NewsArticle> saveNewsArticles(List<NewsDetail> newsDetails) {
@@ -81,5 +83,35 @@ public class NewsArticleService {
     @Transactional(readOnly = true)
     public long getNewsArticleCount() {
         return newsArticleRepository.count();
+    }
+
+    private String normalizeLink(String link) {
+        if (link == null) return "";
+
+        String normalized = link;
+        int paramIndex = link.indexOf('?');
+        if (paramIndex > 0) {
+            normalized = link.substring(0, paramIndex);
+        }
+
+        if (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+
+        return normalized.trim();
+    }
+
+    public void deleteAllNews() {
+        long count = newsArticleRepository.count();
+
+        if (count > 0) {
+            newsArticleRepository.deleteAllInBatch();
+
+            long afterCount = newsArticleRepository.count();
+
+            if (afterCount > 0) {
+                throw new RuntimeException("데이터 삭제 실패");
+            }
+        }
     }
 }

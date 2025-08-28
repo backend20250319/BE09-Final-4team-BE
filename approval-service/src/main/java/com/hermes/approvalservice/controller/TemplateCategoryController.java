@@ -5,7 +5,8 @@ import com.hermes.approvalservice.dto.request.CreateCategoryRequest;
 import com.hermes.approvalservice.dto.request.UpdateCategoryRequest;
 import com.hermes.approvalservice.dto.response.CategoryResponse;
 import com.hermes.approvalservice.service.TemplateCategoryService;
-import com.hermes.auth.context.AuthContext;
+import com.hermes.auth.principal.UserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,10 +34,11 @@ public class TemplateCategoryController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @GetMapping
-    public ResponseEntity<ApiResult<List<CategoryResponse>>> getCategories() {
+    public ResponseEntity<ApiResult<List<CategoryResponse>>> getCategories(
+            @AuthenticationPrincipal UserPrincipal user) {
         List<CategoryResponse> categories;
         
-        if (AuthContext.isCurrentUserAdmin()) {
+        if (user.isAdmin()) {
             categories = categoryService.getAllCategories();
         } else {
             categories = categoryService.getCategoriesWithVisibleTemplates();
@@ -69,8 +71,9 @@ public class TemplateCategoryController {
     })
     @PostMapping
     public ResponseEntity<ApiResult<CategoryResponse>> createCategory(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 생성 요청 정보", required = true) @Valid @RequestBody CreateCategoryRequest request) {
-        if (!AuthContext.isCurrentUserAdmin()) {
+        if (!user.isAdmin()) {
             return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 카테고리를 생성할 수 있습니다."));
         }
         
@@ -89,9 +92,10 @@ public class TemplateCategoryController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<ApiResult<CategoryResponse>> updateCategory(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 ID", required = true) @PathVariable Long id, 
             @Parameter(description = "카테고리 수정 요청 정보", required = true) @Valid @RequestBody UpdateCategoryRequest request) {
-        if (!AuthContext.isCurrentUserAdmin()) {
+        if (!user.isAdmin()) {
             return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 카테고리를 수정할 수 있습니다."));
         }
         
@@ -110,8 +114,9 @@ public class TemplateCategoryController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResult<Void>> deleteCategory(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 ID", required = true) @PathVariable Long id) {
-        if (!AuthContext.isCurrentUserAdmin()) {
+        if (!user.isAdmin()) {
             return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 카테고리를 삭제할 수 있습니다."));
         }
         

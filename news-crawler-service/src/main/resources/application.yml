@@ -6,128 +6,22 @@ spring:
     name: news-crawler-service
   config:
     import:
-      - optional:application-secret.yml
-  cloud:
-    compatibility-verifier:
-      enabled: false
+    - optional:configserver:http://localhost:8888
+    - optional:application-secret.yml
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: true
 
 eureka:
   client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+    instance-id: ${eureka.instance.hostname}:${spring.application.name}:${server.port}
 
-logging:
-  level:
-    com.hermes.newscrawler: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.cloud: INFO
-    org.springframework.boot: INFO
-    com.hermes.newscrawler.util.DatabaseCrawler: DEBUG
-    com.hermes.newscrawler.scheduler.NewsCrawlingScheduler: DEBUG
-
-crawling:
-  schedule:
-    enabled: true
-    initial-delay: 30000
-    interval: 3600000
-    daily-cron: "0 0 2 * * ?"
-
-  limits:
-    max-articles-per-category: 2
-    max-total-articles: 10
-    timeout-seconds: 30
-
-  categories:
-    - id: 100
-      name: "정치"
-    - id: 101
-      name: "경제"
-    - id: 102
-      name: "사회"
-    - id: 103
-      name: "생활/문화"
-    - id: 104
-      name: "세계"
-    - id: 105
-      name: "IT/과학"
-
-  allowed-presses:
-    - "연합뉴스"
-    - "동아일보"
-    - "중앙일보"
-    - "한겨레"
-    - "경향신문"
-    - "MBC"
-    - "파이낸셜뉴스"
-    - "국민일보"
-    - "서울경제"
-    - "한국일보"
-    - "헤럴드경제"
-    - "YTN"
-    - "문화일보"
-    - "오마이뉴스"
-    - "SBS"
-    - "KBS"
-
-  performance:
-    target-count-per-category: 2
-    max-total-articles: 10
-    page-load-timeout: 3000
-    element-wait-timeout: 3000
-    thread-sleep-between-pages: 1000
-
-  session:
-    timeout-minutes: 30
-    cleanup-interval-hours: 1
-    full-cleanup-hour: 3
-
-  chrome:
-    headless: true
-    disable-images: true
-    disable-javascript: true
-    disable-css: true
-    window-size: "1920,1080"
-
-  error-handling:
-    max-retry-attempts: 3
-    retry-delay-seconds: 5
-    continue-on-error: true
-    log-error-details: true
-
-  network:
-    connection-timeout: 10000
-    read-timeout: 30000
-    user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-
-  validation:
-    min-content-length: 50
-    max-content-length: 10000
-    require-reporter: false
-    require-date: true
-    filter-duplicate-titles: true
-
-selenium:
-  chrome:
-    headless: true
-    no-sandbox: true
-    disable-dev-shm-usage: true
-    disable-gpu: true
-    window-size: "1920,1080"
-    disable-extensions: true
-    disable-plugins: true
-    disable-images: true
-    timeout-seconds: 10
-
-memory:
-  session:
-    cleanup-interval: 3600000
-    max-sessions: 100
-    session-timeout: 7200000
-
-csv:
-  enabled: true
-  directory: "src/main/resources/static"
-  filename-pattern: "naver_news_session_{sessionId}_{timestamp}.csv"
-  encoding: "UTF-8"

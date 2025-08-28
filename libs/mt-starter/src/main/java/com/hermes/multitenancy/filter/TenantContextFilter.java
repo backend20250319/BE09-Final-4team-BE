@@ -1,13 +1,15 @@
 package com.hermes.multitenancy.filter;
 
-import com.hermes.auth.context.AuthContext;
-import com.hermes.auth.filter.AuthContextFilter;
+import com.hermes.auth.principal.UserPrincipal;
 import com.hermes.multitenancy.context.TenantContext;
 import com.hermes.multitenancy.dto.TenantInfo;
 import com.hermes.multitenancy.util.TenantUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -20,12 +22,11 @@ import java.io.IOException;
 
 /**
  * 테넌트 컨텍스트 설정 필터
- * AuthContext에서 테넌트 정보를 가져와 TenantContext에 설정
- * AuthContextFilter 다음에 실행됨
+ * Spring Security의 SecurityContext에서 테넌트 정보를 가져와 TenantContext에 설정
+ * Spring Security 필터 다음에 실행됨
  */
 @Slf4j
 @Component
-@Order(AuthContextFilter.ORDER + 1) // AuthContextFilter 다음에 실행
 @ConditionalOnProperty(name = "hermes.multitenancy.enabled", havingValue = "true", matchIfMissing = true)
 public class TenantContextFilter extends OncePerRequestFilter {
 
@@ -36,8 +37,8 @@ public class TenantContextFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
         
         try {
-            // AuthContext에서 테넌트 정보 추출 및 설정
-            TenantInfo tenantInfo = extractTenantInfoFromAuthContext();
+            // Spring Security의 SecurityContext에서 테넌트 정보 추출 및 설정
+            TenantInfo tenantInfo = extractTenantInfoFromSecurityContext();
             
             TenantContext.setTenant(tenantInfo);
             log.debug("Tenant context set: {}", tenantInfo.getTenantId());
@@ -53,20 +54,28 @@ public class TenantContextFilter extends OncePerRequestFilter {
     }
 
     /**
-     * AuthContext에서 테넌트 정보 추출
+     * Spring Security의 SecurityContext에서 테넌트 정보 추출
      */
-    private TenantInfo extractTenantInfoFromAuthContext() {
+    private TenantInfo extractTenantInfoFromSecurityContext() {
         try {
-            // AuthContext에서 테넌트 ID 가져오기
-            String tenantId = AuthContext.getCurrentTenantId();
+            // Spring Security의 SecurityContext에서 인증 정보 가져오기
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             
-            if (StringUtils.hasText(tenantId)) {
-                String schemaName = TenantUtils.generateSchemaName(tenantId);
-                log.debug("Tenant info extracted from AuthContext: {}", tenantId);
-                return new TenantInfo(tenantId, schemaName);
+            if (auth instanceof JwtAuthenticationToken jwtToken) {
+                // UserPrincipal은 details에 저장되어 있음
+                Object details = jwtToken.getDetails();
+                if (details instanceof UserPrincipal userPrincipal) {
+                    String tenantId = userPrincipal.getTenantId();
+                    
+                    if (StringUtils.hasText(tenantId)) {
+                        String schemaName = TenantUtils.generateSchemaName(tenantId);
+                        log.debug("Tenant info extracted from SecurityContext: {}", tenantId);
+                        return new TenantInfo(tenantId, schemaName);
+                    }
+                }
             }
         } catch (Exception e) {
-            log.debug("Failed to extract tenant info from AuthContext: {}", e.getMessage());
+            log.debug("Failed to extract tenant info from SecurityContext: {}", e.getMessage());
         }
         
         // 기본 테넌트 반환

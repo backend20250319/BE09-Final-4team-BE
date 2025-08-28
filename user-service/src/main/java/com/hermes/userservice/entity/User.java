@@ -5,6 +5,8 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -79,6 +81,10 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<UserOrganization> userOrganizations = new ArrayList<>();
+
     public void updateInfo(String name, String phone, String address, String profileImageUrl, String selfIntroduction) {
         this.name = name;
         this.phone = phone;
@@ -95,7 +101,7 @@ public class User {
         this.role = role;
         this.workPolicyId = workPolicyId;
     }
-
+    
     public void updateLastLogin() {
         this.lastLoginAt = LocalDateTime.now();
     }
@@ -159,6 +165,14 @@ public class User {
 
     public void updateWorkPolicyId(Long workPolicyId) {
         this.workPolicyId = workPolicyId;
+    }
+
+    public void updateUserOrganizations(List<UserOrganization> organizations) {
+        this.userOrganizations.clear();
+        if (organizations != null) {
+            this.userOrganizations.addAll(organizations);
+            organizations.forEach(org -> org.setUser(this));
+        }
     }
 
     @PrePersist

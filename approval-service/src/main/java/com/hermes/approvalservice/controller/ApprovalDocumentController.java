@@ -8,7 +8,7 @@ import com.hermes.approvalservice.dto.response.DocumentResponse;
 import com.hermes.approvalservice.dto.response.DocumentSummaryResponse;
 import com.hermes.approvalservice.service.ApprovalDocumentService;
 import com.hermes.approvalservice.service.ApprovalProcessService;
-import com.hermes.auth.context.AuthContext;
+import com.hermes.auth.principal.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -39,8 +40,9 @@ public class ApprovalDocumentController {
     })
     @GetMapping
     public ResponseEntity<ApiResult<Page<DocumentSummaryResponse>>> getDocuments(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "페이지네이션 정보 (기본 크기: 20)") @PageableDefault(size = 20) Pageable pageable) {
-        Long userId = AuthContext.getCurrentUserId();
+        Long userId = user.getUserId();
         Page<DocumentSummaryResponse> documents = documentService.getDocumentsForUser(userId, pageable);
         return ResponseEntity.ok(ApiResult.success("문서 목록을 조회했습니다.", documents));
     }
@@ -53,8 +55,9 @@ public class ApprovalDocumentController {
     })
     @GetMapping("/pending")
     public ResponseEntity<ApiResult<Page<DocumentSummaryResponse>>> getPendingApprovals(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "페이지네이션 정보 (기본 크기: 20)") @PageableDefault(size = 20) Pageable pageable) {
-        Long userId = AuthContext.getCurrentUserId();
+        Long userId = user.getUserId();
         Page<DocumentSummaryResponse> documents = documentService.getPendingApprovals(userId, pageable);
         return ResponseEntity.ok(ApiResult.success("승인 대기 문서 목록을 조회했습니다.", documents));
     }
@@ -69,9 +72,10 @@ public class ApprovalDocumentController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<ApiResult<DocumentResponse>> getDocumentById(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id) {
-        Long userId = AuthContext.getCurrentUserId();
-        DocumentResponse document = documentService.getDocumentById(id, userId);
+        Long userId = user.getUserId();
+        DocumentResponse document = documentService.getDocumentById(id, userId, user);
         return ResponseEntity.ok(ApiResult.success("문서를 조회했습니다.", document));
     }
 
@@ -84,8 +88,9 @@ public class ApprovalDocumentController {
     })
     @PostMapping
     public ResponseEntity<ApiResult<DocumentResponse>> createDocument(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 작성 요청 정보", required = true) @Valid @RequestBody CreateDocumentRequest request) {
-        Long userId = AuthContext.getCurrentUserId();
+        Long userId = user.getUserId();
         DocumentResponse document = documentService.createDocument(request, userId);
         return ResponseEntity.ok(ApiResult.success("문서를 작성했습니다.", document));
     }
@@ -101,10 +106,11 @@ public class ApprovalDocumentController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<ApiResult<DocumentResponse>> updateDocument(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "문서 수정 요청 정보", required = true) @Valid @RequestBody UpdateDocumentRequest request) {
-        Long userId = AuthContext.getCurrentUserId();
-        DocumentResponse document = documentService.updateDocument(id, request, userId);
+        Long userId = user.getUserId();
+        DocumentResponse document = documentService.updateDocument(id, request, userId, user);
         return ResponseEntity.ok(ApiResult.success("문서를 수정했습니다.", document));
     }
 
@@ -119,8 +125,9 @@ public class ApprovalDocumentController {
     })
     @PostMapping("/{id}/submit")
     public ResponseEntity<ApiResult<Void>> submitDocument(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id) {
-        Long userId = AuthContext.getCurrentUserId();
+        Long userId = user.getUserId();
         documentService.submitDocument(id, userId);
         return ResponseEntity.ok(ApiResult.success("문서를 제출했습니다."));
     }
@@ -137,10 +144,11 @@ public class ApprovalDocumentController {
     })
     @PostMapping("/{id}/approve")
     public ResponseEntity<ApiResult<Void>> approveDocument(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "승인 처리 요청 정보") @RequestBody ApprovalActionRequest request) {
-        Long userId = AuthContext.getCurrentUserId();
-        approvalProcessService.approveDocument(id, userId, request);
+        Long userId = user.getUserId();
+        approvalProcessService.approveDocument(id, userId, user, request);
         return ResponseEntity.ok(ApiResult.success("문서를 승인했습니다."));
     }
 
@@ -156,10 +164,11 @@ public class ApprovalDocumentController {
     })
     @PostMapping("/{id}/reject")
     public ResponseEntity<ApiResult<Void>> rejectDocument(
+            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "반려 처리 요청 정보", required = true) @RequestBody ApprovalActionRequest request) {
-        Long userId = AuthContext.getCurrentUserId();
-        approvalProcessService.rejectDocument(id, userId, request);
+        Long userId = user.getUserId();
+        approvalProcessService.rejectDocument(id, userId, user, request);
         return ResponseEntity.ok(ApiResult.success("문서를 반려했습니다."));
     }
 }
