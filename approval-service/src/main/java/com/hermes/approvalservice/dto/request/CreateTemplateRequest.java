@@ -28,7 +28,8 @@ public class CreateTemplateRequest {
     @NotNull(message = "대상 변경 허용 여부는 필수입니다")
     private Boolean allowTargetChange;
     
-    private String referenceFiles;
+    @Valid
+    private List<AttachmentInfoRequest> referenceFiles;
     
     private Long categoryId;
     

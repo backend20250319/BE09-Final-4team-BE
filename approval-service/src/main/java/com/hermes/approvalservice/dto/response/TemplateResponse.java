@@ -17,7 +17,7 @@ public class TemplateResponse {
     private Boolean useAttachment;
     private Boolean allowTargetChange;
     private Boolean isHidden;
-    private String referenceFiles;
+    private List<AttachmentInfoResponse> referenceFiles;
     private CategoryResponse category;
     private List<TemplateFieldResponse> fields;
     private List<ApprovalStageResponse> approvalStages;

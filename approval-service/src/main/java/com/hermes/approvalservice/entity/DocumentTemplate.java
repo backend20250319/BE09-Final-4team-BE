@@ -44,8 +44,9 @@ public class DocumentTemplate {
     @Column(nullable = false)
     private Boolean isHidden = false;
 
-    @Column(length = 1000)
-    private String referenceFiles;
+    @ElementCollection
+    @CollectionTable(name = "template_reference_files", joinColumns = @JoinColumn(name = "template_id"))
+    private List<AttachmentInfo> referenceFiles = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

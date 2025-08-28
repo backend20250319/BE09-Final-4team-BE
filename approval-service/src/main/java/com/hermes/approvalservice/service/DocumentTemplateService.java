@@ -23,6 +23,7 @@ public class DocumentTemplateService {
     private final TemplateFieldRepository fieldRepository;
     private final TemplateApprovalStageRepository stageRepository;
     private final TemplateApprovalTargetRepository targetRepository;
+    private final AttachmentService attachmentService;
 
     public List<TemplateResponse> getAllTemplates(boolean isAdmin) {
         List<DocumentTemplate> templates = isAdmin 
@@ -81,6 +82,9 @@ public class DocumentTemplateService {
                     .orElseThrow(() -> new NotFoundException("카테고리를 찾을 수 없습니다."));
         }
 
+        // 참조 파일 검증 및 변환
+        List<AttachmentInfo> referenceFiles = attachmentService.validateAndConvertAttachments(request.getReferenceFiles());
+
         DocumentTemplate template = DocumentTemplate.builder()
                 .title(request.getTitle())
                 .icon(request.getIcon())
@@ -89,7 +93,7 @@ public class DocumentTemplateService {
                 .useBody(request.getUseBody())
                 .useAttachment(request.getUseAttachment())
                 .allowTargetChange(request.getAllowTargetChange())
-                .referenceFiles(request.getReferenceFiles())
+                .referenceFiles(referenceFiles)
                 .category(category)
                 .build();
 
@@ -124,6 +128,13 @@ public class DocumentTemplateService {
                     .orElseThrow(() -> new NotFoundException("카테고리를 찾을 수 없습니다."));
         }
 
+        // 참조 파일 업데이트
+        if (request.getReferenceFiles() != null) {
+            List<AttachmentInfo> referenceFiles = attachmentService.validateAndConvertAttachments(request.getReferenceFiles());
+            template.getReferenceFiles().clear();
+            template.getReferenceFiles().addAll(referenceFiles);
+        }
+
         template.setTitle(request.getTitle());
         template.setIcon(request.getIcon());
         template.setDescription(request.getDescription());
@@ -131,7 +142,6 @@ public class DocumentTemplateService {
         template.setUseBody(request.getUseBody());
         template.setUseAttachment(request.getUseAttachment());
         template.setAllowTargetChange(request.getAllowTargetChange());
-        template.setReferenceFiles(request.getReferenceFiles());
         template.setCategory(category);
 
         // Clear existing fields, stages, and targets
@@ -242,7 +252,8 @@ public class DocumentTemplateService {
         response.setUseAttachment(template.getUseAttachment());
         response.setAllowTargetChange(template.getAllowTargetChange());
         response.setIsHidden(template.getIsHidden());
-        response.setReferenceFiles(template.getReferenceFiles());
+        // 참조 파일 정보 변환
+        response.setReferenceFiles(attachmentService.convertToResponseList(template.getReferenceFiles()));
         response.setCreatedAt(template.getCreatedAt());
         response.setUpdatedAt(template.getUpdatedAt());
 
