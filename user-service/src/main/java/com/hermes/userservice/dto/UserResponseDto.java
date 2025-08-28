@@ -4,6 +4,7 @@ import com.hermes.userservice.entity.EmploymentType;
 import com.hermes.userservice.entity.Job;
 import com.hermes.userservice.entity.Position;
 import com.hermes.userservice.entity.Rank;
+import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -36,5 +37,6 @@ public class UserResponseDto {
     private LocalDateTime lastLoginAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private WorkPolicyResponseDto workPolicy;
     private List<UserOrganizationDto> organizations;
 }
