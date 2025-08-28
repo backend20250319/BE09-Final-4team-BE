@@ -17,7 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -29,15 +31,19 @@ public class ApprovalDocumentService {
     private final DocumentPermissionService permissionService;
     private final DocumentActivityService activityService;
 
-    public Page<DocumentSummaryResponse> getDocumentsForUser(Long userId, Pageable pageable) {
-        return documentRepository.findDocumentsForUser(userId, pageable)
-                .map(this::convertToSummaryResponse);
+
+    public Page<DocumentSummaryResponse> getDocumentsForUser(Long userId, UserPrincipal user, 
+                                                            List<DocumentStatus> statuses, String search, 
+                                                            LocalDate startDate, LocalDate endDate, 
+                                                            Pageable pageable) {
+        LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = endDate != null ? endDate.atTime(23, 59, 59) : null;
+        
+        return documentRepository.findDocumentsForUserWithFilters(userId, statuses, search, 
+                                                                 startDateTime, endDateTime, pageable)
+                .map(document -> convertToSummaryResponse(document, userId, user));
     }
 
-    public Page<DocumentSummaryResponse> getPendingApprovals(Long userId, Pageable pageable) {
-        return documentRepository.findPendingApprovalsForUser(userId, pageable)
-                .map(this::convertToSummaryResponse);
-    }
 
     public DocumentResponse getDocumentById(Long id, Long userId, UserPrincipal user) {
         ApprovalDocument document = documentRepository.findByIdWithDetails(id);
@@ -120,15 +126,22 @@ public class ApprovalDocumentService {
         activityService.recordActivity(document, userId, ActivityType.SUBMIT, "결재를 요청했습니다.");
     }
 
-    private DocumentSummaryResponse convertToSummaryResponse(ApprovalDocument document) {
+    private DocumentSummaryResponse convertToSummaryResponse(ApprovalDocument document, Long userId, UserPrincipal user) {
         DocumentSummaryResponse response = new DocumentSummaryResponse();
         response.setId(document.getId());
         response.setTitle(document.getTitle());
+        response.setContent(document.getContent());
         response.setStatus(document.getStatus());
         response.setAuthorId(document.getAuthorId());
         response.setTemplateTitle(document.getTemplate().getTitle());
         response.setCurrentStage(document.getCurrentStage());
         response.setTotalStages(document.getApprovalStages().size());
+        
+        // Set user role if user information is available
+        if (user != null) {
+            response.setUserRole(permissionService.getUserRole(document, userId, user));
+        }
+        
         response.setCreatedAt(document.getCreatedAt());
         response.setSubmittedAt(document.getSubmittedAt());
         response.setApprovedAt(document.getApprovedAt());
