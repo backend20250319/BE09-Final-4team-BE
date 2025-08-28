@@ -255,7 +255,15 @@ dependencies {
         title = "Service Name API",
         description = "Service description",
         version = "1.0.0"
-    )
+    ),
+    security = @SecurityRequirement(name = "Bearer Authentication")
+)
+@SecurityScheme(
+    name = "Bearer Authentication",
+    type = SecuritySchemeType.HTTP,
+    bearerFormat = "JWT",
+    scheme = "bearer",
+    description = "JWT Bearer 토큰을 입력하세요"
 )
 public class OpenApiConfig {
     // Configuration if needed
