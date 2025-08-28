@@ -42,6 +42,14 @@ public class WorkPolicyIntegrationService {
         return getWorkPolicy(workPolicyId);
     }
 
+    public WorkPolicyResponseDto getWorkPolicyById(Long workPolicyId) {
+        if (workPolicyId == null) {
+            log.info("근무 정책 ID가 null입니다");
+            return null;
+        }
+        return getWorkPolicy(workPolicyId);
+    }
+
     public WorkPolicyResponseDto getWorkPolicy(Long workPolicyId) {
         log.info("근무 정책 조회: workPolicyId={}", workPolicyId);
         try {

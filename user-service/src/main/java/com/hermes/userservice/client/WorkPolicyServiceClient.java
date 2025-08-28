@@ -10,6 +10,6 @@ import org.springframework.web.bind.annotation.*;
 @FeignClient(name = "attendance-service", fallback = WorkPolicyServiceClientFallback.class)
 public interface WorkPolicyServiceClient {
 
-    @GetMapping("/api/work-policies/{id}")
+    @GetMapping("/api/workpolicy/{id}")
     ApiResult<WorkPolicyResponseDto> getWorkPolicy(@PathVariable("id") Long id);
 }
