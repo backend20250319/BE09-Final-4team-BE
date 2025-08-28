@@ -4,6 +4,8 @@ import com.hermes.userservice.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,4 +22,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findByNameContainingOrEmailContaining(String name, String email, Pageable pageable);
 
     Page<User> findByIsAdmin(Boolean isAdmin, Pageable pageable);
+    
+    // JOIN FETCH를 사용한 메서드들 (LazyInitializationException 방지)
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.userOrganizations")
+    List<User> findAllWithOrganizations();
+    
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.userOrganizations WHERE u.id = :userId")
+    Optional<User> findByIdWithOrganizations(@Param("userId") Long userId);
+    
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.userOrganizations WHERE u.email = :email")
+    Optional<User> findByEmailWithOrganizations(@Param("email") String email);
 }
