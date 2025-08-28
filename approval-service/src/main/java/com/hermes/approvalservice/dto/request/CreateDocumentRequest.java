@@ -26,4 +26,7 @@ public class CreateDocumentRequest {
     
     @Valid
     private List<ApprovalTargetRequest> referenceTargets;
+    
+    @Valid
+    private List<AttachmentInfoRequest> attachments;
 }

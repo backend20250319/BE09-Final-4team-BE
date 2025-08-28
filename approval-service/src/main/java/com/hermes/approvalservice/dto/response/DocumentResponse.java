@@ -21,7 +21,7 @@ public class DocumentResponse {
     private List<ApprovalTargetResponse> referenceTargets;
     private List<DocumentActivityResponse> activities;
     private List<DocumentCommentResponse> comments;
-    private List<DocumentAttachmentResponse> attachments;
+    private List<AttachmentInfoResponse> attachments;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime submittedAt;

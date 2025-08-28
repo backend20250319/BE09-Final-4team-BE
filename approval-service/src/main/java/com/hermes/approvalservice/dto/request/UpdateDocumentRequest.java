@@ -22,4 +22,7 @@ public class UpdateDocumentRequest {
     
     @Valid
     private List<ApprovalTargetRequest> referenceTargets;
+    
+    @Valid
+    private List<AttachmentInfoRequest> attachments;
 }

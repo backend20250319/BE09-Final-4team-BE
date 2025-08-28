@@ -59,8 +59,9 @@ public class ApprovalDocument {
     @OrderBy("createdAt ASC")
     private List<DocumentComment> comments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<DocumentAttachment> attachments = new ArrayList<>();
+    @ElementCollection
+    @CollectionTable(name = "document_attachments", joinColumns = @JoinColumn(name = "document_id"))
+    private List<AttachmentInfo> attachments = new ArrayList<>();
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
