@@ -3,7 +3,7 @@ package com.hermes.attendanceservice.controller;
 import com.hermes.api.common.ApiResult;
 import com.hermes.attendanceservice.dto.leave.CreateLeaveRequestDto;
 import com.hermes.attendanceservice.dto.leave.LeaveRequestResponseDto;
-import com.hermes.attendanceservice.service.LeaveService;
+import com.hermes.attendanceservice.service.leave.LeaveService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

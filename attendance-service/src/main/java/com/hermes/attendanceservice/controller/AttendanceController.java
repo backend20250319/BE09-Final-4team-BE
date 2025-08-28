@@ -7,7 +7,7 @@ import com.hermes.attendanceservice.dto.attendance.WeeklyWorkDetail;
 import com.hermes.attendanceservice.dto.attendance.CheckInRequest;
 import com.hermes.attendanceservice.dto.attendance.CheckOutRequest;
 import com.hermes.attendanceservice.entity.attendance.WorkStatus;
-import com.hermes.attendanceservice.service.AttendanceService;
+import com.hermes.attendanceservice.service.attendance.AttendanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;

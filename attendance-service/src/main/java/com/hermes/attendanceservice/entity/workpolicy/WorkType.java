@@ -6,7 +6,7 @@ package com.hermes.attendanceservice.entity.workpolicy;
 public enum WorkType {
     FIXED("고정"),           // 고정 근무
     SHIFT("교대"),           // 교대 근무
-    FLEXIBLE("탄력"),        // 탄력 근무
+    FLEXIBLE("시차"),        // 시차 근무 (출근 가능 시간대 설정 가능)
     OPTIONAL("선택");        // 선택 근무
     
     private final String name;
