@@ -27,7 +27,7 @@ public class WorkPolicy {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private WorkType type; // 고정, 교대, 탄력, 선택
+    private WorkType type; // 고정, 교대, 시차, 선택
     
     @Enumerated(EnumType.STRING)
     @Column(name = "work_cycle")
@@ -45,7 +45,7 @@ public class WorkPolicy {
     @CollectionTable(name = "work_policy_work_days", 
                     joinColumns = @JoinColumn(name = "work_policy_id"))
     @Column(name = "work_day")
-    private List<StartDayOfWeek> workDays; // 주수 근무 요일 리스트(월요일)
+    private List<StartDayOfWeek> workDays; // 필수 근무 요일 리스트(월요일)
     
     @Column(name = "weekly_working_days")
     private Integer weeklyWorkingDays; // 주간근무일수(교대 근무 용도, nullable)
@@ -54,7 +54,7 @@ public class WorkPolicy {
     private LocalTime startTime; // 출근 시간 (nullable)
     
     @Column(name = "start_time_end")
-    private LocalTime startTimeEnd; // 출근 시간 범위 끝(탄력 근무시 nullable)
+    private LocalTime startTimeEnd; // 출근 시간 범위 끝(시차 근무시 필수, 다른 근무 타입시 nullable)
     
     @Column(name = "work_hours", nullable = false)
     private Integer workHours; // 1일근무 시간 (시간 단위)
@@ -71,13 +71,41 @@ public class WorkPolicy {
     @Column(name = "break_start_time", nullable = false)
     private LocalTime breakStartTime; // 휴게 시작 시간
     
+    @Column(name = "break_end_time")
+    private LocalTime breakEndTime; // 휴게 종료 시간
+    
+    @Column(name = "break_minutes")
+    private Integer breakMinutes; // 휴게 시간 (분)
+    
     @Column(name = "avg_work_time")
     private LocalTime avgWorkTime; // 평균 근무시간 (선택 근무 용도, nullable)
     
     @Column(name = "total_required_minutes", nullable = false)
     private Integer totalRequiredMinutes; // 단위기간 기준 근로 시간 (주동기준)
     
+    @ElementCollection
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "work_policy_holiday_days", 
+                    joinColumns = @JoinColumn(name = "work_policy_id"))
+    @Column(name = "holiday_day")
+    private List<StartDayOfWeek> holidayDays; // 휴일 요일 리스트
+    
+    @ElementCollection
+    @CollectionTable(name = "work_policy_holidays", 
+                    joinColumns = @JoinColumn(name = "work_policy_id"))
+    @Column(name = "holiday_date")
+    private List<String> holidays; // 휴일 날짜 리스트
+    
+    @Column(name = "is_holiday_fixed")
+    @Builder.Default
+    private Boolean isHolidayFixed = true; // 휴일 고정 여부
+    
+    @Column(name = "is_break_fixed")
+    @Builder.Default
+    private Boolean isBreakFixed = true; // 휴식 시간 고정 여부
+    
     @OneToMany(mappedBy = "workPolicy", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<AnnualLeave> annualLeaves = new ArrayList<>();
     
     @Column(name = "created_at")
@@ -112,7 +140,7 @@ public class WorkPolicy {
     }
     
     /**
-     * 탄력 근무인지 확인
+     * 시차 근무인지 확인
      */
     public boolean isFlexibleWork() {
         return type == WorkType.FLEXIBLE;
@@ -143,5 +171,34 @@ public class WorkPolicy {
             // 주기준: 40시간 = 2400분
             return totalRequiredMinutes <= 2400;
         }
+    }
+    
+    /**
+     * 시차 근무 설정 유효성 검증
+     * 시차 근무인 경우 startTime과 startTimeEnd가 모두 필수
+     */
+    public boolean isValidFlexibleWorkSettings() {
+        if (isFlexibleWork()) {
+            return startTime != null && startTimeEnd != null;
+        }
+        return true; // 시차 근무가 아닌 경우 항상 유효
+    }
+    
+    /**
+     * 시차 근무 출근 가능 시간대 설정 여부 확인
+     */
+    public boolean hasFlexibleWorkTimeRange() {
+        return isFlexibleWork() && startTime != null && startTimeEnd != null;
+    }
+    
+    /**
+     * 시차 근무 출근 가능 시간대 유효성 검증
+     * startTime이 startTimeEnd보다 이전이어야 함
+     */
+    public boolean isValidFlexibleWorkTimeRange() {
+        if (!hasFlexibleWorkTimeRange()) {
+            return false;
+        }
+        return startTime.isBefore(startTimeEnd);
     }
 } 
