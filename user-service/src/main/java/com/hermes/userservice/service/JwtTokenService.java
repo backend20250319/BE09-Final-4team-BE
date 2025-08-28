@@ -15,6 +15,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import io.jsonwebtoken.io.Decoders;
 
 /**
  * JWT 토큰 생성 전용 서비스 (user-service에서만 사용)
@@ -86,7 +87,8 @@ public class JwtTokenService {
      * JWT 서명 키 생성
      */
     private SecretKey getSigningKey() {
-        byte[] keyBytes = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
+        // Base64 디코딩 후 사용
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecret());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }

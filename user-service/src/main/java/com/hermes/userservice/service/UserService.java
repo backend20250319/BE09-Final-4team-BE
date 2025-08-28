@@ -66,13 +66,19 @@ public class UserService {
         return new TokenResponse(accessToken, refreshToken);
     }
 
+    @Transactional // @Transactional 어노테이션이 있어야 DB 변경 사항이 커밋됩니다.
     public void logout(Long userId, String accessToken, String refreshToken) {
         log.info("[User Service] 로그아웃 처리 시작 - userId: {}", userId);
 
         try {
-            refreshTokenRepository.deleteById(userId);
+            // userId로 RefreshToken을 찾아서 삭제
+            refreshTokenRepository.findByUserId(userId).ifPresent(rt -> {
+                refreshTokenRepository.delete(rt);
+                log.info("[User Service] RefreshToken 삭제 완료 - userId: {}", userId);
+            });
+            
             tokenBlacklistService.logoutUser(userId, accessToken, refreshToken);
-            log.info("[User Service] 모든 토큰 완전 삭제 완료 - userId: {}", userId);
+            log.info("[User Service] 모든 토큰 완전 삭제 완료 (블랙리스트 포함) - userId: {}", userId);
         } catch (Exception e) {
             log.error("[User Service] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage(), e);
             throw new RuntimeException("로그아웃 처리 중 오류가 발생했습니다.", e);
