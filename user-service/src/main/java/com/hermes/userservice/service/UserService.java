@@ -22,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -36,6 +38,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final TokenBlacklistService tokenBlacklistService;
     private final UserMapper userMapper;
+    private final OrganizationIntegrationService organizationIntegrationService;
 
     public TokenResponse login(LoginRequestDto loginDto) {
         User user = userRepository.findByEmail(loginDto.getEmail())
@@ -77,79 +80,49 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public User getUserById(Long userId) {
-        return userRepository.findById(userId)
+    public UserResponseDto getUserById(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        // 원격 DB에서 조직 정보 가져오기
+        List<Map<String, Object>> remoteOrganizations = organizationIntegrationService.getUserOrganizations(userId);
+        
+        return userMapper.toResponseDto(user, remoteOrganizations);
     }
 
-    public User createUser(UserCreateDto userCreateDto) {
+    public UserResponseDto createUser(UserCreateDto userCreateDto) {
         if (userRepository.findByEmail(userCreateDto.getEmail()).isPresent()) {
             throw new DuplicateEmailException("이미 존재하는 이메일입니다: " + userCreateDto.getEmail());
         }
 
         User user = userMapper.toEntity(userCreateDto);
-        return userRepository.save(user);
+        User createdUser = userRepository.save(user);
+        return userMapper.toResponseDto(createdUser);
     }
 
-    public User updateUser(Long userId, UserUpdateDto userUpdateDto) {
-        User user = getUserById(userId);
+    public UserResponseDto updateUser(Long userId, UserUpdateDto userUpdateDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
+        // DTO 필드가 null이 아닌 경우에만 업데이트 로직 적용
         if (userUpdateDto.getEmail() != null && !Objects.equals(user.getEmail(), userUpdateDto.getEmail())) {
             if (userRepository.findByEmail(userUpdateDto.getEmail()).isPresent()) {
                 throw new DuplicateEmailException("이미 존재하는 이메일입니다: " + userUpdateDto.getEmail());
             }
             user.updateEmail(userUpdateDto.getEmail());
         }
-
         if (userUpdateDto.getPassword() != null) {
             user.updatePassword(passwordEncoder.encode(userUpdateDto.getPassword()));
         }
+        user.updateInfo(userUpdateDto.getName(), userUpdateDto.getPhone(), userUpdateDto.getAddress(), userUpdateDto.getProfileImageUrl(), userUpdateDto.getSelfIntroduction());
+        user.updateWorkInfo(userUpdateDto.getEmploymentType(), userUpdateDto.getRank(), userUpdateDto.getPosition(), userUpdateDto.getJob(), userUpdateDto.getRole(), userUpdateDto.getWorkPolicyId());
+        user.updateAdminStatus(userUpdateDto.getIsAdmin());
+        user.updatePasswordResetFlag(userUpdateDto.getNeedsPasswordReset());
 
-        if (userUpdateDto.getName() != null) {
-            user.updateName(userUpdateDto.getName());
-        }
-        if (userUpdateDto.getPhone() != null) {
-            user.updatePhone(userUpdateDto.getPhone());
-        }
-        if (userUpdateDto.getAddress() != null) {
-            user.updateAddress(userUpdateDto.getAddress());
-        }
-        if (userUpdateDto.getProfileImageUrl() != null) {
-            user.updateProfileImageUrl(userUpdateDto.getProfileImageUrl());
-        }
-        if (userUpdateDto.getSelfIntroduction() != null) {
-            user.updateSelfIntroduction(userUpdateDto.getSelfIntroduction());
-        }
-
-        if (userUpdateDto.getEmploymentType() != null) {
-            user.updateEmploymentType(userUpdateDto.getEmploymentType());
-        }
-        if (userUpdateDto.getRank() != null) {
-            user.updateRank(userUpdateDto.getRank());
-        }
-        if (userUpdateDto.getPosition() != null) {
-            user.updatePosition(userUpdateDto.getPosition());
-        }
-        if (userUpdateDto.getJob() != null) {
-            user.updateJob(userUpdateDto.getJob());
-        }
-        if (userUpdateDto.getRole() != null) {
-            user.updateRole(userUpdateDto.getRole());
-        }
-        if (userUpdateDto.getWorkPolicyId() != null) {
-            user.updateWorkPolicyId(userUpdateDto.getWorkPolicyId());
-        }
-
-        if (userUpdateDto.getIsAdmin() != null) {
-            user.updateAdminStatus(userUpdateDto.getIsAdmin());
-        }
-        if (userUpdateDto.getNeedsPasswordReset() != null) {
-            user.updatePasswordResetFlag(userUpdateDto.getNeedsPasswordReset());
-        }
-
-        return userRepository.save(user);
+        User updatedUser = userRepository.save(user);
+        return userMapper.toResponseDto(updatedUser);
     }
-
+    
     public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException("삭제할 사용자를 찾을 수 없습니다: " + userId);
@@ -159,17 +132,23 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
-
-    @Deprecated
-    public UserResponseDto convertToUserResponseDto(User user) {
-        return userMapper.toResponseDto(user);
+    public List<UserResponseDto> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        
+        // N+1 문제 해결: 모든 사용자의 조직 정보를 한 번에 가져오기
+        Map<Long, List<Map<String, Object>>> allOrganizations = organizationIntegrationService.getAllUsersOrganizations();
+        
+        return users.stream()
+                .map(user -> {
+                    List<Map<String, Object>> userOrganizations = allOrganizations.getOrDefault(user.getId(), List.of());
+                    return userMapper.toResponseDto(user, userOrganizations);
+                })
+                .collect(Collectors.toList());
     }
 
     public User updateUserWorkPolicy(Long userId, Long workPolicyId) {
-        User user = getUserById(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         user.updateWorkPolicyId(workPolicyId);
         return userRepository.save(user);
     }

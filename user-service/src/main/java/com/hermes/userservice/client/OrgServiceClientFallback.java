@@ -1,5 +1,6 @@
 package com.hermes.userservice.client;
 
+import com.hermes.api.common.ApiResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -13,72 +14,78 @@ import java.util.Map;
 public class OrgServiceClientFallback implements OrgServiceClient {
 
     @Override
-    public Map<String, Object> getOrganization(Long organizationId) {
+    public ApiResult<Map<String, Object>> getOrganization(Long organizationId) {
         log.warn("org-service call failed - getOrganization: {}", organizationId);
         Map<String, Object> fallback = new HashMap<>();
         fallback.put("organizationId", organizationId);
         fallback.put("name", "Unable to retrieve organization information");
         fallback.put("error", "org-service connection failed");
-        return fallback;
+        return ApiResult.failure("org-service connection failed", fallback);
     }
 
     @Override
-    public List<Map<String, Object>> getAllOrganizations() {
+    public ApiResult<List<Map<String, Object>>> getAllOrganizations() {
         log.warn("org-service call failed - getAllOrganizations");
-        return new ArrayList<>();
+        return ApiResult.failure("org-service connection failed", new ArrayList<>());
     }
 
     @Override
-    public List<Map<String, Object>> getRootOrganizations() {
+    public ApiResult<List<Map<String, Object>>> getRootOrganizations() {
         log.warn("org-service call failed - getRootOrganizations");
-        return new ArrayList<>();
+        return ApiResult.failure("org-service connection failed", new ArrayList<>());
     }
 
     @Override
-    public List<Map<String, Object>> getOrganizationHierarchy() {
+    public ApiResult<List<Map<String, Object>>> getOrganizationHierarchy() {
         log.warn("org-service call failed - getOrganizationHierarchy");
-        return new ArrayList<>();
+        return ApiResult.failure("org-service connection failed", new ArrayList<>());
     }
 
     @Override
-    public List<Map<String, Object>> getAssignmentsByEmployeeId(Long employeeId) {
+    public ApiResult<List<Map<String, Object>>> getAssignmentsByEmployeeId(Long employeeId) {
         log.warn("org-service call failed - getAssignmentsByEmployeeId: {}", employeeId);
-        return new ArrayList<>();
+        return ApiResult.failure("org-service connection failed", new ArrayList<>());
     }
 
     @Override
-    public List<Map<String, Object>> getPrimaryAssignmentsByEmployeeId(Long employeeId) {
+    public ApiResult<List<Map<String, Object>>> getAllAssignments() {
+        log.warn("org-service call failed - getAllAssignments");
+        return ApiResult.failure("org-service connection failed", new ArrayList<>());
+    }
+
+    @Override
+    public ApiResult<List<Map<String, Object>>> getPrimaryAssignmentsByEmployeeId(Long employeeId) {
         log.warn("org-service call failed - getPrimaryAssignmentsByEmployeeId: {}", employeeId);
-        return new ArrayList<>();
+        return ApiResult.failure("org-service connection failed", new ArrayList<>());
     }
 
     @Override
-    public List<Map<String, Object>> getAssignmentsByOrganizationId(Long organizationId) {
+    public ApiResult<List<Map<String, Object>>> getAssignmentsByOrganizationId(Long organizationId) {
         log.warn("org-service call failed - getAssignmentsByOrganizationId: {}", organizationId);
-        return new ArrayList<>();
+        return ApiResult.failure("org-service connection failed", new ArrayList<>());
     }
 
     @Override
-    public List<Map<String, Object>> getLeadersByOrganizationId(Long organizationId) {
+    public ApiResult<List<Map<String, Object>>> getLeadersByOrganizationId(Long organizationId) {
         log.warn("org-service call failed - getLeadersByOrganizationId: {}", organizationId);
-        return new ArrayList<>();
+        return ApiResult.failure("org-service connection failed", new ArrayList<>());
     }
 
     @Override
-    public Map<String, Object> createOrganization(Map<String, Object> request) {
+    public ApiResult<Map<String, Object>> createOrganization(Map<String, Object> request) {
         log.warn("org-service call failed - createOrganization");
         Map<String, Object> fallback = new HashMap<>();
         fallback.put("error", "org-service connection failed");
-        return fallback;
+        return ApiResult.failure("org-service connection failed", fallback);
     }
 
     @Override
-    public Map<String, Object> updateOrganization(Long organizationId, Map<String, Object> request) {
+    public ApiResult<Map<String, Object>> updateOrganization(Long organizationId, Map<String, Object> request) {
         log.warn("org-service call failed - updateOrganization: {}", organizationId);
         Map<String, Object> fallback = new HashMap<>();
         fallback.put("organizationId", organizationId);
         fallback.put("error", "org-service connection failed");
-        return fallback;
+        return ApiResult.failure("org-service connection failed", fallback);
     }
 
     @Override
@@ -87,20 +94,20 @@ public class OrgServiceClientFallback implements OrgServiceClient {
     }
 
     @Override
-    public Map<String, Object> createAssignment(Map<String, Object> request) {
+    public ApiResult<Map<String, Object>> createAssignment(Map<String, Object> request) {
         log.warn("org-service call failed - createAssignment");
         Map<String, Object> fallback = new HashMap<>();
         fallback.put("error", "org-service connection failed");
-        return fallback;
+        return ApiResult.failure("org-service connection failed", fallback);
     }
 
     @Override
-    public Map<String, Object> updateAssignment(Long assignmentId, Map<String, Object> request) {
+    public ApiResult<Map<String, Object>> updateAssignment(Long assignmentId, Map<String, Object> request) {
         log.warn("org-service call failed - updateAssignment: {}", assignmentId);
         Map<String, Object> fallback = new HashMap<>();
         fallback.put("assignmentId", assignmentId);
         fallback.put("error", "org-service connection failed");
-        return fallback;
+        return ApiResult.failure("org-service connection failed", fallback);
     }
 
     @Override

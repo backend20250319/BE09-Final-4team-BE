@@ -76,6 +76,14 @@ public class EmployeeAssignmentService {
     }
 
     @Transactional(readOnly = true)
+    public List<EmployeeAssignmentDto> getAllAssignments() {
+        List<EmployeeAssignment> assignments = employeeAssignmentRepository.findAll();
+        return assignments.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<EmployeeAssignmentDto> getAssignmentsByOrganizationId(Long organizationId) {
         List<EmployeeAssignment> assignments = employeeAssignmentRepository.findByOrganizationOrganizationId(organizationId);
         return assignments.stream()
@@ -143,6 +151,7 @@ public class EmployeeAssignmentService {
         return EmployeeAssignmentDto.builder()
                 .assignmentId(assignment.getAssignmentId())
                 .employeeId(assignment.getEmployeeId())
+                .employeeName(assignment.getEmployeeName())
                 .organizationId(assignment.getOrganization().getOrganizationId())
                 .organizationName(assignment.getOrganization().getName())
                 .isPrimary(assignment.getIsPrimary())

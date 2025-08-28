@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "employee_assignment")
+@Table(name = "employee_assignment", uniqueConstraints = @UniqueConstraint(columnNames = {"employee_id", "organization_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,6 +20,9 @@ public class EmployeeAssignment {
 
     @Column(name = "employee_id", nullable = false)
     private Long employeeId;
+
+    @Column(name = "employee_name", nullable = false)
+    private String employeeName;
 
     @ManyToOne
     @JoinColumn(name = "organization_id", nullable = false)
@@ -38,4 +41,5 @@ public class EmployeeAssignment {
     protected void onCreate() {
         assignedAt = LocalDateTime.now();
     }
+    
 }
