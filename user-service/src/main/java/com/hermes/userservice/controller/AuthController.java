@@ -94,22 +94,36 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(
-            @AuthenticationPrincipal UserPrincipal user,
+            Authentication authentication,
             @RequestBody RefreshRequest request) {
 
-        log.info(" [Auth Controller] /refresh 요청 - userId: {}", user.getUserId());
+        UserPrincipal user = null;
+        // authentication.getPrincipal() 대신 authentication.getDetails()를 사용합니다.
+        if (authentication != null && authentication.getDetails() instanceof UserPrincipal) {
+            user = (UserPrincipal) authentication.getDetails();
+        }
+
+        // 인증 확인
+        if (user == null) {
+            log.error("❌ [Auth Controller] /refresh 요청 실패 - 인증된 사용자 정보를 찾을 수 없음 (UserPrincipal 추출 실패)");
+            throw new IllegalArgumentException("인증된 사용자 정보를 찾을 수 없습니다. 유효한 JWT 토큰을 포함해주세요.");
+        }
 
         Long userId = user.getUserId();
         String email = user.getEmail();
+
+        log.info("✅ [Auth Controller] /refresh 요청 - userId: {}", userId);
 
         RefreshToken saved = refreshTokenRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("RefreshToken not found"));
 
         if (!saved.getToken().equals(request.getRefreshToken())) {
+            log.warn("⚠️ [Auth Controller] 유효하지 않은 RefreshToken - userId: {}", userId);
             throw new RuntimeException("유효하지 않은 RefreshToken입니다.");
         }
 
         if (tokenBlacklistService.isTokenBlacklisted(request.getRefreshToken())) {
+            log.warn("⚠️ [Auth Controller] 로그아웃된 RefreshToken - userId: {}", userId);
             throw new RuntimeException("로그아웃된 Refresh Token입니다.");
         }
 
@@ -117,6 +131,7 @@ public class AuthController {
         Instant expiration = saved.getExpiration().atZone(ZoneId.systemDefault()).toInstant();
 
         if (expiration.isBefore(now)) {
+            log.warn("⚠️ [Auth Controller] 만료된 RefreshToken - userId: {}", userId);
             throw new RuntimeException("만료된 RefreshToken입니다.");
         }
 
@@ -126,7 +141,7 @@ public class AuthController {
         Role userRole = userEntity.getIsAdmin() ? Role.ADMIN : Role.USER;
         String newAccessToken = jwtTokenService.createAccessToken(email, userId, userRole, null);
 
-        log.info(" [Auth Controller] 토큰 갱신 성공: userId={}", userId);
+        log.info("✅ [Auth Controller] 토큰 갱신 성공: userId={}", userId);
         return ResponseEntity.ok(ApiResponse.success("토큰이 성공적으로 갱신되었습니다.",
                 new TokenResponse(newAccessToken, saved.getToken())));
     }
