@@ -25,11 +25,8 @@ public class UpdateTemplateRequest {
     @NotNull(message = "첨부파일 사용 여부는 필수입니다")
     private Boolean useAttachment;
     
-    @NotNull(message = "승인대상 변경 허용 여부는 필수입니다")
-    private Boolean allowApprovalChange;
-    
-    @NotNull(message = "참조대상 변경 허용 여부는 필수입니다")
-    private Boolean allowReferenceChange;
+    @NotNull(message = "대상 변경 허용 여부는 필수입니다")
+    private Boolean allowTargetChange;
     
     private String referenceFiles;
     

@@ -15,8 +15,7 @@ public class TemplateResponse {
     private String bodyTemplate;
     private Boolean useBody;
     private Boolean useAttachment;
-    private Boolean allowApprovalChange;
-    private Boolean allowReferenceChange;
+    private Boolean allowTargetChange;
     private Boolean isHidden;
     private String referenceFiles;
     private CategoryResponse category;

@@ -39,10 +39,7 @@ public class DocumentTemplate {
     private Boolean useAttachment = false;
 
     @Column(nullable = false)
-    private Boolean allowApprovalChange = false;
-
-    @Column(nullable = false)
-    private Boolean allowReferenceChange = false;
+    private Boolean allowTargetChange = false;
 
     @Column(nullable = false)
     private Boolean isHidden = false;

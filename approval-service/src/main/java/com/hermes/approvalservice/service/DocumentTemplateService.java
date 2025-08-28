@@ -88,8 +88,7 @@ public class DocumentTemplateService {
                 .bodyTemplate(request.getBodyTemplate())
                 .useBody(request.getUseBody())
                 .useAttachment(request.getUseAttachment())
-                .allowApprovalChange(request.getAllowApprovalChange())
-                .allowReferenceChange(request.getAllowReferenceChange())
+                .allowTargetChange(request.getAllowTargetChange())
                 .referenceFiles(request.getReferenceFiles())
                 .category(category)
                 .build();
@@ -131,8 +130,7 @@ public class DocumentTemplateService {
         template.setBodyTemplate(request.getBodyTemplate());
         template.setUseBody(request.getUseBody());
         template.setUseAttachment(request.getUseAttachment());
-        template.setAllowApprovalChange(request.getAllowApprovalChange());
-        template.setAllowReferenceChange(request.getAllowReferenceChange());
+        template.setAllowTargetChange(request.getAllowTargetChange());
         template.setReferenceFiles(request.getReferenceFiles());
         template.setCategory(category);
 
@@ -242,8 +240,7 @@ public class DocumentTemplateService {
         response.setBodyTemplate(template.getBodyTemplate());
         response.setUseBody(template.getUseBody());
         response.setUseAttachment(template.getUseAttachment());
-        response.setAllowApprovalChange(template.getAllowApprovalChange());
-        response.setAllowReferenceChange(template.getAllowReferenceChange());
+        response.setAllowTargetChange(template.getAllowTargetChange());
         response.setIsHidden(template.getIsHidden());
         response.setReferenceFiles(template.getReferenceFiles());
         response.setCreatedAt(template.getCreatedAt());
