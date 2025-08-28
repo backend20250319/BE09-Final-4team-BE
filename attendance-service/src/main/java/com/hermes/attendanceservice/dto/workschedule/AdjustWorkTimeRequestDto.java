@@ -35,11 +35,4 @@ public class AdjustWorkTimeRequestDto {
     private String reason;
     
     private String description;
-    
-    @Builder.Default
-    private Boolean isApproved = false; // 승인 여부
-    
-    private String approverId; // 승인자 ID
-    
-    private String approverComment; // 승인자 코멘트
 } 

@@ -22,18 +22,6 @@ public interface WorkTimeAdjustmentRepository extends JpaRepository<WorkTimeAdju
     List<WorkTimeAdjustment> findByUserIdAndAdjustDateBetweenOrderByAdjustDateDesc(
             Long userId, LocalDate startDate, LocalDate endDate);
     
-    // 사용자별 상태별 근무 시간 조정 조회
-    List<WorkTimeAdjustment> findByUserIdAndStatusOrderByAdjustDateDesc(Long userId, String status);
-    
-    // 사용자별 승인된 근무 시간 조정 조회
-    List<WorkTimeAdjustment> findByUserIdAndIsApprovedTrueOrderByAdjustDateDesc(Long userId);
-    
-    // 승인 대기 중인 근무 시간 조정 조회
-    List<WorkTimeAdjustment> findByStatusOrderByCreatedAtAsc(String status);
-    
-    // 승인자별 처리한 근무 시간 조정 조회
-    List<WorkTimeAdjustment> findByApproverIdOrderByUpdatedAtDesc(String approverId);
-    
     // 특정 날짜의 근무 시간 조정 조회
     List<WorkTimeAdjustment> findByAdjustDate(LocalDate adjustDate);
     
@@ -43,9 +31,6 @@ public interface WorkTimeAdjustmentRepository extends JpaRepository<WorkTimeAdju
     // 페이지네이션을 위한 사용자별 근무 시간 조정 조회
     Page<WorkTimeAdjustment> findByUserId(Long userId, Pageable pageable);
     
-    // 상태별 페이지네이션 조회
-    Page<WorkTimeAdjustment> findByStatus(String status, Pageable pageable);
-    
     // 사용자별 조정 유형별 조회
     List<WorkTimeAdjustment> findByUserIdAndAdjustTypeOrderByAdjustDateDesc(Long userId, String adjustType);
     
@@ -53,9 +38,4 @@ public interface WorkTimeAdjustmentRepository extends JpaRepository<WorkTimeAdju
     @Query("SELECT COUNT(w) FROM WorkTimeAdjustment w WHERE w.userId = :userId " +
            "AND YEAR(w.adjustDate) = :year AND MONTH(w.adjustDate) = :month")
     long countByUserIdAndYearMonth(@Param("userId") Long userId, @Param("year") int year, @Param("month") int month);
-    
-    // 승인된 근무 시간 조정 통계
-    @Query("SELECT COUNT(w) FROM WorkTimeAdjustment w WHERE w.userId = :userId " +
-           "AND w.isApproved = true AND YEAR(w.adjustDate) = :year AND MONTH(w.adjustDate) = :month")
-    long countApprovedByUserIdAndYearMonth(@Param("userId") Long userId, @Param("year") int year, @Param("month") int month);
 } 

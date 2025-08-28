@@ -269,10 +269,6 @@ public class WorkScheduleService {
                     .endTime(requestDto.getEndTime())
                     .reason(requestDto.getReason())
                     .description(requestDto.getDescription())
-                    .isApproved(requestDto.getIsApproved())
-                    .approverId(requestDto.getApproverId())
-                    .approverComment(requestDto.getApproverComment())
-                    .status("PENDING")
                     .build();
             
             WorkTimeAdjustment savedAdjustment = workTimeAdjustmentRepository.save(adjustment);
@@ -287,96 +283,7 @@ public class WorkScheduleService {
         }
     }
     
-    /**
-     * 근무 시간 조정 승인/거절
-     */
-    @Transactional
-    public WorkTimeAdjustment processWorkTimeAdjustment(Long adjustmentId, String approverId, boolean isApproved, String comment) {
-        try {
-            WorkTimeAdjustment adjustment = workTimeAdjustmentRepository.findById(adjustmentId)
-                    .orElseThrow(() -> new RuntimeException("Work time adjustment not found"));
-            
-            if (isApproved) {
-                adjustment.approve(approverId, comment);
-            } else {
-                adjustment.reject(approverId, comment);
-            }
-            
-            WorkTimeAdjustment updatedAdjustment = workTimeAdjustmentRepository.save(adjustment);
-            
-            log.info("Work time adjustment {} successfully: {}", isApproved ? "approved" : "rejected", adjustmentId);
-            
-            return updatedAdjustment;
-            
-        } catch (Exception e) {
-            log.error("Error processing work time adjustment: {}", adjustmentId, e);
-            throw new RuntimeException("Failed to process work time adjustment", e);
-        }
-    }
-    
-    /**
-     * 근무 시간 조정 삭제 (취소)
-     */
-    @Transactional
-    public void deleteWorkTimeAdjustment(Long userId, Long adjustmentId) {
-        try {
-            // 1. 근무 시간 조정 존재 여부 및 소유권 확인
-            WorkTimeAdjustment adjustment = workTimeAdjustmentRepository.findById(adjustmentId)
-                    .orElseThrow(() -> new RuntimeException("Work time adjustment not found"));
-            
-            if (!adjustment.getUserId().equals(userId)) {
-                throw new RuntimeException("Access denied: You can only delete your own work time adjustments");
-            }
-            
-            // 2. 이미 승인된 조정은 삭제 불가
-            if ("APPROVED".equals(adjustment.getStatus())) {
-                throw new RuntimeException("Cannot delete approved work time adjustment");
-            }
-            
-            // 3. 조정 상태를 CANCELLED로 변경
-            adjustment.cancel();
-            workTimeAdjustmentRepository.save(adjustment);
-            
-            log.info("Work time adjustment deleted successfully: {}", adjustmentId);
-            
-        } catch (Exception e) {
-            log.error("Error deleting work time adjustment: {} for userId: {}", adjustmentId, userId, e);
-            throw new RuntimeException("Failed to delete work time adjustment", e);
-        }
-    }
-    
-    /**
-     * 근무 시간 조정 상세 조회
-     */
-    public WorkTimeAdjustment getWorkTimeAdjustmentById(Long userId, Long adjustmentId) {
-        try {
-            WorkTimeAdjustment adjustment = workTimeAdjustmentRepository.findById(adjustmentId)
-                    .orElseThrow(() -> new RuntimeException("Work time adjustment not found"));
-            
-            // 소유권 확인 (관리자가 아닌 경우)
-            if (!adjustment.getUserId().equals(userId)) {
-                throw new RuntimeException("Access denied: You can only view your own work time adjustments");
-            }
-            
-            return adjustment;
-        } catch (Exception e) {
-            log.error("Error fetching work time adjustment: {} for userId: {}", adjustmentId, userId, e);
-            throw new RuntimeException("Failed to fetch work time adjustment", e);
-        }
-    }
-    
-    /**
-     * 관리자용 근무 시간 조정 상세 조회
-     */
-    public WorkTimeAdjustment getWorkTimeAdjustmentByIdForAdmin(Long adjustmentId) {
-        try {
-            return workTimeAdjustmentRepository.findById(adjustmentId)
-                    .orElseThrow(() -> new RuntimeException("Work time adjustment not found"));
-        } catch (Exception e) {
-            log.error("Error fetching work time adjustment: {}", adjustmentId, e);
-            throw new RuntimeException("Failed to fetch work time adjustment", e);
-        }
-    }
+
     
     /**
      * Work Policy 기반 고정 스케줄 생성
@@ -862,29 +769,7 @@ public class WorkScheduleService {
         }
     }
     
-    /**
-     * 사용자별 근무 시간 조정 조회
-     */
-    public List<WorkTimeAdjustment> getUserWorkTimeAdjustments(Long userId) {
-        try {
-            return workTimeAdjustmentRepository.findByUserIdOrderByAdjustDateDesc(userId);
-        } catch (Exception e) {
-            log.error("Error fetching work time adjustments for userId: {}", userId, e);
-            throw new RuntimeException("Failed to fetch work time adjustments", e);
-        }
-    }
-    
-    /**
-     * 승인 대기 중인 근무 시간 조정 조회
-     */
-    public List<WorkTimeAdjustment> getPendingWorkTimeAdjustments() {
-        try {
-            return workTimeAdjustmentRepository.findByStatusOrderByCreatedAtAsc("PENDING");
-        } catch (Exception e) {
-            log.error("Error fetching pending work time adjustments", e);
-            throw new RuntimeException("Failed to fetch pending work time adjustments", e);
-        }
-    }
+
     
     /**
      * Schedule 엔티티를 ScheduleResponseDto로 변환
