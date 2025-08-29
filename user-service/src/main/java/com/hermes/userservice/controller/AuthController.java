@@ -4,14 +4,10 @@ import com.hermes.auth.dto.ApiResponse;
 import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.auth.dto.TokenResponse;
 import com.hermes.auth.dto.RefreshRequest;
-import com.hermes.userservice.service.UserService;
+import com.hermes.userservice.service.AuthService;
 import com.hermes.auth.principal.UserPrincipal;
-import com.hermes.auth.enums.Role;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.repository.RefreshTokenRepository;
-import com.hermes.userservice.repository.UserRepository;
-import com.hermes.userservice.service.JwtTokenService;
-import com.hermes.userservice.service.TokenBlacklistService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,9 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.security.core.Authentication;
@@ -34,16 +27,13 @@ import org.springframework.security.core.Authentication;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserService userService;
-    private final JwtTokenService jwtTokenService;
+    private final AuthService authService;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final UserRepository userRepository;
-    private final TokenBlacklistService tokenBlacklistService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequestDto loginDto) {
         log.info(" [Auth Controller] /login 요청 - email: {}", loginDto.getEmail());
-        TokenResponse tokenResponse = userService.login(loginDto);
+        TokenResponse tokenResponse = authService.login(loginDto);
         return ResponseEntity.ok(ApiResponse.success("로그인이 성공했습니다.", tokenResponse));
     }
 
@@ -82,7 +72,7 @@ public class AuthController {
                 .map(RefreshToken::getTokenHash)
                 .orElse(null);
 
-        userService.logout(userId, accessToken, refreshTokenHash);
+        authService.logout(userId, accessToken, refreshTokenHash);
 
         Map<String, String> result = new HashMap<>();
         result.put("userId", String.valueOf(userId));
@@ -115,53 +105,7 @@ public class AuthController {
 
         log.info("✅ [Auth Controller] /refresh 요청 - userId: {}", userId);
 
-        RefreshToken saved = refreshTokenRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("RefreshToken not found"));
-
-        // 해시된 토큰 검증
-        if (!jwtTokenService.verifyRefreshToken(request.getRefreshToken(), saved.getTokenHash())) {
-            log.warn("⚠️ [Auth Controller] 유효하지 않은 RefreshToken - userId: {}", userId);
-            throw new RuntimeException("유효하지 않은 RefreshToken입니다.");
-        }
-
-        if (tokenBlacklistService.isTokenBlacklisted(request.getRefreshToken())) {
-            log.warn("⚠️ [Auth Controller] 로그아웃된 RefreshToken - userId: {}", userId);
-            throw new RuntimeException("로그아웃된 Refresh Token입니다.");
-        }
-
-        Instant now = Instant.now();
-        Instant expiration = saved.getExpiration().atZone(ZoneId.systemDefault()).toInstant();
-
-        if (expiration.isBefore(now)) {
-            log.warn("⚠️ [Auth Controller] 만료된 RefreshToken - userId: {}", userId);
-            throw new RuntimeException("만료된 RefreshToken입니다.");
-        }
-
-        com.hermes.userservice.entity.User userEntity = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-        
-        Role userRole = userEntity.getIsAdmin() ? Role.ADMIN : Role.USER;
-        String newAccessToken = jwtTokenService.createAccessToken(email, userId, userRole, null);
-
-        // Refresh Token Rotation: 새로운 RefreshToken 생성
-        String newRefreshToken = jwtTokenService.createRefreshToken(String.valueOf(userId), email);
-        String hashedNewRefreshToken = jwtTokenService.hashRefreshToken(newRefreshToken);
-        
-        // 기존 RefreshToken 삭제하고 새로운 것으로 교체
-        refreshTokenRepository.delete(saved);
-        refreshTokenRepository.save(
-                RefreshToken.builder()
-                        .userId(userId)
-                        .tokenHash(hashedNewRefreshToken)
-                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenExpiration() / 1000))
-                        .build()
-        );
-
-        // 기존 RefreshToken을 블랙리스트에 추가 (보안 강화)
-        tokenBlacklistService.logoutUser(userId, null, request.getRefreshToken());
-
-        log.info("✅ [Auth Controller] 토큰 갱신 성공 (Token Rotation 적용): userId={}", userId);
-        return ResponseEntity.ok(ApiResponse.success("토큰이 성공적으로 갱신되었습니다.",
-                new TokenResponse(newAccessToken, newRefreshToken)));
+        TokenResponse tokenResponse = authService.refreshToken(userId, email, request);
+        return ResponseEntity.ok(ApiResponse.success("토큰이 성공적으로 갱신되었습니다.", tokenResponse));
     }
 }
