@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.dto.request;
 
+import com.hermes.attachment.dto.AttachmentInfoRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,4 +27,7 @@ public class CreateDocumentRequest {
     
     @Valid
     private List<ApprovalTargetRequest> referenceTargets;
+    
+    @Valid
+    private List<AttachmentInfoRequest> attachments;
 }
