@@ -1,19 +1,13 @@
 package com.hermes.userservice.service;
 
-import com.hermes.auth.enums.Role;
-import com.hermes.auth.dto.TokenResponse;
-import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.dto.UserCreateDto;
 import com.hermes.userservice.dto.UserResponseDto;
 import com.hermes.userservice.dto.UserUpdateDto;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
-import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.DuplicateEmailException;
-import com.hermes.userservice.exception.InvalidCredentialsException;
 import com.hermes.userservice.exception.UserNotFoundException;
 import com.hermes.userservice.mapper.UserMapper;
-import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,58 +27,11 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final JwtTokenService jwtTokenService;
-    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final TokenBlacklistService tokenBlacklistService;
     private final UserMapper userMapper;
     private final OrganizationIntegrationService organizationIntegrationService;
-        private final WorkPolicyIntegrationService workPolicyIntegrationService;
+    private final WorkPolicyIntegrationService workPolicyIntegrationService;
 
-    public TokenResponse login(LoginRequestDto loginDto) {
-        User user = userRepository.findByEmail(loginDto.getEmail())
-                .orElseThrow(() -> new UserNotFoundException("해당 이메일로 등록된 사용자가 없습니다."));
-
-        if (!passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
-            throw new InvalidCredentialsException("비밀번호가 일치하지 않습니다.");
-        }
-
-        user.updateLastLogin();
-        userRepository.save(user);
-
-        Role userRole = user.getIsAdmin() ? Role.ADMIN : Role.USER;
-        String accessToken = jwtTokenService.createAccessToken(user.getEmail(), user.getId(), userRole, null);
-        String refreshToken = jwtTokenService.createRefreshToken(String.valueOf(user.getId()), user.getEmail());
-
-        refreshTokenRepository.save(
-                RefreshToken.builder()
-                        .userId(user.getId())
-                        .token(refreshToken)
-                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenExpiration() / 1000))
-                        .build()
-        );
-
-        return new TokenResponse(accessToken, refreshToken);
-    }
-
-    @Transactional // @Transactional 어노테이션이 있어야 DB 변경 사항이 커밋됩니다.
-    public void logout(Long userId, String accessToken, String refreshToken) {
-        log.info("[User Service] 로그아웃 처리 시작 - userId: {}", userId);
-
-        try {
-            // userId로 RefreshToken을 찾아서 삭제
-            refreshTokenRepository.findByUserId(userId).ifPresent(rt -> {
-                refreshTokenRepository.delete(rt);
-                log.info("[User Service] RefreshToken 삭제 완료 - userId: {}", userId);
-            });
-            
-            tokenBlacklistService.logoutUser(userId, accessToken, refreshToken);
-            log.info("[User Service] 모든 토큰 완전 삭제 완료 (블랙리스트 포함) - userId: {}", userId);
-        } catch (Exception e) {
-            log.error("[User Service] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage(), e);
-            throw new RuntimeException("로그아웃 처리 중 오류가 발생했습니다.", e);
-        }
-    }
 
     @Transactional(readOnly = true)
     public UserResponseDto getUserById(Long userId) {

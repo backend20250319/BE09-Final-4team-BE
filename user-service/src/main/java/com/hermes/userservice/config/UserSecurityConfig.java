@@ -14,8 +14,8 @@ public class UserSecurityConfig extends BaseSecurityConfig {
     
     @Override
     protected void configureAuthorization(
-        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authz
+        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth
     ) {
-        authz.requestMatchers("/api/auth/**").permitAll();
+        auth.requestMatchers("/api/auth/**").permitAll();
     }
 }
