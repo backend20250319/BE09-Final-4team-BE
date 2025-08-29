@@ -57,6 +57,9 @@ public class UserService {
         String accessToken = jwtTokenService.createAccessToken(user.getEmail(), user.getId(), userRole, null);
         String refreshToken = jwtTokenService.createRefreshToken(String.valueOf(user.getId()), user.getEmail());
 
+        // 기존 RefreshToken이 있으면 삭제 (이중 로그인 방지)
+        refreshTokenRepository.findByUserId(user.getId()).ifPresent(refreshTokenRepository::delete);
+
         refreshTokenRepository.save(
                 RefreshToken.builder()
                         .userId(user.getId())
