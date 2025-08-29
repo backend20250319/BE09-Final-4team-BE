@@ -42,4 +42,8 @@ public class RefreshToken {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+
+    public boolean isExpired() {
+        return expiration.isBefore(LocalDateTime.now());
+    }
 }
