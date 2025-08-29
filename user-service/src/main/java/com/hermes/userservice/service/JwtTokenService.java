@@ -16,7 +16,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import io.jsonwebtoken.io.Decoders;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * JWT 토큰 생성 전용 서비스 (user-service에서만 사용)
@@ -28,7 +29,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class JwtTokenService {
 
     private final JwtProperties jwtProperties;
-    private final PasswordEncoder passwordEncoder;
 
     /**
      * 액세스 토큰 생성
@@ -86,17 +86,32 @@ public class JwtTokenService {
     }
 
     /**
-     * RefreshToken 해시 생성 (보안 강화)
+     * RefreshToken 해시 생성 (SHA-256)
      */
     public String hashRefreshToken(String token) {
-        return passwordEncoder.encode(token);
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 algorithm not found", e);
+        }
     }
 
     /**
      * RefreshToken 검증 (해시 비교)
      */
     public boolean verifyRefreshToken(String rawToken, String hashedToken) {
-        return passwordEncoder.matches(rawToken, hashedToken);
+        String rawTokenHash = hashRefreshToken(rawToken);
+        return rawTokenHash.equals(hashedToken);
     }
 
     /**

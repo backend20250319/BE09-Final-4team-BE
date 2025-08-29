@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @PreAuthorize("permitAll()")
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequestDto loginDto) {
         TokenResponse tokenResponse = authService.login(loginDto);
@@ -41,6 +43,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("로그아웃이 성공적으로 처리되었습니다.", null));
     }
 
+    @PreAuthorize("permitAll()")
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(@RequestBody RefreshRequest request) {
         TokenResponse tokenResponse = authService.refreshToken(request);
