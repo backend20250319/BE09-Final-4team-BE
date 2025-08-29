@@ -42,7 +42,7 @@ public class UserService {
     private final TokenBlacklistService tokenBlacklistService;
     private final UserMapper userMapper;
     private final OrganizationIntegrationService organizationIntegrationService;
-        private final WorkPolicyIntegrationService workPolicyIntegrationService;
+    private final WorkPolicyIntegrationService workPolicyIntegrationService;
 
     public TokenResponse login(LoginRequestDto loginDto) {
         User user = userRepository.findByEmail(loginDto.getEmail())
@@ -70,12 +70,10 @@ public class UserService {
         return new TokenResponse(accessToken, refreshToken);
     }
 
-    @Transactional // @Transactional 어노테이션이 있어야 DB 변경 사항이 커밋됩니다.
     public void logout(Long userId, String accessToken, String refreshToken) {
         log.info("[User Service] 로그아웃 처리 시작 - userId: {}", userId);
 
         try {
-            // userId로 RefreshToken을 찾아서 삭제
             refreshTokenRepository.findByUserId(userId).ifPresent(rt -> {
                 refreshTokenRepository.delete(rt);
                 log.info("[User Service] RefreshToken 삭제 완료 - userId: {}", userId);
@@ -95,10 +93,8 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         
-        // 원격 DB에서 조직 정보 가져오기
         List<Map<String, Object>> remoteOrganizations = organizationIntegrationService.getUserOrganizations(userId);
         
-        // 근무정책 정보 가져오기 (null 체크 추가)
         WorkPolicyResponseDto workPolicy = null;
         if (user.getWorkPolicyId() != null) {
             try {
@@ -125,7 +121,6 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
-        // DTO 필드가 null이 아닌 경우에만 업데이트 로직 적용
         if (userUpdateDto.getEmail() != null && !Objects.equals(user.getEmail(), userUpdateDto.getEmail())) {
             if (userRepository.findByEmail(userUpdateDto.getEmail()).isPresent()) {
                 throw new DuplicateEmailException("이미 존재하는 이메일입니다: " + userUpdateDto.getEmail());
@@ -157,14 +152,12 @@ public class UserService {
         log.info("전체 사용자 목록 조회 요청 (근무정책 및 조직 정보 포함)");
         List<User> users = userRepository.findAll();
         
-        // N+1 문제 해결: 모든 사용자의 조직 정보를 한 번에 가져오기
         Map<Long, List<Map<String, Object>>> allOrganizations = organizationIntegrationService.getAllUsersOrganizations();
         
         return users.stream()
                 .map(user -> {
                     List<Map<String, Object>> userOrganizations = allOrganizations.getOrDefault(user.getId(), List.of());
                     
-                    // 근무정책 정보 가져오기 (null 체크 추가)
                     WorkPolicyResponseDto workPolicy = null;
                     if (user.getWorkPolicyId() != null) {
                         try {
@@ -186,10 +179,6 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    /**
-     * 공개 프로필 정보 조회
-     * 모든 사용자가 접근 가능한 기본 정보만 반환
-     */
     @Transactional(readOnly = true)
     public MainProfileResponseDto getMainProfile(Long userId) {
         log.info("공개 프로필 조회 요청: userId={}", userId);
@@ -199,10 +188,6 @@ public class UserService {
         return userMapper.toMainProfileDto(user);
     }
 
-    /**
-     * 상세 프로필 정보 조회
-     * 본인 및 관리자만 접근 가능한 완전한 정보 반환
-     */
     @Transactional(readOnly = true)
     public DetailProfileResponseDto getDetailProfile(Long userId) {
         log.info("상세 프로필 조회 요청: userId={}", userId);

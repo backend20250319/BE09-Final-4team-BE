@@ -12,13 +12,11 @@ import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;
 import com.hermes.userservice.service.JwtTokenService;
 import com.hermes.userservice.service.TokenBlacklistService;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import jakarta.validation.Valid;
 
 import java.time.Instant;
@@ -50,14 +48,12 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Map<String, String>>> logout(
             Authentication authentication,
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
-        
+
         UserPrincipal user = null;
-        // authentication.getPrincipal() 대신 authentication.getDetails()를 사용합니다.
         if (authentication != null && authentication.getDetails() instanceof UserPrincipal) {
             user = (UserPrincipal) authentication.getDetails();
         }
 
-        // 인증 확인
         if (user == null) {
             log.error("❌ [Auth Controller] /logout 요청 실패 - 인증된 사용자 정보를 찾을 수 없음 (UserPrincipal 추출 실패)");
             throw new IllegalArgumentException("인증된 사용자 정보를 찾을 수 없습니다. 유효한 JWT 토큰을 포함해주세요.");
@@ -70,13 +66,12 @@ public class AuthController {
 
         String accessToken = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            accessToken = authHeader.substring(7); // "Bearer " 제거
+            accessToken = authHeader.substring(7);
             log.info("✅ [Auth Controller] Access Token 추출 완료 - userId: {}", userId);
         } else {
             log.warn("⚠️ [Auth Controller] Authorization 헤더가 없거나 형식이 잘못됨 - userId: {}", userId);
         }
 
-        // RefreshToken을 DB에서 가져오기
         String refreshToken = refreshTokenRepository.findByUserId(userId)
                 .map(RefreshToken::getToken)
                 .orElse(null);
@@ -98,12 +93,10 @@ public class AuthController {
             @RequestBody RefreshRequest request) {
 
         UserPrincipal user = null;
-        // authentication.getPrincipal() 대신 authentication.getDetails()를 사용합니다.
         if (authentication != null && authentication.getDetails() instanceof UserPrincipal) {
             user = (UserPrincipal) authentication.getDetails();
         }
 
-        // 인증 확인
         if (user == null) {
             log.error("❌ [Auth Controller] /refresh 요청 실패 - 인증된 사용자 정보를 찾을 수 없음 (UserPrincipal 추출 실패)");
             throw new IllegalArgumentException("인증된 사용자 정보를 찾을 수 없습니다. 유효한 JWT 토큰을 포함해주세요.");
