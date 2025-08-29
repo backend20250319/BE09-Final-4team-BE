@@ -54,20 +54,10 @@ public class JwtTokenService {
     }
 
     /**
-     * 리프레시 토큰 생성
+     * 리프레시 토큰 생성 (UUID 기반 랜덤 문자열)
      */
-    public String createRefreshToken(Long userId, String email) {
-        Instant now = Instant.now();
-        Instant expiration = now.plus(jwtProperties.getRefreshTokenExpirySeconds(), ChronoUnit.SECONDS);
-
-        return Jwts.builder()
-                .subject(email)
-                .claim("userId", userId)
-                .claim("type", "refresh")
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(expiration))
-                .signWith(getSigningKey(), Jwts.SIG.HS256)
-                .compact();
+    public String createRefreshToken() {
+        return java.util.UUID.randomUUID().toString();
     }
 
 

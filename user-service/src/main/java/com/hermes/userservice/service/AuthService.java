@@ -49,7 +49,7 @@ public class AuthService {
         Role userRole = getUserRole(user);
         // TODO: tenantId
         String accessToken = jwtTokenService.createAccessToken(user.getId(), user.getEmail(), userRole, null);
-        String refreshToken = jwtTokenService.createRefreshToken(user.getId(), user.getEmail());
+        String refreshToken = jwtTokenService.createRefreshToken();
 
         // 기존 RefreshToken이 있으면 삭제 (이중 로그인 방지)
         refreshTokenRepository.findByUserId(user.getId()).ifPresent(refreshTokenRepository::delete);
@@ -63,15 +63,15 @@ public class AuthService {
     /**
      * 로그아웃 처리
      */
-    public void logout(Long userId, String accessToken) {
+    public void logout(Long userId) {
         try {
             // userId로 RefreshToken을 찾아서 삭제
             refreshTokenRepository.findByUserId(userId).ifPresent(refreshTokenRepository::delete);
             
-            // AccessToken을 블랙리스트에 추가 (보안 강화)
-            if (accessToken != null) {
-                tokenBlacklistService.addToken(accessToken, jwtTokenService.getAccessTokenExpirySeconds(), userId);
-            }
+            // AccessToken을 블랙리스트에 추가하는 것은 의미 없음
+            // 각 서비스의 SecurityFilter에서 블랙리스트를 확인하지 않기 때문
+            // AccessToken의 수명이 충분히 짧다면 크게 문제되진 않음
+
         } catch (Exception e) {
             log.error("[Auth Service] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage());
             throw new InvalidJwtTokenException("로그아웃 처리 중 오류가 발생했습니다.", e);
@@ -95,7 +95,7 @@ public class AuthService {
         String newAccessToken = jwtTokenService.createAccessToken(user.getId(), request.getEmail(), userRole, null);
 
         // Refresh Token Rotation: 새로운 RefreshToken 생성
-        String newRefreshToken = jwtTokenService.createRefreshToken(user.getId(), request.getEmail());
+        String newRefreshToken = jwtTokenService.createRefreshToken();
         
         // 기존 RefreshToken 삭제하고 새로운 것으로 교체
         refreshTokenRepository.delete(saved);

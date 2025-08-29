@@ -9,7 +9,6 @@ import com.hermes.userservice.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,15 +30,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(
-            @AuthenticationPrincipal UserPrincipal user,
-            @RequestHeader(value = HttpHeaders.AUTHORIZATION) String authHeader) {
-
-        if (!authHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("유효하지 않은 Authorization 헤더 형식입니다.");
-        }
-        String accessToken = authHeader.substring(7); // "Bearer " 제거
-        authService.logout(user.getUserId(), accessToken);
+    public ResponseEntity<ApiResponse<Void>> logout(@AuthenticationPrincipal UserPrincipal user) {
+        authService.logout(user.getUserId());
         return ResponseEntity.ok(ApiResponse.success("로그아웃이 성공적으로 처리되었습니다.", null));
     }
 
