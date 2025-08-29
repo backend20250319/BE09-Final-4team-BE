@@ -1,58 +1,63 @@
 package com.hermes.userservice.service;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 /**
- * 토큰 블랙리스트 관리 서비스 (user-service 전용)
- * 실제 운영에서는 Redis 등 외부 캐시를 사용하는 것을 권장
+ * 토큰 블랙리스트 관리 서비스 인터페이스
+ * 로그아웃된 토큰이나 무효화된 토큰을 관리하여 보안을 강화합니다.
  */
-@Slf4j
-@Service
-public class TokenBlacklistService {
-
-    // 메모리 기반 블랙리스트 (실제 운영에서는 Redis 사용 권장)
-    private final ConcurrentMap<String, Long> blacklistedTokens = new ConcurrentHashMap<>();
+public interface TokenBlacklistService {
 
     /**
-     * 사용자 로그아웃 - 토큰들을 블랙리스트에 추가
+     * 개별 토큰을 블랙리스트에 추가
+     * 
+     * @param token 블랙리스트에 추가할 토큰
+     * @param duration 블랙리스트에 유지할 시간 (초)
+     * @param userId 토큰의 소유자 ID
      */
-    public void logoutUser(Long userId, String accessToken, String refreshToken) {
-        log.info("사용자 로그아웃 처리: userId={}", userId);
-        
-        if (accessToken != null && !accessToken.isEmpty()) {
-            blacklistedTokens.put(accessToken, userId);
-            log.debug("Access Token을 블랙리스트에 추가: userId={}", userId);
-        }
-        
-        if (refreshToken != null && !refreshToken.isEmpty()) {
-            blacklistedTokens.put(refreshToken, userId);
-            log.debug("Refresh Token을 블랙리스트에 추가: userId={}", userId);
-        }
-    }
+    void addToken(String token, long duration, Long userId);
+
 
     /**
      * 토큰이 블랙리스트에 있는지 확인
+     * 
+     * @param token 확인할 토큰
+     * @return 블랙리스트에 있으면 true, 없으면 false
      */
-    public boolean isTokenBlacklisted(String token) {
-        return blacklistedTokens.containsKey(token);
-    }
+    boolean isBlacklisted(String token);
 
     /**
-     * 블랙리스트 통계 정보 (모니터링용)
+     * 특정 토큰을 블랙리스트에서 제거
+     * 
+     * @param token 제거할 토큰
+     * @return 제거되었으면 true, 토큰이 없었으면 false
      */
-    public int getBlacklistSize() {
-        return blacklistedTokens.size();
-    }
+    boolean removeToken(String token);
 
     /**
-     * 블랙리스트 초기화 (테스트용 - 운영 사용 금지)
+     * 만료된 토큰들을 블랙리스트에서 자동 제거
+     * 메모리 효율성을 위해 정기적으로 호출되어야 합니다.
+     * 
+     * @return 제거된 토큰 개수
      */
-    public void clearBlacklist() {
-        blacklistedTokens.clear();
-        log.warn("토큰 블랙리스트가 초기화되었습니다.");
-    }
+    int removeExpiredTokens();
+
+    /**
+     * 현재 블랙리스트에 있는 토큰 개수 반환
+     * 
+     * @return 블랙리스트 크기
+     */
+    int getSize();
+
+    /**
+     * 블랙리스트 전체 초기화 (테스트 및 관리 목적)
+     * 운영 환경에서는 신중히 사용해야 합니다.
+     */
+    void clear();
+
+    /**
+     * 특정 사용자의 모든 토큰을 블랙리스트에서 제거
+     * 
+     * @param userId 사용자 ID
+     * @return 제거된 토큰 개수
+     */
+    int removeUserTokens(Long userId);
 }

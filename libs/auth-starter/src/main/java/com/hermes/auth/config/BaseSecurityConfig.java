@@ -46,16 +46,16 @@ public abstract class BaseSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> 
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(authz -> {
+            .authorizeHttpRequests(auth -> {
                 // 기본 공개 경로
-                authz.requestMatchers("/actuator/health", "/actuator/info").permitAll();
-                authz.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll();
+                auth.requestMatchers("/actuator/health", "/actuator/info").permitAll();
+                auth.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll();
                 
                 // 서비스별 커스텀 경로 (추상 메서드)
-                configureAuthorization(authz);
+                configureAuthorization(auth);
                 
                 // 기본: 나머지는 인증 필요
-                authz.anyRequest().authenticated();
+                auth.anyRequest().authenticated();
             })
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt
@@ -76,7 +76,7 @@ public abstract class BaseSecurityConfig {
      * 각 서비스의 특정 경로에 대한 권한을 설정합니다.
      */
     protected abstract void configureAuthorization(
-        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authz
+        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth
     );
 
     @Bean
