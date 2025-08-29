@@ -23,5 +23,8 @@ public class SecurityConfig extends BaseSecurityConfig {
         authz.requestMatchers("/api/work-schedule/**").authenticated();
         authz.requestMatchers("/api/workpolicy/**").authenticated();
         authz.requestMatchers("/api/leaves/**").authenticated();
+        
+        // WorkMonitor API - ADMIN 권한 필요
+        authz.requestMatchers("/api/work-monitor/**").hasRole("ADMIN");
     }
 } 

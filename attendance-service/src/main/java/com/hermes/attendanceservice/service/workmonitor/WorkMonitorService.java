@@ -13,7 +13,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -34,14 +37,14 @@ public class WorkMonitorService {
      * 특정 날짜의 근무 모니터링 데이터 조회
      */
     @Transactional(readOnly = true)
-    public WorkMonitorDto getWorkMonitorByDate(LocalDate date, String authorization) {
+    public WorkMonitorDto getWorkMonitorByDate(LocalDate date) {
         Optional<WorkMonitor> workMonitor = workMonitorRepository.findByDate(date);
         
         if (workMonitor.isPresent()) {
             return convertToDto(workMonitor.get());
         } else {
             // 데이터가 없으면 실시간으로 계산하여 생성
-            return generateWorkMonitorData(date, authorization);
+            return generateWorkMonitorData(date);
         }
     }
     
@@ -49,15 +52,15 @@ public class WorkMonitorService {
      * 오늘 날짜의 근무 모니터링 데이터 조회
      */
     @Transactional(readOnly = true)
-    public WorkMonitorDto getTodayWorkMonitor(String authorization) {
-        return getWorkMonitorByDate(LocalDate.now(), authorization);
+    public WorkMonitorDto getTodayWorkMonitor() {
+        return getWorkMonitorByDate(LocalDate.now());
     }
     
     /**
      * 출석 버튼 클릭 시 근무 모니터링 데이터 갱신
      */
-    public WorkMonitorDto updateWorkMonitorData(LocalDate date, String authorization) {
-        WorkMonitorDto workMonitorDto = generateWorkMonitorData(date, authorization);
+    public WorkMonitorDto updateWorkMonitorData(LocalDate date) {
+        WorkMonitorDto workMonitorDto = generateWorkMonitorData(date);
         
         // 기존 데이터가 있으면 업데이트, 없으면 새로 생성
         Optional<WorkMonitor> existingMonitor = workMonitorRepository.findByDate(date);
@@ -77,9 +80,9 @@ public class WorkMonitorService {
     /**
      * 실시간으로 근무 모니터링 데이터 생성
      */
-    private WorkMonitorDto generateWorkMonitorData(LocalDate date, String authorization) {
+    private WorkMonitorDto generateWorkMonitorData(LocalDate date) {
         // 1. 전체 직원 수 조회 (UserService에서 가져옴)
-        int totalEmployees = getTotalEmployees(authorization);
+        int totalEmployees = getTotalEmployees();
         
         // 2. 출석 데이터 조회
         List<Attendance> attendances = attendanceRepository.findByDate(date);
@@ -116,11 +119,26 @@ public class WorkMonitorService {
     /**
      * UserService에서 전체 직원 수 조회
      */
-    private int getTotalEmployees(String authorization) {
+    private int getTotalEmployees() {
         try {
-            // UserService에서 전체 직원 수를 조회하는 API 호출
-            Map<String, Object> response = userServiceClient.getTotalEmployees(authorization);
-            return (Integer) response.get("totalUsers");
+            // 현재 요청의 Authorization 헤더를 가져옴
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                String authorization = request.getHeader("Authorization");
+                
+                if (authorization == null || authorization.trim().isEmpty()) {
+                    log.warn("Authorization header is missing or empty");
+                    return 0;
+                }
+                
+                // UserService에서 전체 직원 수를 조회하는 API 호출
+                Map<String, Object> response = userServiceClient.getTotalEmployees(authorization);
+                return (Integer) response.get("totalUsers");
+            } else {
+                log.warn("Request context not available");
+                return 0;
+            }
         } catch (Exception e) {
             log.error("Failed to get total employees from UserService", e);
             return 0;
