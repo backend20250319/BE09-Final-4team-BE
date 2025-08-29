@@ -25,6 +25,7 @@ Hermes is a Spring Boot microservices system implementing a multi-tenant archite
 - **auth-starter**: Spring Boot Starter for JWT authentication and authorization with auto-configuration
 - **mt-starter**: Multi-tenancy auto-configuration starter with RabbitMQ event-driven schema management
 - **ftp-starter**: FTP file transfer utilities with auto-configuration
+- **attachment-client-starter**: Attachment service integration and file handling utilities with auto-configuration
 - **api-common**: Common API response classes and utilities
 - **events**: Event models for inter-service communication
 
@@ -160,6 +161,46 @@ void testUserEndpoint() {
 - **SpringSecurityTestUtils**: Programmatic test authentication setup
 - **WithMockJwtUserSecurityContextFactory**: SecurityContext factory for tests
 
+## Attachment Service Integration
+
+### attachment-client-starter Usage
+Add attachment-client-starter dependency to enable attachment service integration:
+
+```gradle
+dependencies {
+    implementation project(':libs:attachment-client-starter')
+}
+```
+
+**Auto-Configured Components:**
+- **AttachmentInfo**: JPA `@Embeddable` entity for attachment metadata storage
+- **AttachmentServiceClient**: Feign client for attachment-service communication with circuit breaker
+- **AttachmentClientService**: Business logic for attachment validation and conversion
+
+### Usage Pattern
+```java
+// Entity with embedded attachments
+@Entity
+public class Document {
+    @ElementCollection
+    private List<AttachmentInfo> attachments = new ArrayList<>();
+}
+
+// Service usage
+@Service 
+public class DocumentService {
+    private final AttachmentClientService attachmentClientService;
+    
+    // Validate and convert requests to entities
+    List<AttachmentInfo> attachments = attachmentClientService
+        .validateAndConvertAttachments(request.getAttachments());
+    
+    // Convert entities to response DTOs  
+    List<AttachmentInfoResponse> responses = attachmentClientService
+        .convertToResponseList(document.getAttachments());
+}
+```
+
 ## Multi-Tenancy
 
 ### mt-starter Usage
@@ -255,7 +296,15 @@ dependencies {
         title = "Service Name API",
         description = "Service description",
         version = "1.0.0"
-    )
+    ),
+    security = @SecurityRequirement(name = "Bearer Authentication")
+)
+@SecurityScheme(
+    name = "Bearer Authentication",
+    type = SecuritySchemeType.HTTP,
+    bearerFormat = "JWT",
+    scheme = "bearer",
+    description = "JWT Bearer 토큰을 입력하세요"
 )
 public class OpenApiConfig {
     // Configuration if needed

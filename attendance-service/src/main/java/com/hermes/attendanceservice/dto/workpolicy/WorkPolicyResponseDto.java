@@ -31,8 +31,14 @@ public class WorkPolicyResponseDto {
     private LocalTime coreTimeStart;
     private LocalTime coreTimeEnd;
     private LocalTime breakStartTime;
+    private LocalTime breakEndTime;
+    private Integer breakMinutes;
     private LocalTime avgWorkTime;
     private Integer totalRequiredMinutes;
+    private List<StartDayOfWeek> holidayDays;
+    private List<String> holidays;
+    private Boolean isHolidayFixed;
+    private Boolean isBreakFixed;
     private List<AnnualLeaveResponseDto> annualLeaves;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -62,8 +68,14 @@ public class WorkPolicyResponseDto {
                 .coreTimeStart(workPolicy.getCoreTimeStart())
                 .coreTimeEnd(workPolicy.getCoreTimeEnd())
                 .breakStartTime(workPolicy.getBreakStartTime())
+                .breakEndTime(workPolicy.getBreakEndTime())
+                .breakMinutes(workPolicy.getBreakMinutes())
                 .avgWorkTime(workPolicy.getAvgWorkTime())
                 .totalRequiredMinutes(workPolicy.getTotalRequiredMinutes())
+                .holidayDays(workPolicy.getHolidayDays())
+                .holidays(workPolicy.getHolidays())
+                .isHolidayFixed(workPolicy.getIsHolidayFixed())
+                .isBreakFixed(workPolicy.getIsBreakFixed())
                 .createdAt(workPolicy.getCreatedAt())
                 .updatedAt(workPolicy.getUpdatedAt())
                 .totalWorkMinutes(workPolicy.getTotalWorkMinutes())

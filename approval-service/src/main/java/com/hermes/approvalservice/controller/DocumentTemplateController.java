@@ -8,6 +8,7 @@ import com.hermes.approvalservice.dto.response.TemplatesByCategoryResponse;
 import com.hermes.approvalservice.service.DocumentTemplateService;
 import com.hermes.auth.principal.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -73,6 +74,7 @@ public class DocumentTemplateController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "템플릿 생성", description = "새로운 결재 템플릿을 생성합니다 (관리자 전용)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "템플릿 생성 성공"),
@@ -82,15 +84,12 @@ public class DocumentTemplateController {
     public ResponseEntity<ApiResult<TemplateResponse>> createTemplate(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 생성 요청", required = true) @Valid @RequestBody CreateTemplateRequest request) {
-        if (!user.isAdmin()) {
-            return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 템플릿을 생성할 수 있습니다."));
-        }
-        
         TemplateResponse template = templateService.createTemplate(request);
         return ResponseEntity.ok(ApiResult.success("템플릿을 생성했습니다.", template));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "템플릿 수정", description = "기존 템플릿을 수정합니다 (관리자 전용)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "템플릿 수정 성공"),
@@ -102,15 +101,12 @@ public class DocumentTemplateController {
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 ID", required = true) @PathVariable Long id,
             @Parameter(description = "템플릿 수정 요청", required = true) @Valid @RequestBody UpdateTemplateRequest request) {
-        if (!user.isAdmin()) {
-            return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 템플릿을 수정할 수 있습니다."));
-        }
-        
         TemplateResponse template = templateService.updateTemplate(id, request);
         return ResponseEntity.ok(ApiResult.success("템플릿을 수정했습니다.", template));
     }
 
     @PutMapping("/{id}/visibility")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "템플릿 공개/숨김 설정", description = "템플릿의 공개 여부를 설정합니다 (관리자 전용)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "템플릿 공개 설정 변경 성공"),
@@ -121,16 +117,13 @@ public class DocumentTemplateController {
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 ID", required = true) @PathVariable Long id,
             @Parameter(description = "숨김 여부", required = true) @RequestParam boolean isHidden) {
-        if (!user.isAdmin()) {
-            return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 템플릿 숨김 처리를 할 수 있습니다."));
-        }
-        
         templateService.updateTemplateVisibility(id, isHidden);
         String message = isHidden ? "템플릿을 숨김 처리했습니다." : "템플릿 숨김을 해제했습니다.";
         return ResponseEntity.ok(ApiResult.success(message));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "템플릿 삭제", description = "템플릿을 삭제합니다 (관리자 전용)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "템플릿 삭제 성공"),
@@ -140,10 +133,6 @@ public class DocumentTemplateController {
     public ResponseEntity<ApiResult<Void>> deleteTemplate(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 ID", required = true) @PathVariable Long id) {
-        if (!user.isAdmin()) {
-            return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 템플릿을 삭제할 수 있습니다."));
-        }
-        
         templateService.deleteTemplate(id);
         return ResponseEntity.ok(ApiResult.success("템플릿을 삭제했습니다."));
     }

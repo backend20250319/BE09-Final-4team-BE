@@ -7,6 +7,7 @@ import com.hermes.approvalservice.dto.response.CategoryResponse;
 import com.hermes.approvalservice.service.TemplateCategoryService;
 import com.hermes.auth.principal.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -70,13 +71,10 @@ public class TemplateCategoryController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResult<CategoryResponse>> createCategory(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 생성 요청 정보", required = true) @Valid @RequestBody CreateCategoryRequest request) {
-        if (!user.isAdmin()) {
-            return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 카테고리를 생성할 수 있습니다."));
-        }
-        
         CategoryResponse category = categoryService.createCategory(request);
         return ResponseEntity.ok(ApiResult.success("카테고리를 생성했습니다.", category));
     }
@@ -91,14 +89,11 @@ public class TemplateCategoryController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResult<CategoryResponse>> updateCategory(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 ID", required = true) @PathVariable Long id, 
             @Parameter(description = "카테고리 수정 요청 정보", required = true) @Valid @RequestBody UpdateCategoryRequest request) {
-        if (!user.isAdmin()) {
-            return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 카테고리를 수정할 수 있습니다."));
-        }
-        
         CategoryResponse category = categoryService.updateCategory(id, request);
         return ResponseEntity.ok(ApiResult.success("카테고리를 수정했습니다.", category));
     }
@@ -113,13 +108,10 @@ public class TemplateCategoryController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResult<Void>> deleteCategory(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 ID", required = true) @PathVariable Long id) {
-        if (!user.isAdmin()) {
-            return ResponseEntity.status(403).body(ApiResult.rejected("관리자만 카테고리를 삭제할 수 있습니다."));
-        }
-        
         categoryService.deleteCategory(id);
         return ResponseEntity.ok(ApiResult.success("카테고리를 삭제했습니다."));
     }

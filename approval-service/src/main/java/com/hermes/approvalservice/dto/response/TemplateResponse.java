@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.dto.response;
 
+import com.hermes.attachment.dto.AttachmentInfoResponse;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -15,10 +16,9 @@ public class TemplateResponse {
     private String bodyTemplate;
     private Boolean useBody;
     private Boolean useAttachment;
-    private Boolean allowApprovalChange;
-    private Boolean allowReferenceChange;
+    private Boolean allowTargetChange;
     private Boolean isHidden;
-    private String referenceFiles;
+    private List<AttachmentInfoResponse> referenceFiles;
     private CategoryResponse category;
     private List<TemplateFieldResponse> fields;
     private List<ApprovalStageResponse> approvalStages;

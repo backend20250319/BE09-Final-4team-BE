@@ -24,6 +24,22 @@ spring:
               uri: lb://communication-service
               predicates:
                 - Path=/api/communication/**
+            - id: attendance-service
+              uri: lb://attendance-service
+              predicates:
+                - Path=/api/attendance/**
+            - id: attendance-leaves-service
+              uri: lb://attendance-service
+              predicates:
+                - Path=/api/leaves/**
+            - id: attendance-workpolicy-service
+              uri: lb://attendance-service
+              predicates:
+                - Path=/api/workpolicy/**
+            - id: attendance-work-schedule-service
+              uri: lb://attendance-service
+              predicates:
+                - Path=/api/work-schedule/**
             # API 문서 라우팅
             - id: user-service-docs
               uri: lb://user-service

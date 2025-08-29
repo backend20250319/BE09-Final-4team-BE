@@ -5,7 +5,7 @@ import com.hermes.attendanceservice.dto.workpolicy.WorkPolicyRequestDto;
 import com.hermes.attendanceservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.attendanceservice.entity.workpolicy.WorkPolicy;
 import com.hermes.attendanceservice.entity.workpolicy.WorkType;
-import com.hermes.attendanceservice.repository.WorkPolicyRepository;
+import com.hermes.attendanceservice.repository.workpolicy.WorkPolicyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

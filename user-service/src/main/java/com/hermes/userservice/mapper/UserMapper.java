@@ -4,6 +4,7 @@ import com.hermes.userservice.dto.UserCreateDto;
 import com.hermes.userservice.dto.UserResponseDto;
 import com.hermes.userservice.dto.UserUpdateDto;
 import com.hermes.userservice.dto.UserOrganizationDto;
+import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.entity.UserOrganization;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +47,7 @@ public class UserMapper {
                 .map(this::toUserOrganizationDto)
                 .collect(Collectors.toList());
 
-        return buildUserResponseDto(user, organizations);
+        return buildUserResponseDto(user, organizations, null);
     }
     
     public UserResponseDto toResponseDto(User user, List<Map<String, Object>> remoteOrganizations) {
@@ -54,10 +55,18 @@ public class UserMapper {
                 .map(this::mapToUserOrganizationDto)
                 .collect(Collectors.toList());
 
-        return buildUserResponseDto(user, organizations);
+        return buildUserResponseDto(user, organizations, null);
+    }
+
+    public UserResponseDto toResponseDto(User user, List<Map<String, Object>> remoteOrganizations, WorkPolicyResponseDto workPolicy) {
+        List<UserOrganizationDto> organizations = remoteOrganizations.stream()
+                .map(this::mapToUserOrganizationDto)
+                .collect(Collectors.toList());
+
+        return buildUserResponseDto(user, organizations, workPolicy);
     }
     
-    private UserResponseDto buildUserResponseDto(User user, List<UserOrganizationDto> organizations) {
+    private UserResponseDto buildUserResponseDto(User user, List<UserOrganizationDto> organizations, WorkPolicyResponseDto workPolicy) {
         return UserResponseDto.builder()
                 .id(user.getId())
                 .name(user.getName())
@@ -78,6 +87,7 @@ public class UserMapper {
                 .lastLoginAt(user.getLastLoginAt())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
+                .workPolicy(workPolicy)
                 .organizations(organizations)
                 .build();
     }

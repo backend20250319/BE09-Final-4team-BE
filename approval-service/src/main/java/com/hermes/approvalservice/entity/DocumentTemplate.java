@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.entity;
 
+import com.hermes.attachment.entity.AttachmentInfo;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -39,16 +40,14 @@ public class DocumentTemplate {
     private Boolean useAttachment = false;
 
     @Column(nullable = false)
-    private Boolean allowApprovalChange = false;
-
-    @Column(nullable = false)
-    private Boolean allowReferenceChange = false;
+    private Boolean allowTargetChange = false;
 
     @Column(nullable = false)
     private Boolean isHidden = false;
 
-    @Column(length = 1000)
-    private String referenceFiles;
+    @ElementCollection
+    @CollectionTable(name = "template_reference_files", joinColumns = @JoinColumn(name = "template_id"))
+    private List<AttachmentInfo> referenceFiles = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
