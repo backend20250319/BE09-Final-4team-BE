@@ -8,6 +8,7 @@ import com.hermes.attendanceservice.entity.workpolicy.WorkType;
 import com.hermes.attendanceservice.repository.workpolicy.WorkPolicyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -24,6 +25,7 @@ public class WorkPolicyController {
      * 근무 정책 생성
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResult<WorkPolicyResponseDto> createWorkPolicy(@Valid @RequestBody WorkPolicyRequestDto requestDto) {
         try {
             log.info("Creating work policy: {}", requestDto.getName());

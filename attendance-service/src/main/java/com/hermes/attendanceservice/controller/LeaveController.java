@@ -4,8 +4,11 @@ import com.hermes.api.common.ApiResult;
 import com.hermes.attendanceservice.dto.leave.CreateLeaveRequestDto;
 import com.hermes.attendanceservice.dto.leave.LeaveRequestResponseDto;
 import com.hermes.attendanceservice.service.leave.LeaveService;
+import com.hermes.auth.principal.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -25,8 +28,14 @@ public class LeaveController {
      */
     @PostMapping
     public ApiResult<LeaveRequestResponseDto> createLeaveRequest(
-            @Valid @RequestBody CreateLeaveRequestDto createDto) {
+            @Valid @RequestBody CreateLeaveRequestDto createDto,
+            @AuthenticationPrincipal UserPrincipal user) {
         try {
+            // 본인만 휴가 신청 가능
+            if (!user.getUserId().equals(createDto.getEmployeeId())) {
+                return ApiResult.failure("권한이 없습니다.");
+            }
+            
             log.info("휴가 신청 생성 요청: employeeId={}, leaveType={}, startDate={}, endDate={}", 
                     createDto.getEmployeeId(), createDto.getLeaveType(), 
                     createDto.getStartDate(), createDto.getEndDate());
@@ -51,6 +60,7 @@ public class LeaveController {
      * @return 수정된 휴가 신청 응답
      */
     @PutMapping("/{requestId}")
+    @PreAuthorize("hasRole('ADMIN') or #createDto.employeeId == authentication.principal.userId")
     public ApiResult<LeaveRequestResponseDto> modifyLeaveRequest(
             @PathVariable Long requestId,
             @Valid @RequestBody CreateLeaveRequestDto createDto) {
@@ -78,7 +88,8 @@ public class LeaveController {
      */
     @GetMapping("/{requestId}")
     public ApiResult<LeaveRequestResponseDto> getLeaveRequest(
-            @PathVariable Long requestId) {
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal UserPrincipal user) {
         try {
             log.info("휴가 신청 조회 요청: requestId={}", requestId);
             
@@ -86,6 +97,11 @@ public class LeaveController {
             
             if (response == null) {
                 return ApiResult.failure("휴가 신청을 찾을 수 없습니다.");
+            }
+            
+            // 본인 또는 관리자만 조회 가능
+            if (!user.getUserId().equals(response.getEmployeeId()) && !user.getRole().name().equals("ADMIN")) {
+                return ApiResult.failure("권한이 없습니다.");
             }
             
             return ApiResult.success("휴가 신청 조회가 완료되었습니다.", response);

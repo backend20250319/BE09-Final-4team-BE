@@ -2,6 +2,7 @@ package com.hermes.attendanceservice.config;
 
 import com.hermes.auth.config.BaseSecurityConfig;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 
@@ -10,6 +11,7 @@ import org.springframework.security.config.annotation.web.configurers.AuthorizeH
  * BaseSecurityConfig를 상속받아 attendance-service 특화 권한 설정만 추가
  */
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig extends BaseSecurityConfig {
 
     @Override

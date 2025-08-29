@@ -13,5 +13,8 @@ public interface UserServiceClient {
     @GetMapping("/api/users/{userId}/simple")
     Map<String, Object> getUserById(@PathVariable("userId") Long userId, 
                                    @RequestHeader("Authorization") String authorization);
+    
+    @GetMapping("/api/users/count")
+    Map<String, Object> getTotalEmployees(@RequestHeader("Authorization") String authorization);
 
 } 
