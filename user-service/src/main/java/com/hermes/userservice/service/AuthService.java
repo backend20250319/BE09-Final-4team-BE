@@ -52,7 +52,10 @@ public class AuthService {
         String refreshToken = jwtTokenService.createRefreshToken();
 
         // 기존 RefreshToken이 있으면 삭제 (이중 로그인 방지)
-        refreshTokenRepository.findByUserId(user.getId()).ifPresent(refreshTokenRepository::delete);
+        refreshTokenRepository.findByUserId(user.getId()).ifPresent(entity -> {
+            refreshTokenRepository.delete(entity);
+            refreshTokenRepository.flush();
+        });
 
         saveRefreshToken(user.getId(), refreshToken);
 
@@ -99,6 +102,8 @@ public class AuthService {
         
         // 기존 RefreshToken 삭제하고 새로운 것으로 교체
         refreshTokenRepository.delete(saved);
+        refreshTokenRepository.flush();
+
         saveRefreshToken(user.getId(), newRefreshToken);
 
         // 기존 RefreshToken을 블랙리스트에 추가 (보안 강화)
