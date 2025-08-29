@@ -4,6 +4,8 @@ import com.hermes.userservice.dto.UserCreateDto;
 import com.hermes.userservice.dto.UserResponseDto;
 import com.hermes.userservice.dto.UserUpdateDto;
 import com.hermes.userservice.dto.UserOrganizationDto;
+import com.hermes.userservice.dto.MainProfileResponseDto;
+import com.hermes.userservice.dto.DetailProfileResponseDto;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.entity.UserOrganization;
@@ -64,6 +66,38 @@ public class UserMapper {
                 .collect(Collectors.toList());
 
         return buildUserResponseDto(user, organizations, workPolicy);
+    }
+    
+    /**
+     * User 엔티티를 MainProfileResponseDto로 변환
+     * 공개 가능한 기본 정보만 포함
+     */
+    public MainProfileResponseDto toMainProfileDto(User user) {
+        return MainProfileResponseDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .profileImageUrl(user.getProfileImageUrl())
+                .build();
+    }
+
+    /**
+     * User 엔티티를 DetailProfileResponseDto로 변환
+     * 기본 정보 + 민감한 상세 정보 모두 포함
+     */
+    public DetailProfileResponseDto toDetailProfileDto(User user) {
+        return DetailProfileResponseDto.builder()
+                // 공개 정보
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .profileImageUrl(user.getProfileImageUrl())
+                // 민감한 상세 정보
+                .address(user.getAddress())
+                .joinDate(user.getJoinDate())
+                .build();
     }
     
     private UserResponseDto buildUserResponseDto(User user, List<UserOrganizationDto> organizations, WorkPolicyResponseDto workPolicy) {

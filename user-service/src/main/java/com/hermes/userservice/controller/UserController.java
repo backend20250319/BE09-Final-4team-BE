@@ -1,9 +1,12 @@
 package com.hermes.userservice.controller;
 
 import com.hermes.auth.dto.ApiResponse;
+import com.hermes.auth.principal.UserPrincipal;
 import com.hermes.userservice.dto.UserCreateDto;
 import com.hermes.userservice.dto.UserResponseDto;
 import com.hermes.userservice.dto.UserUpdateDto;
+import com.hermes.userservice.dto.MainProfileResponseDto;
+import com.hermes.userservice.dto.DetailProfileResponseDto;
 import com.hermes.userservice.service.OrganizationSyncService;
 import com.hermes.userservice.service.UserService;
 import jakarta.validation.Valid;
@@ -11,6 +14,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -75,5 +81,38 @@ public class UserController {
         log.info("전체 사용자 조직 정보 동기화 요청");
         organizationSyncService.syncAllUsersOrganizations();
         return ResponseEntity.ok(ApiResponse.success("전체 사용자 조직 정보 동기화 완료", null));
+    }
+
+    /**
+     * 공개 프로필 조회
+     * 모든 사용자가 접근 가능한 기본 정보만 반환
+     */
+    @GetMapping("/{userId}/profile")
+    public ResponseEntity<ApiResponse<MainProfileResponseDto>> getMainProfile(@PathVariable Long userId) {
+        log.info("공개 프로필 조회 요청: userId={}", userId);
+        MainProfileResponseDto profile = userService.getMainProfile(userId);
+        return ResponseEntity.ok(ApiResponse.success("공개 프로필 조회 성공", profile));
+    }
+
+    /**
+     * 상세 프로필 조회
+     * 본인 및 관리자만 접근 가능한 완전한 정보 반환
+     */
+        @GetMapping("/{userId}/profile/detail")
+    public ResponseEntity<ApiResponse<DetailProfileResponseDto>> getDetailProfile(@PathVariable Long userId, Authentication authentication) {
+        log.info("상세 프로필 조회 요청: userId={}", userId);
+        
+        // 권한 검증 - Details에서 UserPrincipal 정보 가져오기
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getDetails();
+        boolean isAdmin = userPrincipal.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+        boolean isOwnProfile = userPrincipal.getUserId().equals(userId);
+
+        if (!isAdmin && !isOwnProfile) {
+            throw new AccessDeniedException("상세 프로필에 접근할 권한이 없습니다.");
+        }
+        
+        DetailProfileResponseDto profile = userService.getDetailProfile(userId);
+        return ResponseEntity.ok(ApiResponse.success("상세 프로필 조회 성공", profile));
     }
 }

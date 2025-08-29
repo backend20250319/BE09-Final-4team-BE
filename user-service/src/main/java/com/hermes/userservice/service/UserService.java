@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import com.hermes.userservice.dto.MainProfileResponseDto;
+import com.hermes.userservice.dto.DetailProfileResponseDto;
 
 @Slf4j
 @Service
@@ -96,8 +98,15 @@ public class UserService {
         // 원격 DB에서 조직 정보 가져오기
         List<Map<String, Object>> remoteOrganizations = organizationIntegrationService.getUserOrganizations(userId);
         
-        // 근무정책 정보 가져오기
-        WorkPolicyResponseDto workPolicy = workPolicyIntegrationService.getWorkPolicyById(user.getWorkPolicyId());
+        // 근무정책 정보 가져오기 (null 체크 추가)
+        WorkPolicyResponseDto workPolicy = null;
+        if (user.getWorkPolicyId() != null) {
+            try {
+                workPolicy = workPolicyIntegrationService.getWorkPolicyById(user.getWorkPolicyId());
+            } catch (Exception e) {
+                log.warn("근무 정책 조회 실패, null로 처리: userId={}, workPolicyId={}", userId, user.getWorkPolicyId(), e);
+            }
+        }
         
         return userMapper.toResponseDto(user, remoteOrganizations, workPolicy);
     }
@@ -155,8 +164,15 @@ public class UserService {
                 .map(user -> {
                     List<Map<String, Object>> userOrganizations = allOrganizations.getOrDefault(user.getId(), List.of());
                     
-                    // 근무정책 정보 가져오기 (N+1 문제 발생 - 추후 개선 필요)
-                    WorkPolicyResponseDto workPolicy = workPolicyIntegrationService.getWorkPolicyById(user.getWorkPolicyId());
+                    // 근무정책 정보 가져오기 (null 체크 추가)
+                    WorkPolicyResponseDto workPolicy = null;
+                    if (user.getWorkPolicyId() != null) {
+                        try {
+                            workPolicy = workPolicyIntegrationService.getWorkPolicyById(user.getWorkPolicyId());
+                        } catch (Exception e) {
+                            log.warn("근무 정책 조회 실패, null로 처리: userId={}, workPolicyId={}", user.getId(), user.getWorkPolicyId(), e);
+                        }
+                    }
                     
                     return userMapper.toResponseDto(user, userOrganizations, workPolicy);
                 })
@@ -168,5 +184,31 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         user.updateWorkPolicyId(workPolicyId);
         return userRepository.save(user);
+    }
+
+    /**
+     * 공개 프로필 정보 조회
+     * 모든 사용자가 접근 가능한 기본 정보만 반환
+     */
+    @Transactional(readOnly = true)
+    public MainProfileResponseDto getMainProfile(Long userId) {
+        log.info("공개 프로필 조회 요청: userId={}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        return userMapper.toMainProfileDto(user);
+    }
+
+    /**
+     * 상세 프로필 정보 조회
+     * 본인 및 관리자만 접근 가능한 완전한 정보 반환
+     */
+    @Transactional(readOnly = true)
+    public DetailProfileResponseDto getDetailProfile(Long userId) {
+        log.info("상세 프로필 조회 요청: userId={}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        return userMapper.toDetailProfileDto(user);
     }
 }
