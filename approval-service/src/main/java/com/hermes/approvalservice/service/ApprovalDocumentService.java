@@ -1,5 +1,7 @@
 package com.hermes.approvalservice.service;
 
+import com.hermes.attachment.entity.AttachmentInfo;
+import com.hermes.attachment.service.AttachmentClientService;
 import com.hermes.approvalservice.dto.request.CreateDocumentRequest;
 import com.hermes.approvalservice.dto.request.UpdateDocumentRequest;
 import com.hermes.approvalservice.dto.response.DocumentResponse;
@@ -30,7 +32,7 @@ public class ApprovalDocumentService {
     private final DocumentTemplateRepository templateRepository;
     private final DocumentPermissionService permissionService;
     private final DocumentActivityService activityService;
-    private final AttachmentService attachmentService;
+    private final AttachmentClientService attachmentService;
 
 
     public Page<DocumentSummaryResponse> getDocumentsForUser(Long userId, UserPrincipal user, 

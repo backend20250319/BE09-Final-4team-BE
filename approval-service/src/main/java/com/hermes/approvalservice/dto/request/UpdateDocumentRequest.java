@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.dto.request;
 
+import com.hermes.attachment.dto.AttachmentInfoRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

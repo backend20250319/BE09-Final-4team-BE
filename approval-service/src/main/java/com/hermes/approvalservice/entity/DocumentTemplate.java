@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.entity;
 
+import com.hermes.attachment.entity.AttachmentInfo;
 import jakarta.persistence.*;
 import lombok.*;
 

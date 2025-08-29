@@ -1,4 +1,4 @@
-package com.hermes.approvalservice.dto;
+package com.hermes.attachment.dto;
 
 import lombok.Data;
 

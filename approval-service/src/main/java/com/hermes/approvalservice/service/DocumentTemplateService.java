@@ -1,5 +1,7 @@
 package com.hermes.approvalservice.service;
 
+import com.hermes.attachment.entity.AttachmentInfo;
+import com.hermes.attachment.service.AttachmentClientService;
 import com.hermes.approvalservice.dto.request.*;
 import com.hermes.approvalservice.dto.response.*;
 import com.hermes.approvalservice.entity.*;
@@ -23,7 +25,7 @@ public class DocumentTemplateService {
     private final TemplateFieldRepository fieldRepository;
     private final TemplateApprovalStageRepository stageRepository;
     private final TemplateApprovalTargetRepository targetRepository;
-    private final AttachmentService attachmentService;
+    private final AttachmentClientService attachmentService;
 
     public List<TemplateResponse> getAllTemplates(boolean isAdmin) {
         List<DocumentTemplate> templates = isAdmin 

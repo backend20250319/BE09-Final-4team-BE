@@ -1,6 +1,6 @@
-package com.hermes.approvalservice.client;
+package com.hermes.attachment.client;
 
-import com.hermes.approvalservice.dto.AttachmentMetadata;
+import com.hermes.attachment.dto.AttachmentMetadata;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -9,5 +9,5 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface AttachmentServiceClient {
     
     @GetMapping("/internal/attachments/{fileId}/metadata")
-    AttachmentMetadata getFileMetadata(@PathVariable String fileId);
+    AttachmentMetadata getFileMetadata(@PathVariable("fileId") String fileId);
 }

@@ -1,4 +1,4 @@
-package com.hermes.approvalservice.entity;
+package com.hermes.attachment.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;

@@ -1,6 +1,6 @@
-package com.hermes.approvalservice.client;
+package com.hermes.attachment.client;
 
-import com.hermes.approvalservice.dto.AttachmentMetadata;
+import com.hermes.attachment.dto.AttachmentMetadata;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

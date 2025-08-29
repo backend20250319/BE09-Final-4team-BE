@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.dto.response;
 
+import com.hermes.attachment.dto.AttachmentInfoResponse;
 import lombok.Data;
 
 import java.time.LocalDateTime;

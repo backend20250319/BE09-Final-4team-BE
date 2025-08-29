@@ -1,4 +1,4 @@
-package com.hermes.approvalservice.dto.request;
+package com.hermes.attachment.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

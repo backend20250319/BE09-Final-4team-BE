@@ -1,10 +1,10 @@
-package com.hermes.approvalservice.service;
+package com.hermes.attachment.service;
 
-import com.hermes.approvalservice.client.AttachmentServiceClient;
-import com.hermes.approvalservice.dto.AttachmentMetadata;
-import com.hermes.approvalservice.dto.request.AttachmentInfoRequest;
-import com.hermes.approvalservice.dto.response.AttachmentInfoResponse;
-import com.hermes.approvalservice.entity.AttachmentInfo;
+import com.hermes.attachment.client.AttachmentServiceClient;
+import com.hermes.attachment.dto.AttachmentInfoRequest;
+import com.hermes.attachment.dto.AttachmentInfoResponse;
+import com.hermes.attachment.dto.AttachmentMetadata;
+import com.hermes.attachment.entity.AttachmentInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AttachmentService {
+public class AttachmentClientService {
     
     private final AttachmentServiceClient attachmentServiceClient;
     
@@ -30,19 +30,17 @@ public class AttachmentService {
     }
     
     public AttachmentInfo validateAndConvertAttachment(AttachmentInfoRequest request) {
-        // attachment-service에서 실제 메타데이터 조회하여 검증
         try {
             AttachmentMetadata metadata = attachmentServiceClient.getFileMetadata(request.getFileId());
             
-            // 파일 메타데이터 검증 완료
             log.info("File metadata validated for fileId: {}, size: {}, type: {}", 
                     request.getFileId(), metadata.getFileSize(), metadata.getContentType());
             
             return AttachmentInfo.builder()
                     .fileId(request.getFileId())
                     .displayFileName(sanitizeFileName(request.getDisplayFileName()))
-                    .fileSize(metadata.getFileSize()) // 서버 검증된 값 사용
-                    .contentType(metadata.getContentType()) // 서버 검증된 값 사용
+                    .fileSize(metadata.getFileSize())
+                    .contentType(metadata.getContentType())
                     .build();
                     
         } catch (Exception e) {
@@ -71,7 +69,6 @@ public class AttachmentService {
         if (fileName == null) {
             return "Unknown";
         }
-        // XSS 방지를 위한 파일명 정리
         return fileName.replaceAll("[<>\"'&]", "_").trim();
     }
 }
