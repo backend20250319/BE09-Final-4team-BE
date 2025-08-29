@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.dto.request;
 
+import com.hermes.attachment.dto.AttachmentInfoRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,13 +26,11 @@ public class UpdateTemplateRequest {
     @NotNull(message = "첨부파일 사용 여부는 필수입니다")
     private Boolean useAttachment;
     
-    @NotNull(message = "승인대상 변경 허용 여부는 필수입니다")
-    private Boolean allowApprovalChange;
+    @NotNull(message = "대상 변경 허용 여부는 필수입니다")
+    private Boolean allowTargetChange;
     
-    @NotNull(message = "참조대상 변경 허용 여부는 필수입니다")
-    private Boolean allowReferenceChange;
-    
-    private String referenceFiles;
+    @Valid
+    private List<AttachmentInfoRequest> referenceFiles;
     
     private Long categoryId;
     

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -18,19 +19,26 @@ public interface ApprovalDocumentRepository extends JpaRepository<ApprovalDocume
 
     Page<ApprovalDocument> findByStatusOrderByCreatedAtDesc(DocumentStatus status, Pageable pageable);
 
-    @Query("SELECT d FROM ApprovalDocument d WHERE d.authorId = :userId OR " +
-           "EXISTS (SELECT 1 FROM DocumentApprovalTarget t WHERE t.document = d AND t.userId = :userId) " +
-           "ORDER BY d.createdAt DESC")
-    Page<ApprovalDocument> findDocumentsForUser(@Param("userId") Long userId, Pageable pageable);
 
-    @Query("SELECT d FROM ApprovalDocument d JOIN d.approvalStages s JOIN s.approvalTargets t " +
-           "WHERE t.userId = :userId AND t.isApproved = false AND s.stageOrder = d.currentStage " +
-           "AND d.status = 'IN_PROGRESS' ORDER BY d.submittedAt ASC")
-    Page<ApprovalDocument> findPendingApprovalsForUser(@Param("userId") Long userId, Pageable pageable);
 
     @Query("SELECT d FROM ApprovalDocument d LEFT JOIN FETCH d.template LEFT JOIN FETCH d.fieldValues " +
            "LEFT JOIN FETCH d.approvalStages LEFT JOIN FETCH d.referenceTargets WHERE d.id = :id")
     ApprovalDocument findByIdWithDetails(@Param("id") Long id);
 
     List<ApprovalDocument> findByTemplateId(Long templateId);
+
+    @Query("SELECT d FROM ApprovalDocument d WHERE " +
+           "(d.authorId = :userId OR EXISTS (SELECT 1 FROM DocumentApprovalTarget t WHERE t.document = d AND t.userId = :userId)) " +
+           "AND (:statuses IS NULL OR d.status IN :statuses) " +
+           "AND (:search IS NULL OR LOWER(d.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND (:startDateTime IS NULL OR d.createdAt >= :startDateTime) " +
+           "AND (:endDateTime IS NULL OR d.createdAt <= :endDateTime) " +
+           "ORDER BY d.createdAt DESC")
+    Page<ApprovalDocument> findDocumentsForUserWithFilters(
+            @Param("userId") Long userId,
+            @Param("statuses") List<DocumentStatus> statuses,
+            @Param("search") String search,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime,
+            Pageable pageable);
 }

@@ -6,6 +6,7 @@ import com.hermes.approvalservice.dto.request.CreateDocumentRequest;
 import com.hermes.approvalservice.dto.request.UpdateDocumentRequest;
 import com.hermes.approvalservice.dto.response.DocumentResponse;
 import com.hermes.approvalservice.dto.response.DocumentSummaryResponse;
+import com.hermes.approvalservice.enums.DocumentStatus;
 import com.hermes.approvalservice.service.ApprovalDocumentService;
 import com.hermes.approvalservice.service.ApprovalProcessService;
 import com.hermes.auth.principal.UserPrincipal;
@@ -23,6 +24,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/approval/documents")
 @RequiredArgsConstructor
@@ -32,7 +36,7 @@ public class ApprovalDocumentController {
     private final ApprovalDocumentService documentService;
     private final ApprovalProcessService approvalProcessService;
 
-    @Operation(summary = "문서 목록 조회", description = "현재 사용자가 접근할 수 있는 문서 목록을 페이지네이션으로 조회합니다.")
+    @Operation(summary = "문서 목록 조회", description = "현재 사용자가 접근할 수 있는 문서 목록을 필터링하여 페이지네이션으로 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "문서 목록 조회 성공"),
             @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
@@ -41,26 +45,17 @@ public class ApprovalDocumentController {
     @GetMapping
     public ResponseEntity<ApiResult<Page<DocumentSummaryResponse>>> getDocuments(
             @AuthenticationPrincipal UserPrincipal user,
+            @Parameter(description = "문서 상태 필터 (여러 개 선택 가능)") @RequestParam(required = false) List<DocumentStatus> status,
+            @Parameter(description = "제목 검색 키워드") @RequestParam(required = false) String search,
+            @Parameter(description = "조회 시작 날짜 (yyyy-MM-dd)") @RequestParam(required = false) LocalDate startDate,
+            @Parameter(description = "조회 종료 날짜 (yyyy-MM-dd)") @RequestParam(required = false) LocalDate endDate,
             @Parameter(description = "페이지네이션 정보 (기본 크기: 20)") @PageableDefault(size = 20) Pageable pageable) {
         Long userId = user.getUserId();
-        Page<DocumentSummaryResponse> documents = documentService.getDocumentsForUser(userId, pageable);
+        Page<DocumentSummaryResponse> documents = documentService.getDocumentsForUser(
+                userId, user, status, search, startDate, endDate, pageable);
         return ResponseEntity.ok(ApiResult.success("문서 목록을 조회했습니다.", documents));
     }
 
-    @Operation(summary = "승인 대기 문서 조회", description = "현재 사용자가 승인해야 할 문서 목록을 페이지네이션으로 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "승인 대기 문서 목록 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
-    @GetMapping("/pending")
-    public ResponseEntity<ApiResult<Page<DocumentSummaryResponse>>> getPendingApprovals(
-            @AuthenticationPrincipal UserPrincipal user,
-            @Parameter(description = "페이지네이션 정보 (기본 크기: 20)") @PageableDefault(size = 20) Pageable pageable) {
-        Long userId = user.getUserId();
-        Page<DocumentSummaryResponse> documents = documentService.getPendingApprovals(userId, pageable);
-        return ResponseEntity.ok(ApiResult.success("승인 대기 문서 목록을 조회했습니다.", documents));
-    }
 
     @Operation(summary = "문서 상세 조회", description = "지정한 ID의 문서 상세 정보를 조회합니다.")
     @ApiResponses(value = {

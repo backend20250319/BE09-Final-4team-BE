@@ -1,5 +1,7 @@
 package com.hermes.approvalservice.service;
 
+import com.hermes.attachment.entity.AttachmentInfo;
+import com.hermes.attachment.service.AttachmentClientService;
 import com.hermes.approvalservice.dto.request.CreateDocumentRequest;
 import com.hermes.approvalservice.dto.request.UpdateDocumentRequest;
 import com.hermes.approvalservice.dto.response.DocumentResponse;
@@ -17,7 +19,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,16 +32,21 @@ public class ApprovalDocumentService {
     private final DocumentTemplateRepository templateRepository;
     private final DocumentPermissionService permissionService;
     private final DocumentActivityService activityService;
+    private final AttachmentClientService attachmentService;
 
-    public Page<DocumentSummaryResponse> getDocumentsForUser(Long userId, Pageable pageable) {
-        return documentRepository.findDocumentsForUser(userId, pageable)
-                .map(this::convertToSummaryResponse);
+
+    public Page<DocumentSummaryResponse> getDocumentsForUser(Long userId, UserPrincipal user, 
+                                                            List<DocumentStatus> statuses, String search, 
+                                                            LocalDate startDate, LocalDate endDate, 
+                                                            Pageable pageable) {
+        LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = endDate != null ? endDate.atTime(23, 59, 59) : null;
+        
+        return documentRepository.findDocumentsForUserWithFilters(userId, statuses, search, 
+                                                                 startDateTime, endDateTime, pageable)
+                .map(document -> convertToSummaryResponse(document, userId, user));
     }
 
-    public Page<DocumentSummaryResponse> getPendingApprovals(Long userId, Pageable pageable) {
-        return documentRepository.findPendingApprovalsForUser(userId, pageable)
-                .map(this::convertToSummaryResponse);
-    }
 
     public DocumentResponse getDocumentById(Long id, Long userId, UserPrincipal user) {
         ApprovalDocument document = documentRepository.findByIdWithDetails(id);
@@ -57,6 +66,11 @@ public class ApprovalDocumentService {
         DocumentTemplate template = templateRepository.findById(request.getTemplateId())
                 .orElseThrow(() -> new NotFoundException("템플릿을 찾을 수 없습니다."));
 
+        // TODO: 템플릿의 각종 옵션들을 기반으로 request 검증
+
+        // 첨부파일 검증 및 변환
+        List<AttachmentInfo> attachments = attachmentService.validateAndConvertAttachments(request.getAttachments());
+
         ApprovalDocument document = ApprovalDocument.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
@@ -64,6 +78,7 @@ public class ApprovalDocumentService {
                 .authorId(authorId)
                 .currentStage(0)
                 .template(template)
+                .attachments(attachments)
                 .build();
 
         ApprovalDocument savedDocument = documentRepository.save(document);
@@ -89,8 +104,17 @@ public class ApprovalDocumentService {
             throw new UnauthorizedException("임시저장 상태의 문서만 수정할 수 있습니다.");
         }
 
+        // TODO: 템플릿의 각종 옵션들을 기반으로 request 검증
+
         document.setTitle(request.getTitle());
         document.setContent(request.getContent());
+        
+        // 첨부파일 업데이트
+        if (request.getAttachments() != null) {
+            List<AttachmentInfo> attachments = attachmentService.validateAndConvertAttachments(request.getAttachments());
+            document.getAttachments().clear();
+            document.getAttachments().addAll(attachments);
+        }
 
         // Update field values, approval stages, and reference targets
         // (Implementation details)
@@ -120,15 +144,22 @@ public class ApprovalDocumentService {
         activityService.recordActivity(document, userId, ActivityType.SUBMIT, "결재를 요청했습니다.");
     }
 
-    private DocumentSummaryResponse convertToSummaryResponse(ApprovalDocument document) {
+    private DocumentSummaryResponse convertToSummaryResponse(ApprovalDocument document, Long userId, UserPrincipal user) {
         DocumentSummaryResponse response = new DocumentSummaryResponse();
         response.setId(document.getId());
         response.setTitle(document.getTitle());
+        response.setContent(document.getContent());
         response.setStatus(document.getStatus());
         response.setAuthorId(document.getAuthorId());
         response.setTemplateTitle(document.getTemplate().getTitle());
         response.setCurrentStage(document.getCurrentStage());
         response.setTotalStages(document.getApprovalStages().size());
+        
+        // Set user role if user information is available
+        if (user != null) {
+            response.setUserRole(permissionService.getUserRole(document, userId, user));
+        }
+        
         response.setCreatedAt(document.getCreatedAt());
         response.setSubmittedAt(document.getSubmittedAt());
         response.setApprovedAt(document.getApprovedAt());
@@ -148,6 +179,10 @@ public class ApprovalDocumentService {
         response.setUpdatedAt(document.getUpdatedAt());
         response.setSubmittedAt(document.getSubmittedAt());
         response.setApprovedAt(document.getApprovedAt());
+        
+        // 첨부파일 정보 변환
+        response.setAttachments(attachmentService.convertToResponseList(document.getAttachments()));
+        
         // Add template, field values, stages, etc.
         return response;
     }
