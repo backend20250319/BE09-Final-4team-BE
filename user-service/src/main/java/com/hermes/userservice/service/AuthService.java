@@ -61,7 +61,7 @@ public class AuthService {
                 RefreshToken.builder()
                         .userId(user.getId())
                         .tokenHash(hashedRefreshToken)
-                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenExpiration() / 1000))
+                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenExpirySeconds()))
                         .build()
         );
 
@@ -82,9 +82,9 @@ public class AuthService {
                 log.info("[Auth Service] RefreshToken 삭제 완료 - userId: {}", userId);
             });
             
-            // 해시된 토큰은 블랙리스트에 추가하지 않음 (의미 없음)
+            // AccessToken을 블랙리스트에 추가 (보안 강화)
             if (accessToken != null) {
-                tokenBlacklistService.logoutUser(userId, accessToken, null);
+                tokenBlacklistService.addToken(accessToken, jwtTokenService.getAccessTokenExpirySeconds(), userId);
             }
             log.info("[Auth Service] 모든 토큰 완전 삭제 완료 (블랙리스트 포함) - userId: {}", userId);
         } catch (Exception e) {
@@ -108,7 +108,7 @@ public class AuthService {
             throw new RuntimeException("유효하지 않은 RefreshToken입니다.");
         }
 
-        if (tokenBlacklistService.isTokenBlacklisted(request.getRefreshToken())) {
+        if (tokenBlacklistService.isBlacklisted(request.getRefreshToken())) {
             log.warn("⚠️ [Auth Service] 로그아웃된 RefreshToken - userId: {}", userId);
             throw new RuntimeException("로그아웃된 Refresh Token입니다.");
         }
@@ -137,12 +137,12 @@ public class AuthService {
                 RefreshToken.builder()
                         .userId(userId)
                         .tokenHash(hashedNewRefreshToken)
-                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenExpiration() / 1000))
+                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenExpirySeconds()))
                         .build()
         );
 
         // 기존 RefreshToken을 블랙리스트에 추가 (보안 강화)
-        tokenBlacklistService.logoutUser(userId, null, request.getRefreshToken());
+        tokenBlacklistService.addToken(request.getRefreshToken(), jwtTokenService.getRefreshTokenExpirySeconds(), userId);
 
         log.info("[Auth Service] 토큰 갱신 성공 (Token Rotation 적용) - userId: {}", userId);
         return new TokenResponse(newAccessToken, newRefreshToken);

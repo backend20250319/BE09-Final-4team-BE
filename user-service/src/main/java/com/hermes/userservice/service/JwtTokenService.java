@@ -35,7 +35,7 @@ public class JwtTokenService {
      */
     public String createAccessToken(String email, Long userId, Role role, String tenantId) {
         Instant now = Instant.now();
-        Instant expiration = now.plus(jwtProperties.getExpirationTime(), ChronoUnit.MILLIS);
+        Instant expiration = now.plus(jwtProperties.getAccessTokenExpirySeconds(), ChronoUnit.SECONDS);
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
@@ -58,7 +58,7 @@ public class JwtTokenService {
      */
     public String createRefreshToken(String userId, String email) {
         Instant now = Instant.now();
-        Instant expiration = now.plus(jwtProperties.getRefreshExpiration(), ChronoUnit.MILLIS);
+        Instant expiration = now.plus(jwtProperties.getRefreshTokenExpirySeconds(), ChronoUnit.SECONDS);
 
         return Jwts.builder()
                 .subject(email)
@@ -72,17 +72,17 @@ public class JwtTokenService {
 
 
     /**
-     * 액세스 토큰 만료 시간 반환
+     * 액세스 토큰 만료 시간 반환 (초)
      */
-    public long getAccessTokenExpiration() {
-        return jwtProperties.getExpirationTime();
+    public long getAccessTokenExpirySeconds() {
+        return jwtProperties.getAccessTokenExpirySeconds();
     }
 
     /**
-     * 리프레시 토큰 만료 시간 반환
+     * 리프레시 토큰 만료 시간 반환 (초)
      */
-    public long getRefreshTokenExpiration() {
-        return jwtProperties.getRefreshExpiration();
+    public long getRefreshTokenExpirySeconds() {
+        return jwtProperties.getRefreshTokenExpirySeconds();
     }
 
     /**
