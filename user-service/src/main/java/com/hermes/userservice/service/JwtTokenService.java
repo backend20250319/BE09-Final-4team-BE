@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import io.jsonwebtoken.io.Decoders;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * JWT 토큰 생성 전용 서비스 (user-service에서만 사용)
@@ -27,6 +28,7 @@ import io.jsonwebtoken.io.Decoders;
 public class JwtTokenService {
 
     private final JwtProperties jwtProperties;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 액세스 토큰 생성
@@ -81,6 +83,20 @@ public class JwtTokenService {
      */
     public long getRefreshTokenExpiration() {
         return jwtProperties.getRefreshExpiration();
+    }
+
+    /**
+     * RefreshToken 해시 생성 (보안 강화)
+     */
+    public String hashRefreshToken(String token) {
+        return passwordEncoder.encode(token);
+    }
+
+    /**
+     * RefreshToken 검증 (해시 비교)
+     */
+    public boolean verifyRefreshToken(String rawToken, String hashedToken) {
+        return passwordEncoder.matches(rawToken, hashedToken);
     }
 
     /**

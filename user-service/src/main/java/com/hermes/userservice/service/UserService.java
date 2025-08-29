@@ -60,10 +60,12 @@ public class UserService {
         // 기존 RefreshToken이 있으면 삭제 (이중 로그인 방지)
         refreshTokenRepository.findByUserId(user.getId()).ifPresent(refreshTokenRepository::delete);
 
+        // RefreshToken을 해시화하여 저장 (보안 강화)
+        String hashedRefreshToken = jwtTokenService.hashRefreshToken(refreshToken);
         refreshTokenRepository.save(
                 RefreshToken.builder()
                         .userId(user.getId())
-                        .token(refreshToken)
+                        .tokenHash(hashedRefreshToken)
                         .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenExpiration() / 1000))
                         .build()
         );
@@ -72,7 +74,7 @@ public class UserService {
     }
 
     @Transactional // @Transactional 어노테이션이 있어야 DB 변경 사항이 커밋됩니다.
-    public void logout(Long userId, String accessToken, String refreshToken) {
+    public void logout(Long userId, String accessToken, String refreshTokenHash) {
         log.info("[User Service] 로그아웃 처리 시작 - userId: {}", userId);
 
         try {
@@ -82,7 +84,10 @@ public class UserService {
                 log.info("[User Service] RefreshToken 삭제 완료 - userId: {}", userId);
             });
             
-            tokenBlacklistService.logoutUser(userId, accessToken, refreshToken);
+            // 해시된 토큰은 블랙리스트에 추가하지 않음 (의미 없음)
+            if (accessToken != null) {
+                tokenBlacklistService.logoutUser(userId, accessToken, null);
+            }
             log.info("[User Service] 모든 토큰 완전 삭제 완료 (블랙리스트 포함) - userId: {}", userId);
         } catch (Exception e) {
             log.error("[User Service] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage(), e);

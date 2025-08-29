@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
@@ -76,12 +77,12 @@ public class AuthController {
             log.warn("⚠️ [Auth Controller] Authorization 헤더가 없거나 형식이 잘못됨 - userId: {}", userId);
         }
 
-        // RefreshToken을 DB에서 가져오기
-        String refreshToken = refreshTokenRepository.findByUserId(userId)
-                .map(RefreshToken::getToken)
+        // RefreshToken을 DB에서 가져오기 (해시된 형태)
+        String refreshTokenHash = refreshTokenRepository.findByUserId(userId)
+                .map(RefreshToken::getTokenHash)
                 .orElse(null);
 
-        userService.logout(userId, accessToken, refreshToken);
+        userService.logout(userId, accessToken, refreshTokenHash);
 
         Map<String, String> result = new HashMap<>();
         result.put("userId", String.valueOf(userId));
@@ -117,7 +118,8 @@ public class AuthController {
         RefreshToken saved = refreshTokenRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("RefreshToken not found"));
 
-        if (!saved.getToken().equals(request.getRefreshToken())) {
+        // 해시된 토큰 검증
+        if (!jwtTokenService.verifyRefreshToken(request.getRefreshToken(), saved.getTokenHash())) {
             log.warn("⚠️ [Auth Controller] 유효하지 않은 RefreshToken - userId: {}", userId);
             throw new RuntimeException("유효하지 않은 RefreshToken입니다.");
         }
@@ -141,8 +143,25 @@ public class AuthController {
         Role userRole = userEntity.getIsAdmin() ? Role.ADMIN : Role.USER;
         String newAccessToken = jwtTokenService.createAccessToken(email, userId, userRole, null);
 
-        log.info("✅ [Auth Controller] 토큰 갱신 성공: userId={}", userId);
+        // Refresh Token Rotation: 새로운 RefreshToken 생성
+        String newRefreshToken = jwtTokenService.createRefreshToken(String.valueOf(userId), email);
+        String hashedNewRefreshToken = jwtTokenService.hashRefreshToken(newRefreshToken);
+        
+        // 기존 RefreshToken 삭제하고 새로운 것으로 교체
+        refreshTokenRepository.delete(saved);
+        refreshTokenRepository.save(
+                RefreshToken.builder()
+                        .userId(userId)
+                        .tokenHash(hashedNewRefreshToken)
+                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenExpiration() / 1000))
+                        .build()
+        );
+
+        // 기존 RefreshToken을 블랙리스트에 추가 (보안 강화)
+        tokenBlacklistService.logoutUser(userId, null, request.getRefreshToken());
+
+        log.info("✅ [Auth Controller] 토큰 갱신 성공 (Token Rotation 적용): userId={}", userId);
         return ResponseEntity.ok(ApiResponse.success("토큰이 성공적으로 갱신되었습니다.",
-                new TokenResponse(newAccessToken, saved.getToken())));
+                new TokenResponse(newAccessToken, newRefreshToken)));
     }
 }
