@@ -102,7 +102,7 @@ public class AuthService {
         saveRefreshToken(user.getId(), newRefreshToken);
 
         // 기존 RefreshToken을 블랙리스트에 추가 (보안 강화)
-        tokenBlacklistService.addToken(request.getRefreshToken(), jwtTokenService.getRefreshTokenExpirySeconds(), user.getId());
+        tokenBlacklistService.addToken(request.getRefreshToken(), jwtTokenService.getRefreshTokenTTL(), user.getId());
 
         return new TokenResponse(newAccessToken, newRefreshToken);
     }
@@ -118,7 +118,7 @@ public class AuthService {
                 RefreshToken.builder()
                         .userId(userId)
                         .tokenHash(hashedRefreshToken)
-                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenExpirySeconds()))
+                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenTTL()))
                         .build()
         );
     }

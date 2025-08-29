@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -32,13 +33,13 @@ public class InMemoryTokenBlacklistService implements TokenBlacklistService {
     private final ConcurrentMap<String, BlacklistEntry> blacklistedTokens = new ConcurrentHashMap<>();
 
     @Override
-    public void addToken(String token, long expirySeconds, Long userId) {
+    public void addToken(String token, long duration, Long userId) {
         if (token == null || token.trim().isEmpty()) {
             log.warn("토큰이 null이거나 비어있어 블랙리스트에 추가하지 않습니다.");
             return;
         }
 
-        long expirationTime = Instant.now().getEpochSecond() + expirySeconds;
+        long expirationTime = Instant.now().getEpochSecond() + duration;
         BlacklistEntry entry = new BlacklistEntry(userId, expirationTime);
         blacklistedTokens.put(token, entry);
         
@@ -81,7 +82,7 @@ public class InMemoryTokenBlacklistService implements TokenBlacklistService {
     }
 
     @Override
-    @Scheduled(fixedRate = 300000) // 5분마다 실행
+    @Scheduled(fixedRate = 24, timeUnit = TimeUnit.HOURS)
     public int removeExpiredTokens() {
         long currentTime = Instant.now().getEpochSecond();
         AtomicInteger removedCount = new AtomicInteger(0);

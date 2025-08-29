@@ -10,10 +10,10 @@ public interface TokenBlacklistService {
      * 개별 토큰을 블랙리스트에 추가
      * 
      * @param token 블랙리스트에 추가할 토큰
-     * @param expirationSeconds 토큰 만료 시간 (초)
+     * @param duration 블랙리스트에 유지할 시간 (초)
      * @param userId 토큰의 소유자 ID
      */
-    void addToken(String token, long expirationSeconds, Long userId);
+    void addToken(String token, long duration, Long userId);
 
 
     /**

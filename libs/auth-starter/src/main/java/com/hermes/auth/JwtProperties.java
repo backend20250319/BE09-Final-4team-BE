@@ -13,8 +13,8 @@ public class JwtProperties {
     private String secret;
 
     // 액세스 토큰 만료 시간 (초)
-    private long accessTokenExpirySeconds;
+    private long accessTokenTTL;
 
     // 리프레시 토큰 만료 시간 (초)
-    private long refreshTokenExpirySeconds;
+    private long refreshTokenTTL;
 }
