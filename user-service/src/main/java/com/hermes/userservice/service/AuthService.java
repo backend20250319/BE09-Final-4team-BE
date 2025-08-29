@@ -36,8 +36,6 @@ public class AuthService {
      * 로그인 처리
      */
     public TokenResponse login(LoginRequestDto loginDto) {
-        log.info("[Auth Service] 로그인 처리 시작 - email: {}", loginDto.getEmail());
-        
         User user = userRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("해당 이메일로 등록된 사용자가 없습니다."));
 
@@ -49,8 +47,9 @@ public class AuthService {
         userRepository.save(user);
 
         Role userRole = getUserRole(user);
-        String accessToken = jwtTokenService.createAccessToken(user.getEmail(), user.getId(), userRole, null);
-        String refreshToken = jwtTokenService.createRefreshToken(String.valueOf(user.getId()), user.getEmail());
+        // TODO: tenantId
+        String accessToken = jwtTokenService.createAccessToken(user.getId(), user.getEmail(), userRole, null);
+        String refreshToken = jwtTokenService.createRefreshToken(user.getId(), user.getEmail());
 
         // 기존 RefreshToken이 있으면 삭제 (이중 로그인 방지)
         refreshTokenRepository.findByUserId(user.getId()).ifPresent(refreshTokenRepository::delete);
@@ -64,23 +63,17 @@ public class AuthService {
     /**
      * 로그아웃 처리
      */
-    public void logout(Long userId, String accessToken, String refreshTokenHash) {
-        log.info("[Auth Service] 로그아웃 처리 시작 - userId: {}", userId);
-
+    public void logout(Long userId, String accessToken) {
         try {
             // userId로 RefreshToken을 찾아서 삭제
-            refreshTokenRepository.findByUserId(userId).ifPresent(rt -> {
-                refreshTokenRepository.delete(rt);
-                log.info("[Auth Service] RefreshToken 삭제 완료 - userId: {}", userId);
-            });
+            refreshTokenRepository.findByUserId(userId).ifPresent(refreshTokenRepository::delete);
             
             // AccessToken을 블랙리스트에 추가 (보안 강화)
             if (accessToken != null) {
                 tokenBlacklistService.addToken(accessToken, jwtTokenService.getAccessTokenExpirySeconds(), userId);
             }
-            log.info("[Auth Service] 모든 토큰 완전 삭제 완료 (블랙리스트 포함) - userId: {}", userId);
         } catch (Exception e) {
-            log.error("[Auth Service] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage(), e);
+            log.error("[Auth Service] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage());
             throw new InvalidJwtTokenException("로그아웃 처리 중 오류가 발생했습니다.", e);
         }
     }
@@ -88,31 +81,29 @@ public class AuthService {
     /**
      * 토큰 갱신 처리 (Refresh Token Rotation 포함)
      */
-    public TokenResponse refreshToken(Long userId, String email, RefreshRequest request) {
-        log.info("[Auth Service] 토큰 갱신 처리 시작 - userId: {}", userId);
+    public TokenResponse refreshToken(RefreshRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UserNotFoundException("해당 이메일로 등록된 사용자가 없습니다."));
 
-        RefreshToken saved = refreshTokenRepository.findByUserId(userId)
+        RefreshToken saved = refreshTokenRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new InvalidJwtTokenException("RefreshToken not found"));
 
-        validateRefreshToken(request.getRefreshToken(), saved, userId);
-
-        User userEntity = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+        validateRefreshToken(request.getRefreshToken(), saved, user.getId());
         
-        Role userRole = getUserRole(userEntity);
-        String newAccessToken = jwtTokenService.createAccessToken(email, userId, userRole, null);
+        Role userRole = getUserRole(user);
+        // TODO: tenantId
+        String newAccessToken = jwtTokenService.createAccessToken(user.getId(), request.getEmail(), userRole, null);
 
         // Refresh Token Rotation: 새로운 RefreshToken 생성
-        String newRefreshToken = jwtTokenService.createRefreshToken(String.valueOf(userId), email);
+        String newRefreshToken = jwtTokenService.createRefreshToken(user.getId(), request.getEmail());
         
         // 기존 RefreshToken 삭제하고 새로운 것으로 교체
         refreshTokenRepository.delete(saved);
-        saveRefreshToken(userId, newRefreshToken);
+        saveRefreshToken(user.getId(), newRefreshToken);
 
         // 기존 RefreshToken을 블랙리스트에 추가 (보안 강화)
-        tokenBlacklistService.addToken(request.getRefreshToken(), jwtTokenService.getRefreshTokenExpirySeconds(), userId);
+        tokenBlacklistService.addToken(request.getRefreshToken(), jwtTokenService.getRefreshTokenExpirySeconds(), user.getId());
 
-        log.info("[Auth Service] 토큰 갱신 성공 (Token Rotation 적용) - userId: {}", userId);
         return new TokenResponse(newAccessToken, newRefreshToken);
     }
 

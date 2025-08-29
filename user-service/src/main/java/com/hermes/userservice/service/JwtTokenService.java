@@ -33,7 +33,7 @@ public class JwtTokenService {
     /**
      * 액세스 토큰 생성
      */
-    public String createAccessToken(String email, Long userId, Role role, String tenantId) {
+    public String createAccessToken(Long userId, String email, Role role, String tenantId) {
         Instant now = Instant.now();
         Instant expiration = now.plus(jwtProperties.getAccessTokenExpirySeconds(), ChronoUnit.SECONDS);
 
@@ -56,7 +56,7 @@ public class JwtTokenService {
     /**
      * 리프레시 토큰 생성
      */
-    public String createRefreshToken(String userId, String email) {
+    public String createRefreshToken(Long userId, String email) {
         Instant now = Instant.now();
         Instant expiration = now.plus(jwtProperties.getRefreshTokenExpirySeconds(), ChronoUnit.SECONDS);
 
