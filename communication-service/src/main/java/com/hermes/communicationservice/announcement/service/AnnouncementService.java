@@ -7,6 +7,7 @@ import com.hermes.communicationservice.announcement.dto.AnnouncementSummaryDto;
 import com.hermes.communicationservice.announcement.dto.AnnouncementUpdateRequestDto;
 import com.hermes.communicationservice.announcement.entity.Announcement;
 import com.hermes.communicationservice.announcement.repository.AnnouncementRepository;
+import java.util.ArrayList;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -44,7 +45,7 @@ public class AnnouncementService {
         .displayAuthor(saved.getDisplayAuthor())
         .content(saved.getContent())
         .createdAt(saved.getCreatedAt())
-        .fileIds(saved.getFileIds())
+        .fileIds(new ArrayList<>(saved.getFileIds()))
         .build();
   }
 
@@ -53,7 +54,7 @@ public class AnnouncementService {
   public AnnouncementResponseDto getAnnouncement(Long id) {
 
     // 1. 공지사항 엔터티 조회
-    Announcement announcement = announcementRepository.findById(id)
+    Announcement announcement = announcementRepository.findByIdWithFileIds(id)
         .orElseThrow(() -> new AnnouncementNotFoundException(id));
 
     // 2. 조회수 증가
@@ -66,7 +67,7 @@ public class AnnouncementService {
         .displayAuthor(announcement.getDisplayAuthor())
         .content(announcement.getContent())
         .createdAt(announcement.getCreatedAt())
-        .fileIds(announcement.getFileIds())
+        .fileIds(new ArrayList<>(announcement.getFileIds()))
         .build();
 
   }
@@ -109,7 +110,7 @@ public class AnnouncementService {
         .displayAuthor(announcement.getDisplayAuthor())
         .content(announcement.getContent())
         .createdAt(announcement.getCreatedAt())
-        .fileIds(announcement.getFileIds())
+        .fileIds(new ArrayList<>(announcement.getFileIds()))
         .build();
 
   }
