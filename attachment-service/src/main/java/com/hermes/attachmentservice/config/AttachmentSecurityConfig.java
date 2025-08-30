@@ -20,8 +20,6 @@ public class AttachmentSecurityConfig extends BaseSecurityConfig {
             // 내부 API - 인증된 사용자만
             .requestMatchers("/internal/**").authenticated()
             // 공개 API - 인증된 사용자만  
-            .requestMatchers("/api/**").authenticated()
-            // 나머지 모든 요청도 인증 필요
-            .anyRequest().authenticated();
+            .requestMatchers("/api/**").authenticated();
     }
 }
