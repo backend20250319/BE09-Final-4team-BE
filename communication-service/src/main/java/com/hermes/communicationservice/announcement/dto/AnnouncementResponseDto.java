@@ -13,10 +13,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AnnouncementResponseDto {
+
     private Long id;
     private String title;
     private String displayAuthor;
     private String content;
     private LocalDateTime createdAt;
-    private List<FileResponseDto> files;
+    private List<String> fileIds;
+
 }
