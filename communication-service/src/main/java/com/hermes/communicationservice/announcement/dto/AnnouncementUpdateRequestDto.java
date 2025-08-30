@@ -14,11 +14,8 @@ import jakarta.validation.constraints.*;
 @AllArgsConstructor
 public class AnnouncementUpdateRequestDto {
 
-  @NotNull
-  private Long id;
   @Size(max = 200)
   private String title;
-  private Long authorId;
   @Size(max = 100)
   private String displayAuthor;
   private String content;

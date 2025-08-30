@@ -18,8 +18,6 @@ public class AnnouncementCreateRequestDto {
   @NotBlank(message = "제목은 필수입니다.")
   @Size(max = 200)
   private String title;
-  @NotNull
-  private Long authorId;
   @Size(max = 100)
   private String displayAuthor;
   private String content;
