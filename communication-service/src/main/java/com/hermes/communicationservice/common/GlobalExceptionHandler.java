@@ -11,15 +11,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(AnnouncementNotFoundException.class)
-    public ResponseEntity<ApiResult<Void>> handleAnnouncementNotFound(AnnouncementNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResult.failure(ex.getMessage()));
-    }
+  @ExceptionHandler(AnnouncementNotFoundException.class)
+  public ResponseEntity<ApiResult<Void>> handleAnnouncementNotFound(
+      AnnouncementNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResult.failure(ex.getMessage()));
+  }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResult<Void>> handleValidation(MethodArgumentNotValidException ex) {
-        String msg = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
-        return ResponseEntity.badRequest().body(ApiResult.failure(msg));
-    }
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ApiResult<Void>> handleValidation(MethodArgumentNotValidException ex) {
+    String msg = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
+    return ResponseEntity.badRequest().body(ApiResult.failure(msg));
+  }
 
 }

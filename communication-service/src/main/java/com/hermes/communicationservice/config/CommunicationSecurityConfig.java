@@ -11,11 +11,11 @@ import org.springframework.security.config.annotation.web.configurers.AuthorizeH
 @EnableWebSecurity
 @EnableMethodSecurity // @PreAuthorize 활성화
 public class CommunicationSecurityConfig extends BaseSecurityConfig {
-    
-    @Override
-    protected void configureAuthorization(
-        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authz
-    ) {
 
-    }
+  @Override
+  protected void configureAuthorization(
+      AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authz
+  ) {
+
+  }
 }

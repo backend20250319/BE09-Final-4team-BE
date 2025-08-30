@@ -26,5 +26,7 @@ import org.springframework.context.annotation.Configuration;
     scheme = "bearer",
     description = "JWT Bearer 토큰을 입력하세요"
 )
+
 public class OpenApiConfig {
+
 }
