@@ -51,6 +51,7 @@ public class Announcement {
 
   // 첨부파일 fileId 리스트
   @ElementCollection
+  @Builder.Default
   List<String> fileIds = new ArrayList<>();
 
 }

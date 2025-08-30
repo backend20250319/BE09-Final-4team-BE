@@ -22,6 +22,6 @@ public class AnnouncementUpdateRequestDto {
   @Size(max = 100)
   private String displayAuthor;
   private String content;
-  private List<String> filesIds = new ArrayList<>();
+  private List<String> fileIds = new ArrayList<>();
 
 }
