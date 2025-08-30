@@ -40,6 +40,10 @@ spring:
               uri: lb://attendance-service
               predicates:
                 - Path=/api/work-schedule/**
+            - id: attachment-service
+              uri: lb://attachment-service
+              predicates:
+                - Path=/api/attachment/**
             # API 문서 라우팅
             - id: user-service-docs
               uri: lb://user-service
