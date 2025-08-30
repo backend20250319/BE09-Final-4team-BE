@@ -111,7 +111,7 @@ public class AttachmentController {
             response.setDisplayFileName(metadata.getOriginalFileName());
             response.setFileSize(metadata.getFileSize());
             response.setContentType(metadata.getContentType());
-            response.setDownloadUrl("/api/attachments/" + fileId + "/download");
+            response.setDownloadUrl("http://gateway-server:8080/attachment-service/api/attachments/" + fileId + "/download");
             
             return ResponseEntity.ok(ApiResult.success(response));
             
