@@ -2,6 +2,7 @@ package com.hermes.approvalservice.service;
 
 import com.hermes.approvalservice.entity.ApprovalDocument;
 import com.hermes.approvalservice.entity.DocumentApprovalTarget;
+import com.hermes.approvalservice.enums.UserRole;
 import com.hermes.auth.principal.UserPrincipal;
 import com.hermes.auth.enums.Role;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,43 @@ public class DocumentPermissionService {
                 .flatMap(stage -> stage.getApprovalTargets().stream())
                 .filter(target -> !target.getIsReference())
                 .anyMatch(target -> isTargetUser(target, userId) && !target.getIsApproved());
+    }
+
+    public UserRole getUserRole(ApprovalDocument document, Long userId, UserPrincipal user) {
+        // 작성자인 경우
+        if (document.getAuthorId().equals(userId)) {
+            return UserRole.AUTHOR;
+        }
+
+        // 관리자인 경우 (작성자가 아닌 경우)
+        if (user.getRole() == Role.ADMIN) {
+            return UserRole.VIEWER;
+        }
+
+        // 승인 대상자인지 확인
+        boolean isApprover = document.getApprovalStages().stream()
+                .flatMap(stage -> stage.getApprovalTargets().stream())
+                .filter(target -> !target.getIsReference())
+                .anyMatch(target -> isTargetUser(target, userId));
+
+        if (isApprover) {
+            return UserRole.APPROVER;
+        }
+
+        // 참조 대상자인지 확인
+        boolean isReference = document.getApprovalStages().stream()
+                .flatMap(stage -> stage.getApprovalTargets().stream())
+                .filter(DocumentApprovalTarget::getIsReference)
+                .anyMatch(target -> isTargetUser(target, userId)) ||
+                document.getReferenceTargets().stream()
+                        .anyMatch(target -> isTargetUser(target, userId));
+
+        if (isReference) {
+            return UserRole.REFERENCE;
+        }
+
+        // 그 외의 경우 (권한이 있어서 조회는 가능하지만 특별한 역할이 없는 경우)
+        return UserRole.VIEWER;
     }
 
     private boolean isTargetUser(DocumentApprovalTarget target, Long userId) {

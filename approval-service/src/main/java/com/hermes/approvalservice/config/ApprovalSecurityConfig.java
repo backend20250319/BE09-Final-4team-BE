@@ -14,9 +14,7 @@ public class ApprovalSecurityConfig extends BaseSecurityConfig {
     
     @Override
     protected void configureAuthorization(
-        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authz
+        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth
     ) {
-        authz.requestMatchers("/api/approval/templates/**").hasRole("ADMIN");
-        authz.requestMatchers("/api/approval/documents/**").authenticated();
     }
 }

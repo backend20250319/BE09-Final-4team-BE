@@ -23,14 +23,14 @@ public class WorkPolicyRequestDto {
     @NotNull(message = "근무 타입은 필수입니다.")
     private WorkType type;
     
-    private WorkCycle workCycle; // 탄력 근무 용도
+    private WorkCycle workCycle; // 시차 근무 용도
     
     @NotNull(message = "근무 시작 요일은 필수입니다.")
     private StartDayOfWeek startDayOfWeek;
     
     @Min(value = 1, message = "근무 주기 시작일은 1 이상이어야 합니다.")
     @Max(value = 31, message = "근무 주기 시작일은 31 이하여야 합니다.")
-    private Integer workCycleStartDay; // 탄력 근무 용도
+    private Integer workCycleStartDay; // 시차 근무 용도
     
     @NotEmpty(message = "근무 요일은 필수입니다.")
     private List<StartDayOfWeek> workDays;
@@ -41,7 +41,7 @@ public class WorkPolicyRequestDto {
     
     private LocalTime startTime;
     
-    private LocalTime startTimeEnd; // 교대 근무용
+    private LocalTime startTimeEnd; // 시차 근무용 (시차 근무시 필수, 다른 근무 타입시 nullable)
     
     @NotNull(message = "근무 시간은 필수입니다.")
     @Min(value = 0, message = "근무 시간은 0 이상이어야 합니다.")
