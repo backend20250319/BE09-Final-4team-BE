@@ -14,12 +14,7 @@ public class SecurityConfig extends BaseSecurityConfig {
 
     @Override
     protected void configureAuthorization(
-        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authz
+        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth
     ) {
-        // 인증이 필요한 API 경로
-        authz.requestMatchers("/api/attendance/**").authenticated();
-        authz.requestMatchers("/api/work-schedule/**").authenticated();
-        authz.requestMatchers("/api/workpolicy/**").authenticated();
-        authz.requestMatchers("/api/leaves/**").authenticated();
     }
-} 
+}

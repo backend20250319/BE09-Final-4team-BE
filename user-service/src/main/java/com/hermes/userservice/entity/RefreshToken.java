@@ -22,11 +22,11 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(nullable = false, unique = true)
     private Long userId;
 
-    @Column(nullable = false, unique = true)
-    private String token;
+    @Column(nullable = false)
+    private String tokenHash;
 
     @Column(nullable = false)
     private LocalDateTime expiration;
@@ -34,12 +34,12 @@ public class RefreshToken {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    private User user;
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+    }
+
+    public boolean isExpired() {
+        return expiration.isBefore(LocalDateTime.now());
     }
 }

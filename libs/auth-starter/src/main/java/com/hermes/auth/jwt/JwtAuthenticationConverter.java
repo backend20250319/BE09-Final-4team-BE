@@ -5,6 +5,7 @@ import com.hermes.auth.principal.UserPrincipal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -21,7 +22,7 @@ import java.util.List;
 @Slf4j
 @Component
 public class JwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
-    
+
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
         try {
@@ -58,12 +59,23 @@ public class JwtAuthenticationConverter implements Converter<Jwt, AbstractAuthen
             
             log.debug("JWT converted to authentication: userId={}, email={}, role={}, tenantId={}", 
                      userId, email, role, tenantId);
-            
-            // JwtAuthenticationToken은 principal을 String으로 받으므로 email을 사용
-            JwtAuthenticationToken token = new JwtAuthenticationToken(jwt, authorities, email);
-            // UserPrincipal은 별도로 details에 저장
-            token.setDetails(principal);
-            return token;
+
+            return new AbstractAuthenticationToken(authorities) {
+                @Override
+                public Object getCredentials() {
+                    return null;
+                }
+                
+                @Override
+                public Object getPrincipal() {
+                    return principal;
+                }
+                
+                @Override
+                public boolean isAuthenticated() {
+                    return true;
+                }
+            };
             
         } catch (Exception e) {
             log.error("Failed to convert JWT to authentication: {}", e.getMessage(), e);
