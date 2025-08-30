@@ -46,8 +46,9 @@ public class Announcement {
 
   private int views; // 조회수
 
-  @OneToMany(mappedBy = "announcement", cascade = CascadeType.REMOVE, orphanRemoval = true)
-  private List<Comment> comments = new ArrayList<>(); // 읽기 전용 리스트
+  @OneToMany(mappedBy = "announcement", cascade = CascadeType.ALL, orphanRemoval = true)
+  @Builder.Default
+  private List<Comment> comments = new ArrayList<>();
 
   // 첨부파일 fileId 리스트
   @ElementCollection
