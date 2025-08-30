@@ -1,16 +1,13 @@
 package com.hermes.communicationservice.announcement.entity;
 
 import com.hermes.communicationservice.comment.entity.Comment;
-import com.hermes.communicationservice.file.entity.FileMapping;
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -52,9 +49,8 @@ public class Announcement {
   @OneToMany(mappedBy = "announcement", cascade = CascadeType.REMOVE, orphanRemoval = true)
   private List<Comment> comments = new ArrayList<>(); // 읽기 전용 리스트
 
-  // orphanRemoval은 컬렉션(attachments)에서 삭제 시, db에 바로 반영한다.
-  // @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-  // @JoinColumn(name = "announcement_id") // 자식 테이블(파일)에 생성할 fk 칼럼명
-  // private List<FileMapping> attachments = new ArrayList<>();
+  // 첨부파일 fileId 리스트
+  @ElementCollection
+  List<String> fileIds = new ArrayList<>();
 
 }
