@@ -15,6 +15,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("api/communication/")
 public class CommentController {
 
     private final CommentService commentService;
