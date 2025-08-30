@@ -14,6 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriUtils;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.hermes.auth.principal.UserPrincipal;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -33,16 +36,17 @@ public class AttachmentController {
         return ResponseEntity.ok(metadata);
     }
     
-    // 파일 업로드
+    // 파일 업로드 (ADMIN 권한 필요)
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/api/attachments/upload")
     public ResponseEntity<ApiResult<List<UploadResponse>>> uploadFiles(
             @RequestParam("files") List<MultipartFile> files,
-            @RequestParam("uploadedBy") Long uploadedBy) {
+            @AuthenticationPrincipal UserPrincipal user) {
         
-        log.info("파일 업로드 요청 - 파일 수: {}, 업로더: {}", files.size(), uploadedBy);
+        log.info("파일 업로드 요청 - 파일 수: {}, 업로더: {}", files.size(), user.getUserId());
         
         try {
-            List<UploadResponse> response = attachmentService.uploadFiles(files, uploadedBy);
+            List<UploadResponse> response = attachmentService.uploadFiles(files, user.getUserId());
             return ResponseEntity.ok(ApiResult.success(response));
         } catch (Exception e) {
             log.error("파일 업로드 실패: {}", e.getMessage(), e);
@@ -78,6 +82,8 @@ public class AttachmentController {
         }
     }
     
+    // 파일 삭제 (ADMIN 권한 필요)
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/api/attachments/{fileId}")
     public ResponseEntity<ApiResult<Boolean>> deleteFile(@PathVariable String fileId) {
         log.info("파일 삭제 요청: {}", fileId);
