@@ -9,7 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "comment", indexes = {
+@Table(name = "comments", indexes = {
     @Index(name = "idx_comment_announcement_id", columnList = "announcement_id, id")
 })
 @EntityListeners(AuditingEntityListener.class)
@@ -23,8 +23,8 @@ public class Comment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "announcement_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "announcement_id")
     private Announcement announcement;
 
     @Column(name = "author_id", nullable = false)

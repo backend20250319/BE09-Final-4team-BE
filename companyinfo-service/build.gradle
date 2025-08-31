@@ -51,9 +51,6 @@ dependencies {
 	
 	// API Common Library
 	implementation project(':libs:api-common')
-	
-	// FTP Starter Library
-	implementation project(':libs:ftp-starter')
 }
 
 dependencyManagement {

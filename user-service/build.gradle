@@ -33,7 +33,6 @@ dependencies {
     implementation project(':libs:api-common')
     implementation project(':libs:auth-starter')
     implementation project(':libs:events')
-    implementation project(':libs:ftp-starter')
     // implementation project(':libs:mt-starter')
     
     compileOnly 'org.projectlombok:lombok'

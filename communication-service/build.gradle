@@ -30,9 +30,9 @@ ext {
 
 dependencies {
     // 모듈 의존성
-    implementation project(':libs:ftp-starter')
     implementation project(':libs:api-common')
     implementation project(':libs:api-client:user-service-client')
+    implementation project(':libs:auth-starter')
 
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -53,7 +53,10 @@ dependencies {
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    
+
+    // Swagger/OpenAPI
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.11'
+
     // MapStruct
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
