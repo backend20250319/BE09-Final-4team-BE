@@ -14,7 +14,5 @@ public class OrgSecurityConfig extends BaseSecurityConfig {
     protected void configureAuthorization(
         AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth
     ) {
-        // 모든 API는 인증 필요
-        auth.anyRequest().authenticated();
     }
 }

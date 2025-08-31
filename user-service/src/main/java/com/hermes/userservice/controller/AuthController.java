@@ -1,7 +1,7 @@
 package com.hermes.userservice.controller;
 
 import com.hermes.api.common.ApiResult;
-import com.hermes.auth.dto.LoginRequestDto;
+import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.auth.dto.RefreshRequest;
 import com.hermes.auth.dto.TokenResponse;
 import com.hermes.auth.principal.UserPrincipal;
