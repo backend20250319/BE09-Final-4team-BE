@@ -36,8 +36,7 @@ public class AttachmentController {
         return ResponseEntity.ok(metadata);
     }
     
-    // 파일 업로드 (ADMIN 권한 필요)
-    @PreAuthorize("hasRole('ADMIN')")
+    // 파일 업로드 (인증된 사용자면 가능)
     @PostMapping("/api/attachments/upload")
     public ResponseEntity<ApiResult<List<UploadResponse>>> uploadFiles(
             @RequestParam("files") List<MultipartFile> files,
