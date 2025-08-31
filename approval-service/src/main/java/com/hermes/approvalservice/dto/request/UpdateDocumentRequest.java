@@ -1,6 +1,5 @@
 package com.hermes.approvalservice.dto.request;
 
-import com.hermes.attachment.dto.AttachmentInfoRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -25,5 +24,5 @@ public class UpdateDocumentRequest {
     private List<ApprovalTargetRequest> referenceTargets;
     
     @Valid
-    private List<AttachmentInfoRequest> attachments;
+    private List<@NotBlank(message = "파일 ID는 필수입니다") String> attachments;
 }

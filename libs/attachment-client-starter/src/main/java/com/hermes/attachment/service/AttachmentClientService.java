@@ -1,7 +1,6 @@
 package com.hermes.attachment.service;
 
 import com.hermes.attachment.client.AttachmentServiceClient;
-import com.hermes.attachment.dto.AttachmentInfoRequest;
 import com.hermes.attachment.dto.AttachmentInfoResponse;
 import com.hermes.attachment.dto.AttachmentMetadata;
 import com.hermes.attachment.entity.AttachmentInfo;
@@ -19,33 +18,33 @@ public class AttachmentClientService {
     
     private final AttachmentServiceClient attachmentServiceClient;
     
-    public List<AttachmentInfo> validateAndConvertAttachments(List<AttachmentInfoRequest> attachmentRequests) {
-        if (attachmentRequests == null || attachmentRequests.isEmpty()) {
+    public List<AttachmentInfo> validateAndConvertAttachments(List<String> fileIds) {
+        if (fileIds == null || fileIds.isEmpty()) {
             return List.of();
         }
         
-        return attachmentRequests.stream()
+        return fileIds.stream()
                 .map(this::validateAndConvertAttachment)
                 .collect(Collectors.toList());
     }
     
-    public AttachmentInfo validateAndConvertAttachment(AttachmentInfoRequest request) {
+    public AttachmentInfo validateAndConvertAttachment(String fileId) {
         try {
-            AttachmentMetadata metadata = attachmentServiceClient.getFileMetadata(request.getFileId());
+            AttachmentMetadata metadata = attachmentServiceClient.getFileMetadata(fileId);
             
             log.info("File metadata validated for fileId: {}, size: {}, type: {}", 
-                    request.getFileId(), metadata.getFileSize(), metadata.getContentType());
+                    fileId, metadata.getFileSize(), metadata.getContentType());
             
             return AttachmentInfo.builder()
-                    .fileId(request.getFileId())
-                    .displayFileName(sanitizeFileName(request.getDisplayFileName()))
+                    .fileId(fileId)
+                    .displayFileName(sanitizeFileName(metadata.getOriginalFileName()))
                     .fileSize(metadata.getFileSize())
                     .contentType(metadata.getContentType())
                     .build();
                     
         } catch (Exception e) {
-            log.error("Failed to validate attachment: {}", request.getFileId(), e);
-            throw new RuntimeException("첨부파일 검증에 실패했습니다: " + request.getFileId());
+            log.error("Failed to validate attachment: {}", fileId, e);
+            throw new RuntimeException("첨부파일 검증에 실패했습니다: " + fileId);
         }
     }
     

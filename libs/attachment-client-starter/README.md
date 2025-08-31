@@ -43,7 +43,7 @@ public class DocumentService {
     private final AttachmentClientService attachmentClientService;
     
     public void createDocument(CreateDocumentRequest request) {
-        // 첨부파일 검증 및 변환
+        // 첨부파일 검증 및 변환 (fileId 리스트 사용)
         List<AttachmentInfo> attachments = attachmentClientService
             .validateAndConvertAttachments(request.getAttachments());
         
@@ -79,14 +79,6 @@ public class AttachmentInfo {
 
 ### DTO 클래스들
 
-#### AttachmentInfoRequest
-첨부파일 요청 DTO
-```java
-public class AttachmentInfoRequest {
-    private String fileId;
-    private String displayFileName;
-}
-```
 
 #### AttachmentInfoResponse
 첨부파일 응답 DTO
@@ -117,10 +109,12 @@ public class AttachmentMetadata {
 #### AttachmentClientService
 주요 비즈니스 로직을 처리하는 서비스:
 
-- `validateAndConvertAttachments()`: 첨부파일 목록 검증 및 변환
-- `validateAndConvertAttachment()`: 단일 첨부파일 검증 및 변환
+- `validateAndConvertAttachments(List<String> fileIds)`: fileId 리스트를 받아 첨부파일 검증 및 변환
+- `validateAndConvertAttachment(String fileId)`: 단일 fileId로 첨부파일 검증 및 변환
 - `convertToResponseList()`: 엔터티를 응답 DTO로 변환
 - `convertToResponse()`: 단일 엔터티를 응답 DTO로 변환
+
+**주요 변경사항**: displayFileName은 클라이언트에서 받지 않고 attachment-service의 `originalFileName`을 사용합니다.
 
 ### Feign 클라이언트
 
