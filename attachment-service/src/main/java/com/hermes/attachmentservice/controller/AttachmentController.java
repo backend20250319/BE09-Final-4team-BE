@@ -1,6 +1,5 @@
 package com.hermes.attachmentservice.controller;
 
-import com.hermes.attachmentservice.dto.UploadResponse;
 import com.hermes.attachmentservice.service.AttachmentService;
 import com.hermes.attachment.dto.AttachmentInfoResponse;
 import com.hermes.api.common.ApiResult;
@@ -30,14 +29,14 @@ public class AttachmentController {
     
     // 파일 업로드 (인증된 사용자면 가능)
     @PostMapping("/upload")
-    public ResponseEntity<ApiResult<List<UploadResponse>>> uploadFiles(
+    public ResponseEntity<ApiResult<List<AttachmentInfoResponse>>> uploadFiles(
             @RequestParam("files") List<MultipartFile> files,
             @AuthenticationPrincipal UserPrincipal user) {
         
         log.info("파일 업로드 요청 - 파일 수: {}, 업로더: {}", files.size(), user.getUserId());
         
         try {
-            List<UploadResponse> response = attachmentService.uploadFiles(files, user.getUserId());
+            List<AttachmentInfoResponse> response = attachmentService.uploadFiles(files, user.getUserId());
             return ResponseEntity.ok(ApiResult.success(response));
         } catch (Exception e) {
             log.error("파일 업로드 실패: {}", e.getMessage(), e);
