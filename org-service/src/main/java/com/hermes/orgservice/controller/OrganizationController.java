@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -23,6 +24,7 @@ public class OrganizationController {
 
     private final OrganizationService organizationService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResult<OrganizationDto>> createOrganization(@Valid @RequestBody CreateOrganizationRequest request) {
         log.info("Create organization API called: {}", request.getName());
@@ -30,6 +32,7 @@ public class OrganizationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResult.success("조직 생성 성공", createdOrganization));
     }
 
+    // 조회는 모든 인증된 사용자 가능
     @GetMapping("/{organizationId}")
     public ResponseEntity<ApiResult<OrganizationDto>> getOrganization(@PathVariable Long organizationId) {
         log.info("Get organization API called: organizationId={}", organizationId);
@@ -58,6 +61,7 @@ public class OrganizationController {
         return ResponseEntity.ok(ApiResult.success("조직 계층 구조 조회 성공", hierarchy));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{organizationId}")
     public ResponseEntity<ApiResult<OrganizationDto>> updateOrganization(
             @PathVariable Long organizationId,
@@ -67,6 +71,7 @@ public class OrganizationController {
         return ResponseEntity.ok(ApiResult.success("조직 정보 수정 성공", updatedOrganization));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{organizationId}")
     public ResponseEntity<ApiResult<Void>> deleteOrganization(@PathVariable Long organizationId) {
         log.info("Delete organization API called: organizationId={}", organizationId);
