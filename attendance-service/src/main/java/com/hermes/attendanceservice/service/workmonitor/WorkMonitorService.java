@@ -91,15 +91,26 @@ public class WorkMonitorService {
         int lateCount = 0; // 지각
         
         for (Attendance attendance : attendances) {
-            switch (attendance.getStatus()) {
+            // 출근 상태에 따른 분류
+            switch (attendance.getAttendanceStatus()) {
                 case REGULAR:
+                    attendanceCount++;
+                    break;
+                case LATE:
+                    lateCount++;
+                    break;
+                default:
+                    break;
+            }
+            
+            // 근무 상태에 따른 추가 분류
+            switch (attendance.getWorkStatus()) {
                 case REMOTE:
                 case BUSINESS_TRIP:
                 case OUT_OF_OFFICE:
                     attendanceCount++;
                     break;
-                case LATE:
-                    lateCount++;
+                default:
                     break;
             }
         }

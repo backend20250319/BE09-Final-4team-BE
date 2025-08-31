@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.hermes.attendanceservice.entity.workschedule.ScheduleType;
 
 @Data
 @Builder
@@ -24,7 +25,7 @@ public class ScheduleResponseDto {
     private LocalDate endDate;
     private LocalTime startTime;
     private LocalTime endTime;
-    private String scheduleType;
+    private ScheduleType scheduleType;
     private String color;
     private Boolean isAllDay;
     private Boolean isRecurring;
