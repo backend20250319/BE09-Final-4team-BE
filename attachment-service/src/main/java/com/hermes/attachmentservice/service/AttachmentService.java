@@ -8,7 +8,7 @@ import com.hermes.attachmentservice.repository.AttachmentFileRepository;
 import com.hermes.attachmentservice.exception.FileNotFoundException;
 import com.hermes.attachmentservice.exception.FileUploadException;
 import com.hermes.attachmentservice.exception.FileStorageException;
-import com.hermes.attachment.dto.AttachmentMetadata;
+import com.hermes.attachment.dto.AttachmentInfoResponse;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -31,20 +31,16 @@ public class AttachmentService {
 
   private final AttachmentFileRepository attachmentFileRepository;
   private final AttachmentProperties attachmentProperties;
-  private final String downloadBaseUrl;
 
   public AttachmentService(AttachmentFileRepository attachmentFileRepository,
       AttachmentProperties attachmentProperties) {
     this.attachmentFileRepository = attachmentFileRepository;
     this.attachmentProperties = attachmentProperties;
-    this.downloadBaseUrl =
-        "http://" + attachmentProperties.getHost() + ":" + attachmentProperties.getDownloadPort()
-            + attachmentProperties.getBaseDir();
   }
 
 
   @Transactional
-  public List<UploadResponse> uploadFiles(List<MultipartFile> files, Long uploadedBy) throws IOException {
+  public List<UploadResponse> uploadFiles(List<MultipartFile> files, Long uploadedBy) {
     if (files == null || files.isEmpty()) {
       throw new FileUploadException("업로드할 파일이 없습니다");
     }
@@ -113,17 +109,17 @@ public class AttachmentService {
   }
 
   @Transactional(readOnly = true)
-  public AttachmentMetadata getFileMetadata(String fileId) {
+  public AttachmentInfoResponse getFileMetadata(String fileId) {
     AttachmentFile file = attachmentFileRepository.findById(fileId)
         .orElseThrow(() -> new FileNotFoundException(fileId));
     
-    return AttachmentMetadata.builder()
-        .fileId(file.getFileId())
-        .originalFileName(file.getOriginalFileName())
-        .fileSize(file.getFileSize())
-        .contentType(file.getContentType())
-        .filePath(downloadBaseUrl + "/" + file.getStoredName())
-        .build();
+    AttachmentInfoResponse response = new AttachmentInfoResponse();
+    response.setFileId(file.getFileId());
+    response.setFileName(file.getOriginalFileName());
+    response.setFileSize(file.getFileSize());
+    response.setContentType(file.getContentType());
+    
+    return response;
   }
 
   @Transactional(readOnly = true)

@@ -2,7 +2,6 @@ package com.hermes.attachment.service;
 
 import com.hermes.attachment.client.AttachmentServiceClient;
 import com.hermes.attachment.dto.AttachmentInfoResponse;
-import com.hermes.attachment.dto.AttachmentMetadata;
 import com.hermes.attachment.entity.AttachmentInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,14 +29,14 @@ public class AttachmentClientService {
     
     public AttachmentInfo validateAndConvertAttachment(String fileId) {
         try {
-            AttachmentMetadata metadata = attachmentServiceClient.getFileMetadata(fileId);
+            AttachmentInfoResponse metadata = attachmentServiceClient.getFileMetadata(fileId).getData();
             
             log.info("File metadata validated for fileId: {}, size: {}, type: {}", 
                     fileId, metadata.getFileSize(), metadata.getContentType());
             
             return AttachmentInfo.builder()
                     .fileId(fileId)
-                    .displayFileName(sanitizeFileName(metadata.getOriginalFileName()))
+                    .fileName(metadata.getFileName())
                     .fileSize(metadata.getFileSize())
                     .contentType(metadata.getContentType())
                     .build();
@@ -57,17 +56,9 @@ public class AttachmentClientService {
     public AttachmentInfoResponse convertToResponse(AttachmentInfo attachment) {
         AttachmentInfoResponse response = new AttachmentInfoResponse();
         response.setFileId(attachment.getFileId());
-        response.setDisplayFileName(attachment.getDisplayFileName());
+        response.setFileName(attachment.getFileName());
         response.setFileSize(attachment.getFileSize());
         response.setContentType(attachment.getContentType());
-        response.setDownloadUrl("/api/attachments/" + attachment.getFileId() + "/download");
         return response;
-    }
-    
-    private String sanitizeFileName(String fileName) {
-        if (fileName == null) {
-            return "Unknown";
-        }
-        return fileName.replaceAll("[<>\"'&]", "_").trim();
     }
 }

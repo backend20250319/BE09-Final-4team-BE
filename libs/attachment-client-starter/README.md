@@ -70,10 +70,10 @@ public class DocumentService {
 ```java
 @Embeddable
 public class AttachmentInfo {
-    private String fileId;           // 파일 ID
-    private String displayFileName;  // 표시할 파일명
-    private Long fileSize;          // 파일 크기
-    private String contentType;     // 콘텐츠 타입
+    private String fileId;      // 파일 ID
+    private String fileName;    // 파일명
+    private Long fileSize;      // 파일 크기
+    private String contentType; // 콘텐츠 타입
 }
 ```
 
@@ -81,26 +81,13 @@ public class AttachmentInfo {
 
 
 #### AttachmentInfoResponse
-첨부파일 응답 DTO
+첨부파일 응답 DTO (내부 통신과 외부 응답 모두 사용)
 ```java
 public class AttachmentInfoResponse {
     private String fileId;
-    private String displayFileName;
+    private String fileName;
     private Long fileSize;
     private String contentType;
-    private String downloadUrl;
-}
-```
-
-#### AttachmentMetadata
-attachment-service로부터 받는 메타데이터
-```java
-public class AttachmentMetadata {
-    private String fileId;
-    private String originalFileName;
-    private Long fileSize;
-    private String contentType;
-    private String filePath;
 }
 ```
 
@@ -114,7 +101,9 @@ public class AttachmentMetadata {
 - `convertToResponseList()`: 엔터티를 응답 DTO로 변환
 - `convertToResponse()`: 단일 엔터티를 응답 DTO로 변환
 
-**주요 변경사항**: displayFileName은 클라이언트에서 받지 않고 attachment-service의 `originalFileName`을 사용합니다.
+**주요 변경사항**: 
+- fileName은 클라이언트에서 받지 않고 attachment-service에서 가져옵니다.
+- AttachmentMetadata를 제거하고 AttachmentInfoResponse로 통합했습니다.
 
 ### Feign 클라이언트
 
@@ -125,7 +114,7 @@ attachment-service와의 통신을 담당:
 @FeignClient(name = "attachment-service", fallback = AttachmentServiceClientFallback.class)
 public interface AttachmentServiceClient {
     @GetMapping("/internal/attachments/{fileId}/metadata")
-    AttachmentMetadata getFileMetadata(@PathVariable String fileId);
+    AttachmentInfoResponse getFileMetadata(@PathVariable String fileId);
 }
 ```
 
@@ -152,17 +141,16 @@ attachment-service가 응답하지 않을 경우 `AttachmentServiceClientFallbac
 
 ```java
 @Override
-public AttachmentMetadata getFileMetadata(String fileId) {
+public AttachmentInfoResponse getFileMetadata(String fileId) {
     log.warn("attachment-service is not available, returning mock data for fileId: {}", fileId);
     
-    AttachmentMetadata metadata = new AttachmentMetadata();
-    metadata.setFileId(fileId);
-    metadata.setOriginalFileName("mock-file.pdf");
-    metadata.setFileSize(1024L);
-    metadata.setContentType("application/pdf");
-    metadata.setFilePath("/mock/path/" + fileId);
+    AttachmentInfoResponse response = new AttachmentInfoResponse();
+    response.setFileId(fileId);
+    response.setFileName("mock-file.pdf");
+    response.setFileSize(1024L);
+    response.setContentType("application/pdf");
     
-    return metadata;
+    return response;
 }
 ```
 
