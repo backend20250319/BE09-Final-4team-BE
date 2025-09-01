@@ -266,8 +266,67 @@ public class DocumentTemplateService {
             response.setCategory(categoryResponse);
         }
 
-        // Convert fields, stages, and targets to responses
-        // (Implementation details omitted for brevity)
+        // Convert fields to responses
+        response.setFields(template.getFields().stream()
+                .map(field -> {
+                    TemplateFieldResponse fieldResponse = new TemplateFieldResponse();
+                    fieldResponse.setId(field.getId());
+                    fieldResponse.setName(field.getName());
+                    fieldResponse.setFieldType(field.getFieldType());
+                    fieldResponse.setRequired(field.getRequired());
+                    fieldResponse.setFieldOrder(field.getFieldOrder());
+                    fieldResponse.setOptions(field.getOptions());
+                    return fieldResponse;
+                })
+                .toList());
+
+        // Convert approval stages to responses
+        response.setApprovalStages(template.getApprovalStages().stream()
+                .map(stage -> {
+                    ApprovalStageResponse stageResponse = new ApprovalStageResponse();
+                    stageResponse.setId(stage.getId());
+                    stageResponse.setStageOrder(stage.getStageOrder());
+                    stageResponse.setStageName(stage.getStageName());
+                    stageResponse.setIsCompleted(false); // 템플릿에서는 완료 상태 없음
+                    stageResponse.setCompletedAt(null);
+                    
+                    // Convert stage's approval targets
+                    stageResponse.setApprovalTargets(stage.getApprovalTargets().stream()
+                            .map(target -> {
+                                ApprovalTargetResponse targetResponse = new ApprovalTargetResponse();
+                                targetResponse.setId(target.getId());
+                                targetResponse.setTargetType(target.getTargetType());
+                                targetResponse.setUserId(target.getUserId());
+                                targetResponse.setOrganizationId(target.getOrganizationId());
+                                targetResponse.setManagerLevel(target.getManagerLevel());
+                                targetResponse.setIsReference(target.getIsReference());
+                                targetResponse.setIsApproved(false); // 템플릿에서는 승인 상태 없음
+                                targetResponse.setApprovedBy(null);
+                                targetResponse.setApprovedAt(null);
+                                return targetResponse;
+                            })
+                            .toList());
+                    
+                    return stageResponse;
+                })
+                .toList());
+
+        // Convert reference targets to responses
+        response.setReferenceTargets(template.getReferenceTargets().stream()
+                .map(target -> {
+                    ApprovalTargetResponse targetResponse = new ApprovalTargetResponse();
+                    targetResponse.setId(target.getId());
+                    targetResponse.setTargetType(target.getTargetType());
+                    targetResponse.setUserId(target.getUserId());
+                    targetResponse.setOrganizationId(target.getOrganizationId());
+                    targetResponse.setManagerLevel(target.getManagerLevel());
+                    targetResponse.setIsReference(target.getIsReference());
+                    targetResponse.setIsApproved(false); // 템플릿에서는 승인 상태 없음
+                    targetResponse.setApprovedBy(null);
+                    targetResponse.setApprovedAt(null);
+                    return targetResponse;
+                })
+                .toList());
 
         return response;
     }
