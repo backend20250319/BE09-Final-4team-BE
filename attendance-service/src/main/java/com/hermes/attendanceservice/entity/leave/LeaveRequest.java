@@ -69,4 +69,22 @@ public class LeaveRequest {
         REJECTED,    // 반려
         CANCELLED    // 취소
     }
+    
+    /**
+     * CreateLeaveRequestDto로부터 LeaveRequest 엔티티를 생성하는 정적 팩토리 메서드
+     */
+    public static LeaveRequest createFromDto(com.hermes.attendanceservice.dto.leave.CreateLeaveRequestDto createDto, double totalDays) {
+        return LeaveRequest.builder()
+                .employeeId(createDto.getEmployeeId())
+                .leaveType(createDto.getLeaveType())
+                .startDate(createDto.getStartDate())
+                .endDate(createDto.getEndDate())
+                .startTime(createDto.getStartTime())
+                .endTime(createDto.getEndTime())
+                .totalDays(totalDays)
+                .reason(createDto.getReason())
+                .status(RequestStatus.REQUESTED)
+                .requestedAt(LocalDateTime.now())
+                .build();
+    }
 } 

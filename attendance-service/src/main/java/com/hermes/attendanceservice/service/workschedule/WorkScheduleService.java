@@ -104,7 +104,7 @@ public class WorkScheduleService {
     public UserWorkPolicyDto getUserWorkPolicy(Long userId, String authorization) {
         try {
             // 1. User Service에서 사용자 정보 조회
-            Map<String, Object> userResponse = userServiceClient.getUserById(userId, authorization);
+            Map<String, Object> userResponse = userServiceClient.getUserById(userId);
             
             if (userResponse == null) {
                 log.warn("User not found with id: {}", userId);
@@ -137,9 +137,15 @@ public class WorkScheduleService {
                     .workPolicy(workPolicy)
                     .build();
                     
+        } catch (feign.FeignException.Unauthorized e) {
+            log.error("Unauthorized access to user service for userId: {}. Please check JWT token.", userId);
+            throw new RuntimeException("인증이 필요합니다. JWT 토큰을 확인해주세요.", e);
+        } catch (feign.FeignException.ServiceUnavailable e) {
+            log.error("User service is unavailable for userId: {}. Service may be down.", userId);
+            throw new RuntimeException("사용자 서비스에 연결할 수 없습니다. 서비스가 실행 중인지 확인해주세요.", e);
         } catch (Exception e) {
             log.error("Error fetching user work policy for userId: {}", userId, e);
-            throw new RuntimeException("Failed to fetch user work policy", e);
+            throw new RuntimeException("사용자 근무 정책 조회에 실패했습니다.", e);
         }
     }
     
@@ -152,7 +158,7 @@ public class WorkScheduleService {
     public ScheduleResponseDto createSchedule(CreateScheduleRequestDto requestDto, String authorization) {
         try {
             // 1. 사용자 존재 여부 확인
-            Map<String, Object> userResponse = userServiceClient.getUserById(requestDto.getUserId(), authorization);
+            Map<String, Object> userResponse = userServiceClient.getUserById(requestDto.getUserId());
             if (userResponse == null) {
                 throw new RuntimeException("User not found with id: " + requestDto.getUserId());
             }
@@ -307,7 +313,7 @@ public class WorkScheduleService {
     public WorkTimeAdjustment createWorkTimeAdjustment(AdjustWorkTimeRequestDto requestDto) {
         try {
             // 1. 사용자 존재 여부 확인
-            Map<String, Object> userResponse = userServiceClient.getUserById(requestDto.getUserId(), "Bearer token");
+            Map<String, Object> userResponse = userServiceClient.getUserById(requestDto.getUserId());
             if (userResponse == null) {
                 throw new RuntimeException("User not found with id: " + requestDto.getUserId());
             }

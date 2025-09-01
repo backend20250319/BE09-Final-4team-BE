@@ -42,6 +42,7 @@ public class WorkScheduleController {
                 return ResponseEntity.ok(ApiResult.failure("권한이 없습니다."));
             }
             
+            // Authorization 헤더는 null로 전달 (User Service에서 직접 처리)
             UserWorkPolicyDto result = workScheduleService.getUserWorkPolicy(userId, null);
             
             if (result == null) {

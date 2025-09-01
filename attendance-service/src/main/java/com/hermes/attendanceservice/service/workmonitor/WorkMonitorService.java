@@ -144,7 +144,7 @@ public class WorkMonitorService {
                 }
                 
                 // UserService에서 전체 직원 수를 조회하는 API 호출
-                Map<String, Object> response = userServiceClient.getTotalEmployees(authorization);
+                Map<String, Object> response = userServiceClient.getTotalEmployees();
                 return (Integer) response.get("totalUsers");
             } else {
                 log.warn("Request context not available");
