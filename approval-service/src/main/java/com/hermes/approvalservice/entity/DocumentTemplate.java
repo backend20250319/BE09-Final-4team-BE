@@ -34,19 +34,24 @@ public class DocumentTemplate {
     private String bodyTemplate;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean useBody = true;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean useAttachment = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean allowTargetChange = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isHidden = false;
 
     @ElementCollection
     @CollectionTable(name = "template_reference_files", joinColumns = @JoinColumn(name = "template_id"))
+    @Builder.Default
     private List<AttachmentInfo> referenceFiles = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -54,13 +59,16 @@ public class DocumentTemplate {
     private TemplateCategory category;
 
     @OneToMany(mappedBy = "template", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<TemplateField> fields = new ArrayList<>();
 
     @OneToMany(mappedBy = "template", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("stageOrder ASC")
+    @Builder.Default
     private List<TemplateApprovalStage> approvalStages = new ArrayList<>();
 
     @OneToMany(mappedBy = "template", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<TemplateApprovalTarget> referenceTargets = new ArrayList<>();
 
     @Column(nullable = false)

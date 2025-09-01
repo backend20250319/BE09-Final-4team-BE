@@ -11,7 +11,9 @@ import java.util.Map;
 public interface UserServiceClient {
     
     @GetMapping("/api/users/{userId}/simple")
-    Map<String, Object> getUserById(@PathVariable("userId") Long userId, 
-                                   @RequestHeader("Authorization") String authorization);
+    Map<String, Object> getUserById(@PathVariable("userId") Long userId);
+    
+    @GetMapping("/api/users/count")
+    Map<String, Object> getTotalEmployees();
 
 } 

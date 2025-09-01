@@ -8,10 +8,13 @@ import com.hermes.attendanceservice.dto.workschedule.UpdateScheduleRequestDto;
 import com.hermes.attendanceservice.dto.workschedule.UserWorkPolicyDto;
 import com.hermes.attendanceservice.entity.workschedule.WorkTimeAdjustment;
 import com.hermes.attendanceservice.service.workschedule.WorkScheduleService;
+import com.hermes.auth.principal.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -32,9 +35,15 @@ public class WorkScheduleController {
     @GetMapping("/users/{userId}/work-policy")
     public ResponseEntity<ApiResult<UserWorkPolicyDto>> getUserWorkPolicy(
             @PathVariable Long userId,
-            @RequestHeader("Authorization") String authorization) {
+            @AuthenticationPrincipal UserPrincipal user) {
         try {
-            UserWorkPolicyDto result = workScheduleService.getUserWorkPolicy(userId, authorization);
+            // 본인 또는 관리자만 조회 가능
+            if (!user.getUserId().equals(userId) && !user.getRole().name().equals("ADMIN")) {
+                return ResponseEntity.ok(ApiResult.failure("권한이 없습니다."));
+            }
+            
+            // Authorization 헤더는 null로 전달 (User Service에서 직접 처리)
+            UserWorkPolicyDto result = workScheduleService.getUserWorkPolicy(userId, null);
             
             if (result == null) {
                 return ResponseEntity.ok(ApiResult.failure("사용자의 근무 정책을 찾을 수 없습니다."));
@@ -53,10 +62,15 @@ public class WorkScheduleController {
     @PostMapping("/schedules")
     public ResponseEntity<ApiResult<ScheduleResponseDto>> createSchedule(
             @Valid @RequestBody CreateScheduleRequestDto requestDto,
-            @RequestHeader("Authorization") String authorization) {
+            @AuthenticationPrincipal UserPrincipal user) {
         try {
+            // 본인 또는 관리자만 생성 가능
+            if (!user.getUserId().equals(requestDto.getUserId()) && !user.getRole().name().equals("ADMIN")) {
+                return ResponseEntity.ok(ApiResult.failure("권한이 없습니다."));
+            }
+            
             log.info("Creating schedule for userId: {}", requestDto.getUserId());
-            ScheduleResponseDto result = workScheduleService.createSchedule(requestDto, authorization);
+            ScheduleResponseDto result = workScheduleService.createSchedule(requestDto, null);
             return ResponseEntity.ok(ApiResult.success("스케줄 생성 성공", result));
         } catch (Exception e) {
             log.error("Error creating schedule for userId: {}", requestDto.getUserId(), e);
@@ -68,6 +82,7 @@ public class WorkScheduleController {
      * Work Policy 기반 고정 스케줄 생성
      */
     @PostMapping("/users/{userId}/fixed-schedules")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
     public ResponseEntity<ApiResult<List<ScheduleResponseDto>>> createFixedSchedules(
             @PathVariable Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -87,14 +102,14 @@ public class WorkScheduleController {
      * 근무시간, 휴게시간, 출근시간, 퇴근시간, 코어시간, 시차 근무 출근 가능 시간 등을 스케줄로 생성
      */
     @PostMapping("/users/{userId}/apply-work-policy")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
     public ResponseEntity<ApiResult<List<ScheduleResponseDto>>> applyWorkPolicyToSchedule(
             @PathVariable Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestHeader("Authorization") String authorization) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         try {
             log.info("Applying work policy to schedule for userId: {} from {} to {}", userId, startDate, endDate);
-            List<ScheduleResponseDto> results = workScheduleService.applyWorkPolicyToSchedule(userId, authorization, startDate, endDate);
+            List<ScheduleResponseDto> results = workScheduleService.applyWorkPolicyToSchedule(userId, null, startDate, endDate);
             return ResponseEntity.ok(ApiResult.success("근무 정책이 스케줄에 성공적으로 반영되었습니다.", results));
         } catch (Exception e) {
             log.error("Error applying work policy to schedule for userId: {} from {} to {}", userId, startDate, endDate, e);
@@ -106,6 +121,7 @@ public class WorkScheduleController {
      * 스케줄 수정
      */
     @PutMapping("/users/{userId}/schedules/{scheduleId}")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
     public ResponseEntity<ApiResult<ScheduleResponseDto>> updateSchedule(
             @PathVariable Long userId,
             @PathVariable Long scheduleId,
@@ -124,6 +140,7 @@ public class WorkScheduleController {
      * 스케줄 삭제
      */
     @DeleteMapping("/users/{userId}/schedules/{scheduleId}")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
     public ResponseEntity<ApiResult<Void>> deleteSchedule(
             @PathVariable Long userId,
             @PathVariable Long scheduleId) {
@@ -141,11 +158,11 @@ public class WorkScheduleController {
      * 사용자별 스케줄 조회 (WorkPolicy 정보 포함)
      */
     @GetMapping("/users/{userId}/schedules")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
     public ResponseEntity<ApiResult<List<ScheduleResponseDto>>> getUserSchedules(
-            @PathVariable Long userId,
-            @RequestHeader("Authorization") String authorization) {
+            @PathVariable Long userId) {
         try {
-            List<ScheduleResponseDto> schedules = workScheduleService.getUserSchedules(userId, authorization);
+            List<ScheduleResponseDto> schedules = workScheduleService.getUserSchedules(userId, null);
             return ResponseEntity.ok(ApiResult.success("스케줄 조회 성공", schedules));
         } catch (Exception e) {
             log.error("Error fetching schedules for userId: {}", userId, e);
@@ -157,6 +174,7 @@ public class WorkScheduleController {
      * 사용자별 특정 기간 스케줄 조회
      */
     @GetMapping("/users/{userId}/schedules/range")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
     public ResponseEntity<ApiResult<List<ScheduleResponseDto>>> getUserSchedulesByDateRange(
             @PathVariable Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -174,6 +192,7 @@ public class WorkScheduleController {
      * 스케줄 상세 조회
      */
     @GetMapping("/users/{userId}/schedules/{scheduleId}")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
     public ResponseEntity<ApiResult<ScheduleResponseDto>> getScheduleById(
             @PathVariable Long userId,
             @PathVariable Long scheduleId) {
@@ -193,8 +212,15 @@ public class WorkScheduleController {
      * 근무 시간 조정 요청 생성
      */
     @PostMapping("/work-time-adjustments")
-    public ResponseEntity<ApiResult<WorkTimeAdjustment>> createWorkTimeAdjustment(@Valid @RequestBody AdjustWorkTimeRequestDto requestDto) {
+    public ResponseEntity<ApiResult<WorkTimeAdjustment>> createWorkTimeAdjustment(
+            @Valid @RequestBody AdjustWorkTimeRequestDto requestDto,
+            @AuthenticationPrincipal UserPrincipal user) {
         try {
+            // 본인만 조정 요청 가능
+            if (!user.getUserId().equals(requestDto.getUserId())) {
+                return ResponseEntity.ok(ApiResult.failure("권한이 없습니다."));
+            }
+            
             log.info("Creating work time adjustment for userId: {}", requestDto.getUserId());
             WorkTimeAdjustment result = workScheduleService.createWorkTimeAdjustment(requestDto);
             return ResponseEntity.ok(ApiResult.success("근무 시간 조정 요청 생성 성공", result));
@@ -203,8 +229,4 @@ public class WorkScheduleController {
             return ResponseEntity.ok(ApiResult.failure("근무 시간 조정 요청 생성 중 오류가 발생했습니다."));
         }
     }
-    
-
-    
-
 } 

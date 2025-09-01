@@ -8,9 +8,11 @@ import com.hermes.attendanceservice.entity.workpolicy.WorkType;
 import com.hermes.attendanceservice.repository.workpolicy.WorkPolicyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -24,6 +26,7 @@ public class WorkPolicyController {
      * 근무 정책 생성
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResult<WorkPolicyResponseDto> createWorkPolicy(@Valid @RequestBody WorkPolicyRequestDto requestDto) {
         try {
             log.info("Creating work policy: {}", requestDto.getName());
@@ -65,6 +68,27 @@ public class WorkPolicyController {
         } catch (Exception e) {
             log.error("Error creating work policy: {}", requestDto.getName(), e);
             return ApiResult.failure("근무 정책 생성에 실패했습니다: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 전체 근무 정책 목록 조회
+     */
+    @GetMapping
+    public ApiResult<List<WorkPolicyResponseDto>> getAllWorkPolicies() {
+        try {
+            log.info("Get all work policies");
+            
+            List<WorkPolicy> workPolicies = workPolicyRepository.findAll();
+            List<WorkPolicyResponseDto> responses = workPolicies.stream()
+                    .map(WorkPolicyResponseDto::from)
+                    .toList();
+            
+            return ApiResult.success("전체 근무 정책 목록을 성공적으로 조회했습니다.", responses);
+            
+        } catch (Exception e) {
+            log.error("Error getting all work policies", e);
+            return ApiResult.failure("근무 정책 목록 조회에 실패했습니다: " + e.getMessage());
         }
     }
     

@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Max;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import com.hermes.attendanceservice.entity.workschedule.ScheduleType;
 
 @Data
 @Builder
@@ -37,7 +38,7 @@ public class UpdateScheduleRequestDto {
     private LocalTime endTime;
     
     @NotNull(message = "스케줄 유형은 필수입니다.")
-    private String scheduleType; // WORK, MEETING, BREAK, OVERTIME, VACATION, SICK_LEAVE
+    private ScheduleType scheduleType; // WORK(근무), SICK_LEAVE(병가), VACATION(휴가), BUSINESS_TRIP(출장), OUT_OF_OFFICE(외근), OVERTIME(초과근무)
     
     private String color;
     

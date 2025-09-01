@@ -4,7 +4,9 @@ import com.hermes.attendanceservice.entity.leave.LeaveRequest;
 import com.hermes.attendanceservice.entity.leave.LeaveType;
 import com.hermes.attendanceservice.dto.leave.CreateLeaveRequestDto;
 import com.hermes.attendanceservice.dto.leave.LeaveRequestResponseDto;
+import com.hermes.attendanceservice.repository.leave.LeaveRepository;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,15 +19,14 @@ import java.util.List;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class LeaveService {
     
     private static final double WORK_HOURS_PER_DAY = 8.0;
     private static final LocalTime WORK_START_TIME = LocalTime.of(9, 0);
     private static final LocalTime WORK_END_TIME = LocalTime.of(18, 0);
     
-    // TODO: Repository 주입 필요
-    // private final LeaveRequestRepository leaveRequestRepository;
-    // private final UserRepository userRepository;
+    private final LeaveRepository leaveRequestRepository;
     
     /**
      * 휴가 신청을 생성합니다.
@@ -40,25 +41,14 @@ public class LeaveService {
         double totalHours = calculateTotalHours(createDto);
         double totalDays = totalHours / WORK_HOURS_PER_DAY;
         
-        // 3. LeaveRequest 엔티티 생성
-        LeaveRequest leaveRequest = LeaveRequest.builder()
-                .employeeId(createDto.getEmployeeId())
-                .leaveType(createDto.getLeaveType())
-                .startDate(createDto.getStartDate())
-                .endDate(createDto.getEndDate())
-                .startTime(createDto.getStartTime())
-                .endTime(createDto.getEndTime())
-                .totalDays(totalDays)
-                .reason(createDto.getReason())
-                .status(LeaveRequest.RequestStatus.REQUESTED)
-                .requestedAt(LocalDateTime.now())
-                .build();
+        // 3. LeaveRequest 엔티티 생성 (엔티티의 정적 팩토리 메서드 사용)
+        LeaveRequest leaveRequest = LeaveRequest.createFromDto(createDto, totalDays);
         
         // 4. 저장
-        // LeaveRequest savedRequest = leaveRequestRepository.save(leaveRequest);
+        LeaveRequest savedRequest = leaveRequestRepository.save(leaveRequest);
         
         // 5. 응답 DTO 변환
-        return convertToResponseDto(leaveRequest);
+        return convertToResponseDto(savedRequest);
     }
     
     /**
@@ -69,16 +59,16 @@ public class LeaveService {
      */
     public LeaveRequestResponseDto modifyLeaveRequest(Long requestId, CreateLeaveRequestDto createDto) {
         // 1. 기존 휴가 신청 조회 및 검증
-        // LeaveRequest existingRequest = leaveRequestRepository.findById(requestId)
-        //         .orElseThrow(() -> new RuntimeException("휴가 신청을 찾을 수 없습니다"));
+        LeaveRequest existingRequest = leaveRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("휴가 신청을 찾을 수 없습니다"));
         
         // 2. 수정 가능한 상태인지 확인
-        // if (existingRequest.getStatus() != LeaveRequest.RequestStatus.REQUESTED) {
-        //     throw new RuntimeException("수정할 수 없는 상태입니다");
-        // }
+        if (existingRequest.getStatus() != LeaveRequest.RequestStatus.REQUESTED) {
+            throw new RuntimeException("수정할 수 없는 상태입니다");
+        }
         
         // 3. 기존 휴가 신청 삭제
-        // leaveRequestRepository.delete(existingRequest);
+        leaveRequestRepository.delete(existingRequest);
         
         // 4. 새로운 휴가 신청 생성
         return createLeaveRequest(createDto);
@@ -91,25 +81,105 @@ public class LeaveService {
      */
     @Transactional(readOnly = true)
     public LeaveRequestResponseDto getLeaveRequest(Long requestId) {
-        // LeaveRequest leaveRequest = leaveRequestRepository.findById(requestId)
-        //         .orElseThrow(() -> new RuntimeException("휴가 신청을 찾을 수 없습니다"));
+        LeaveRequest leaveRequest = leaveRequestRepository.findById(requestId)
+                .orElse(null);
         
-        // return convertToResponseDto(leaveRequest);
-        return null; // TODO: 실제 구현 필요
+        if (leaveRequest == null) {
+            return null;
+        }
+        
+        return convertToResponseDto(leaveRequest);
     }
     
-    // TODO: 나머지 메서드들 구현 필요
+    /**
+     * 휴가 신청 검증
+     */
     private void validateLeaveRequest(CreateLeaveRequestDto createDto) {
-        // 검증 로직 구현
+        // 시작일이 종료일보다 늦으면 안됨
+        if (createDto.getStartDate().isAfter(createDto.getEndDate())) {
+            throw new RuntimeException("시작일은 종료일보다 늦을 수 없습니다.");
+        }
+        
+        // 시작일이 오늘보다 이전이면 안됨
+        if (createDto.getStartDate().isBefore(LocalDate.now())) {
+            throw new RuntimeException("시작일은 오늘 이후여야 합니다.");
+        }
+        
+        // 같은 기간에 다른 휴가 신청이 있는지 확인
+        List<LeaveRequest> existingRequests = leaveRequestRepository.findByStatusAndDateRange(
+                LeaveRequest.RequestStatus.REQUESTED,
+                createDto.getStartDate(),
+                createDto.getEndDate()
+        );
+        
+        boolean hasConflict = existingRequests.stream()
+                .anyMatch(request -> request.getEmployeeId().equals(createDto.getEmployeeId()));
+        
+        if (hasConflict) {
+            throw new RuntimeException("해당 기간에 이미 휴가 신청이 있습니다.");
+        }
     }
     
+    /**
+     * 총 휴가 시간 계산
+     */
     private double calculateTotalHours(CreateLeaveRequestDto createDto) {
-        // 시간 계산 로직 구현
-        return 0.0;
+        long daysBetween = ChronoUnit.DAYS.between(createDto.getStartDate(), createDto.getEndDate()) + 1;
+        
+        if (daysBetween == 1) {
+            // 하루 휴가인 경우 시간 계산
+            if (createDto.getStartTime() != null && createDto.getEndTime() != null) {
+                Duration duration = Duration.between(createDto.getStartTime(), createDto.getEndTime());
+                return duration.toHours() + (duration.toMinutes() % 60) / 60.0;
+            } else {
+                return WORK_HOURS_PER_DAY;
+            }
+        } else {
+            // 여러 날 휴가인 경우
+            double totalHours = 0;
+            
+            for (int i = 0; i < daysBetween; i++) {
+                LocalDate currentDate = createDto.getStartDate().plusDays(i);
+                
+                if (i == 0 && createDto.getStartTime() != null) {
+                    // 첫날
+                    Duration duration = Duration.between(createDto.getStartTime(), WORK_END_TIME);
+                    totalHours += duration.toHours() + (duration.toMinutes() % 60) / 60.0;
+                } else if (i == daysBetween - 1 && createDto.getEndTime() != null) {
+                    // 마지막날
+                    Duration duration = Duration.between(WORK_START_TIME, createDto.getEndTime());
+                    totalHours += duration.toHours() + (duration.toMinutes() % 60) / 60.0;
+                } else {
+                    // 중간 날들
+                    totalHours += WORK_HOURS_PER_DAY;
+                }
+            }
+            
+            return totalHours;
+        }
     }
     
+    /**
+     * DTO 변환
+     */
     private LeaveRequestResponseDto convertToResponseDto(LeaveRequest leaveRequest) {
-        // DTO 변환 로직 구현
-        return null;
+        return LeaveRequestResponseDto.builder()
+                .requestId(leaveRequest.getRequestId())
+                .employeeId(leaveRequest.getEmployeeId())
+                .leaveType(leaveRequest.getLeaveType())
+                .leaveTypeName(leaveRequest.getLeaveType().getName())
+                .startDate(leaveRequest.getStartDate())
+                .endDate(leaveRequest.getEndDate())
+                .startTime(leaveRequest.getStartTime())
+                .endTime(leaveRequest.getEndTime())
+                .totalDays(leaveRequest.getTotalDays())
+                .totalHours(leaveRequest.getTotalDays() * WORK_HOURS_PER_DAY)
+                .reason(leaveRequest.getReason())
+                .status(leaveRequest.getStatus().name())
+                .statusName(leaveRequest.getStatus().name())
+                .approverId(leaveRequest.getApproverId())
+                .requestedAt(leaveRequest.getRequestedAt())
+                .approvedAt(leaveRequest.getApprovedAt())
+                .build();
     }
 } 

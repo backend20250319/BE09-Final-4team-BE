@@ -7,6 +7,8 @@ group = 'com.hermes'
 version = '0.0.1-SNAPSHOT'
 
 dependencies {
+    implementation project(":libs:api-common")
+
     // Spring Boot Starter 의존성
     api 'org.springframework.boot:spring-boot-starter'
     api 'org.springframework.boot:spring-boot-starter-web'

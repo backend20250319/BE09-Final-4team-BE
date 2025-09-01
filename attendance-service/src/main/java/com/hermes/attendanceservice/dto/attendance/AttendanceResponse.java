@@ -1,6 +1,7 @@
 package com.hermes.attendanceservice.dto.attendance;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.hermes.attendanceservice.entity.attendance.AttendanceStatus;
 import com.hermes.attendanceservice.entity.attendance.WorkStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +25,8 @@ public class AttendanceResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime checkOut; // 퇴근 시간
 
-    private WorkStatus status; // 근무 상태 (REGULAR, LATE, VACATION 등)
+    private AttendanceStatus attendanceStatus; // 출근 상태 (REGULAR, LATE, NOT_CLOCKIN, ABSENT)
+    private WorkStatus workStatus; // 근무 상태 (OFFICE, REMOTE, VACATION, BUSINESS_TRIP 등)
 
     private boolean autoRecorded; // 자동 기록 여부
 } 
