@@ -30,12 +30,14 @@ public class ApprovalDocument {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private DocumentStatus status = DocumentStatus.DRAFT;
 
     @Column(nullable = false)
     private Long authorId;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer currentStage = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -43,25 +45,31 @@ public class ApprovalDocument {
     private DocumentTemplate template;
 
     @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<DocumentFieldValue> fieldValues = new ArrayList<>();
 
     @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("stageOrder ASC")
+    @Builder.Default
     private List<DocumentApprovalStage> approvalStages = new ArrayList<>();
 
     @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<DocumentApprovalTarget> referenceTargets = new ArrayList<>();
 
     @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("createdAt ASC")
+    @Builder.Default
     private List<DocumentActivity> activities = new ArrayList<>();
 
     @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("createdAt ASC")
+    @Builder.Default
     private List<DocumentComment> comments = new ArrayList<>();
 
     @ElementCollection
     @CollectionTable(name = "document_attachments", joinColumns = @JoinColumn(name = "document_id"))
+    @Builder.Default
     private List<AttachmentInfo> attachments = new ArrayList<>();
 
     @Column(nullable = false)

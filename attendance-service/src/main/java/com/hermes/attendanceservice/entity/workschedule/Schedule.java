@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.hermes.attendanceservice.entity.workschedule.ScheduleType;
 
 @Entity
 @Table(name = "schedules")
@@ -41,8 +42,9 @@ public class Schedule {
     @Column(nullable = false)
     private LocalTime endTime;
     
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private String scheduleType; // WORK, MEETING, BREAK, OVERTIME, VACATION, SICK_LEAVE
+    private ScheduleType scheduleType; // WORK(근무), SICK_LEAVE(병가), VACATION(휴가), BUSINESS_TRIP(출장), OUT_OF_OFFICE(외근), OVERTIME(초과근무)
     
     @Column(length = 20)
     private String color;

@@ -4,11 +4,15 @@ import com.hermes.attendanceservice.dto.attendance.AttendanceResponse;
 import com.hermes.attendanceservice.dto.attendance.WeeklyWorkSummary;
 import com.hermes.attendanceservice.dto.attendance.DailyWorkSummary;
 import com.hermes.attendanceservice.entity.attendance.Attendance;
+import com.hermes.attendanceservice.entity.attendance.AttendanceStatus;
 import com.hermes.attendanceservice.entity.attendance.WorkStatus;
 import com.hermes.attendanceservice.repository.attendance.AttendanceRepository;
-import jakarta.annotation.PostConstruct;
+import com.hermes.attendanceservice.service.workschedule.WorkScheduleService;
+import com.hermes.attendanceservice.dto.workschedule.WorkTimeInfoDto;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,30 +28,15 @@ import java.util.stream.Collectors;
 import static java.time.DayOfWeek.SATURDAY;
 import static java.time.DayOfWeek.SUNDAY;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
+@EnableScheduling
 public class AttendanceServiceImpl implements AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
-
-    @Value("${attendance.start-time:09:00}")
-    private String startTimeConfig;
-
-    @Value("${attendance.end-time:18:00}")
-    private String endTimeConfig;
-
-    @PostConstruct
-    public void init() {
-        System.out.println("=== DEBUG: endTimeConfig ===");
-        System.out.println("endTimeConfig: " + endTimeConfig);
-        System.out.println("endTimeConfig length: " + endTimeConfig.length());
-        System.out.println("endTimeConfig bytes: " + java.util.Arrays.toString(endTimeConfig.getBytes()));
-        System.out.println("=============================");
-    }
-
-    private LocalTime startTime() { return LocalTime.parse(startTimeConfig); }
-    private LocalTime endTime()   { return LocalTime.parse(endTimeConfig);   }
+    private final WorkScheduleService workScheduleService;
 
     @Override
     public AttendanceResponse checkIn(Long userId, LocalDateTime checkInTime) {
@@ -59,7 +48,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .orElseGet(() -> Attendance.builder()
                         .userId(userId)
                         .date(date)
-                        .status(WorkStatus.NOT_CLOCKIN)
+                        .attendanceStatus(AttendanceStatus.NOT_CLOCKIN)
+                        .workStatus(WorkStatus.OFFICE)
                         .isAutoRecorded(false)
                         .build());
 
@@ -67,9 +57,26 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         a.setCheckIn(effective);
 
-        // 휴가/출장 등은 markStatus로 기록하는 것이 맞다면?
-        if (a.getStatus() == WorkStatus.NOT_CLOCKIN || a.getStatus() == WorkStatus.REGULAR || a.getStatus() == WorkStatus.LATE) {
-            a.setStatus(effective.toLocalTime().isAfter(startTime()) ? WorkStatus.LATE : WorkStatus.REGULAR);
+        // WorkSchedule에서 근무 시간 조회
+        WorkTimeInfoDto workTime = workScheduleService.getUserWorkTime(userId, date);
+        LocalTime scheduledStartTime = workTime.getStartTime();
+        
+        // 출근 시간과 근무 시작 시간 비교 (30분 전부터 허용)
+        LocalTime checkInTimeOnly = effective.toLocalTime();
+        LocalTime allowedStartTime = scheduledStartTime.minusMinutes(30);
+        
+        // 30분 전보다 일찍 출근한 경우 에러 처리
+        if (checkInTimeOnly.isBefore(allowedStartTime)) {
+            throw new IllegalStateException("출근 가능 시간이 아닙니다. " + 
+                allowedStartTime.format(DateTimeFormatter.ofPattern("HH:mm")) + " 이후에 출근해주세요.");
+        }
+        
+        // 근무 시작 시간보다 늦게 출근한 경우 지각
+        if (checkInTimeOnly.isAfter(scheduledStartTime)) {
+            a.setAttendanceStatus(AttendanceStatus.LATE);
+        } else {
+            // 허용 시간 내 출근
+            a.setAttendanceStatus(AttendanceStatus.REGULAR);
         }
 
         a.setAutoRecorded(false);
@@ -89,31 +96,61 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         a.setCheckOut(effective);
 
-        if ((a.getStatus() == WorkStatus.REGULAR || a.getStatus() == WorkStatus.LATE)
-                && effective.toLocalTime().isBefore(endTime())) {
-            a.setStatus(WorkStatus.EARLY_LEAVE);
+        // WorkSchedule에서 근무 종료 시간 조회
+        WorkTimeInfoDto workTime = workScheduleService.getUserWorkTime(userId, date);
+        LocalTime scheduledEndTime = workTime.getEndTime();
+        
+        // 퇴근 시간이 근무 종료 시간보다 이른 경우 조퇴
+        if (effective.toLocalTime().isBefore(scheduledEndTime)) {
+            a.setWorkStatus(WorkStatus.EARLY_LEAVE);
         }
 
         return toResponse(attendanceRepository.save(a));
     }
 
     @Override
-    public AttendanceResponse markStatus(Long userId,
-                                         LocalDate date,
-                                         WorkStatus status,
-                                         boolean autoRecorded,
-                                         LocalDateTime checkInTime,
-                                         LocalDateTime checkOutTime) {
+    public AttendanceResponse markAttendanceStatus(Long userId,
+                                                   LocalDate date,
+                                                   AttendanceStatus attendanceStatus,
+                                                   boolean autoRecorded,
+                                                   LocalDateTime checkInTime,
+                                                   LocalDateTime checkOutTime) {
 
         Attendance a = attendanceRepository.findByUserIdAndDate(userId, date)
                 .orElseGet(() -> Attendance.builder()
                         .userId(userId)
                         .date(date)
-                        .status(WorkStatus.NOT_CLOCKIN)
+                        .attendanceStatus(AttendanceStatus.NOT_CLOCKIN)
+                        .workStatus(WorkStatus.OFFICE)
                         .isAutoRecorded(autoRecorded)
                         .build());
 
-        a.setStatus(status);
+        a.setAttendanceStatus(attendanceStatus);
+        if (checkInTime != null)  a.setCheckIn(checkInTime);
+        if (checkOutTime != null) a.setCheckOut(checkOutTime);
+        a.setAutoRecorded(autoRecorded);
+
+        return toResponse(attendanceRepository.save(a));
+    }
+
+    @Override
+    public AttendanceResponse markWorkStatus(Long userId,
+                                             LocalDate date,
+                                             WorkStatus workStatus,
+                                             boolean autoRecorded,
+                                             LocalDateTime checkInTime,
+                                             LocalDateTime checkOutTime) {
+
+        Attendance a = attendanceRepository.findByUserIdAndDate(userId, date)
+                .orElseGet(() -> Attendance.builder()
+                        .userId(userId)
+                        .date(date)
+                        .attendanceStatus(AttendanceStatus.NOT_CLOCKIN)
+                        .workStatus(WorkStatus.OFFICE)
+                        .isAutoRecorded(autoRecorded)
+                        .build());
+
+        a.setWorkStatus(workStatus);
         if (checkInTime != null)  a.setCheckIn(checkInTime);
         if (checkOutTime != null) a.setCheckOut(checkOutTime);
         a.setAutoRecorded(autoRecorded);
@@ -158,19 +195,31 @@ public class AttendanceServiceImpl implements AttendanceService {
 
             // 상태별 시간 계산
             double hours = validMinutes / 60.0;
-            switch (a.getStatus()) {
+            
+            // 출근 상태에 따른 분류
+            switch (a.getAttendanceStatus()) {
                 case REGULAR:
                     regularWorkHours += hours;
                     break;
                 case LATE:
                     lateWorkHours += hours;
                     break;
+                default:
+                    // 기타 출근 상태는 regularWorkHours에 포함
+                    regularWorkHours += hours;
+                    break;
+            }
+            
+            // 근무 상태에 따른 추가 분류
+            switch (a.getWorkStatus()) {
                 case VACATION:
                     vacationHours += hours;
                     break;
+                case SICK_LEAVE:
+                    vacationHours += hours; // 병가도 휴가 시간으로 계산
+                    break;
                 default:
-                    // 기타 상태는 regularWorkHours에 포함
-                    regularWorkHours += hours;
+                    // 기타 근무 상태는 별도 계산하지 않음
                     break;
             }
         }
@@ -194,6 +243,26 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .build();
     }
 
+    @Override
+    public Map<String, Object> getCheckInAvailableTime(Long userId) {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        WorkTimeInfoDto workTime = workScheduleService.getUserWorkTime(userId, today);
+        
+        LocalTime scheduledStartTime = workTime.getStartTime();
+        LocalTime allowedStartTime = scheduledStartTime.minusMinutes(30);
+        LocalTime now = LocalTime.now(ZoneId.of("Asia/Seoul"));
+        
+        boolean isAvailable = !now.isBefore(allowedStartTime);
+        
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("scheduledStartTime", scheduledStartTime.format(DateTimeFormatter.ofPattern("HH:mm")));
+        response.put("allowedStartTime", allowedStartTime.format(DateTimeFormatter.ofPattern("HH:mm")));
+        response.put("isAvailable", isAvailable);
+        response.put("currentTime", now.format(DateTimeFormatter.ofPattern("HH:mm")));
+        
+        return response;
+    }
+
     private AttendanceResponse toResponse(Attendance a) {
         return AttendanceResponse.builder()
                 .id(a.getId())
@@ -201,7 +270,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .date(a.getDate())
                 .checkIn(a.getCheckIn())
                 .checkOut(a.getCheckOut())
-                .status(a.getStatus())
+                .attendanceStatus(a.getAttendanceStatus())
+                .workStatus(a.getWorkStatus())
                 .autoRecorded(a.isAutoRecorded())
                 .build();
     }
@@ -219,7 +289,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                     
                     return DailyWorkSummary.builder()
                             .date(date)
-                            .status(record != null ? record.getStatus().name() : "NO_RECORD")
+                            .attendanceStatus(record != null ? record.getAttendanceStatus().name() : "NO_RECORD")
+                            .workStatus(record != null ? record.getWorkStatus().name() : "NO_RECORD")
                             .workMinutes(minutes.doubleValue())
                             .workHours(minutes / 60.0)
                             .checkInTime(record != null && record.getCheckIn() != null ? 
@@ -236,5 +307,37 @@ public class AttendanceServiceImpl implements AttendanceService {
         long h = minutes / 60;
         long m = minutes % 60;
         return h + "시간 " + m + "분";
+    }
+
+    // 자동 퇴근 처리 메서드
+    @Scheduled(cron = "0 0 0 * * ?") // 매일 24시(자정)에 실행
+    public void autoCheckOut() {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        
+        // 출근했지만 퇴근하지 않은 모든 기록 조회
+        List<Attendance> incompleteRecords = attendanceRepository
+            .findAllByCheckInIsNotNullAndCheckOutIsNullAndDate(today);
+        
+        for (Attendance attendance : incompleteRecords) {
+            try {
+                // WorkSchedule에서 근무 종료 시간 조회
+                WorkTimeInfoDto workTime = 
+                    workScheduleService.getUserWorkTime(attendance.getUserId(), today);
+                LocalTime scheduledEndTime = workTime.getEndTime();
+                
+                // 스케줄된 퇴근 시간으로 자동 퇴근 처리
+                LocalDateTime autoCheckOutTime = today.atTime(scheduledEndTime);
+                attendance.setCheckOut(autoCheckOutTime);
+                attendance.setAutoRecorded(true);
+                
+                attendanceRepository.save(attendance);
+                
+                log.info("자동 퇴근 처리: 사용자 {}, 시간: {}", 
+                    attendance.getUserId(), autoCheckOutTime);
+                    
+            } catch (Exception e) {
+                log.error("자동 퇴근 처리 실패: 사용자 {}", attendance.getUserId(), e);
+            }
+        }
     }
 } 

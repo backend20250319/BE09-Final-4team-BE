@@ -25,9 +25,11 @@ public class TemplateField {
     private FieldType fieldType;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean required = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer fieldOrder = 0;
 
     @Column(columnDefinition = "TEXT")

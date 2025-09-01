@@ -15,7 +15,6 @@ include 'org-service'
 include 'news-crawler-service'
 include 'companyinfo-service'
 include 'attendance-service'
-include 'work-schedule-service'
 
 include 'tenant-service'
 include 'approval-service'

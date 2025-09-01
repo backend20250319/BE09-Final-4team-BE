@@ -1,6 +1,7 @@
 package com.hermes.attendanceservice.repository.workschedule;
 
 import com.hermes.attendanceservice.entity.workschedule.Schedule;
+import com.hermes.attendanceservice.entity.workschedule.ScheduleType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -42,7 +43,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     
     // 사용자별 스케줄 타입별 조회
     List<Schedule> findByUserIdAndScheduleTypeAndStatusOrderByStartDateAscStartTimeAsc(
-            Long userId, String scheduleType, String status);
+            Long userId, ScheduleType scheduleType, String status);
     
     // 반복 스케줄 조회
     List<Schedule> findByUserIdAndIsRecurringTrueAndStatusOrderByStartDateAscStartTimeAsc(
@@ -74,4 +75,14 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     
     // 사용자별 활성 스케줄 개수
     long countByUserIdAndStatus(Long userId, String status);
+    
+    // 특정 날짜의 사용자 근무 스케줄 조회
+    @Query("SELECT s FROM Schedule s WHERE s.userId = :userId AND s.scheduleType = :scheduleType " +
+           "AND s.status = 'ACTIVE' AND s.startDate <= :date AND s.endDate >= :date " +
+           "ORDER BY s.startTime ASC")
+    List<Schedule> findByUserIdAndDateAndScheduleType(
+            @Param("userId") Long userId, 
+            @Param("date") LocalDate date, 
+            @Param("scheduleType") ScheduleType scheduleType
+    );
 } 

@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import com.hermes.attendanceservice.entity.attendance.AttendanceStatus;
+import com.hermes.attendanceservice.entity.attendance.WorkStatus;
 
 @Entity
 @Table(name = "attendance")
@@ -29,7 +31,11 @@ public class Attendance {
 
   @Enumerated(EnumType.STRING)
   @Builder.Default
-  private WorkStatus status = WorkStatus.NOT_CLOCKIN; // 기본값을 미출근으로 설정
+  private AttendanceStatus attendanceStatus = AttendanceStatus.NOT_CLOCKIN; // 출근 상태
+  
+  @Enumerated(EnumType.STRING)
+  @Builder.Default
+  private WorkStatus workStatus = WorkStatus.OFFICE; // 근무 상태
   
   @Builder.Default
   private boolean isAutoRecorded = false; // 자동 기록(버튼)인지, 수동 기록인지

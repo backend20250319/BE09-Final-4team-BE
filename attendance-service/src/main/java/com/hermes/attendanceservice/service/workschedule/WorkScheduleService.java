@@ -7,7 +7,9 @@ import com.hermes.attendanceservice.dto.workschedule.ScheduleResponseDto;
 import com.hermes.attendanceservice.dto.workschedule.UpdateScheduleRequestDto;
 import com.hermes.attendanceservice.dto.workschedule.UserWorkPolicyDto;
 import com.hermes.attendanceservice.dto.workschedule.WorkPolicyDto;
+import com.hermes.attendanceservice.dto.workschedule.WorkTimeInfoDto;
 import com.hermes.attendanceservice.entity.workschedule.Schedule;
+import com.hermes.attendanceservice.entity.workschedule.ScheduleType;
 import com.hermes.attendanceservice.entity.workschedule.WorkTimeAdjustment;
 import com.hermes.attendanceservice.repository.workschedule.ScheduleRepository;
 import com.hermes.attendanceservice.repository.workschedule.WorkTimeAdjustmentRepository;
@@ -41,12 +43,68 @@ public class WorkScheduleService {
     private final WorkPolicyService workPolicyService; // WorkPolicyService 주입 추가
     
     /**
+     * 특정 날짜의 사용자 근무 스케줄 조회
+     */
+    public Schedule getUserWorkSchedule(Long userId, LocalDate date) {
+        List<Schedule> schedules = scheduleRepository.findByUserIdAndDateAndScheduleType(userId, date, ScheduleType.WORK);
+        return schedules.isEmpty() ? null : schedules.get(0);
+    }
+    
+    /**
+     * 사용자의 근무 시작/종료 시간 조회
+     */
+    public WorkTimeInfoDto getUserWorkTime(Long userId, LocalDate date) {
+        Schedule schedule = getUserWorkSchedule(userId, date);
+        
+        if (schedule != null) {
+            return WorkTimeInfoDto.builder()
+                .startTime(schedule.getStartTime())
+                .endTime(schedule.getEndTime())
+                .build();
+        }
+        
+        // 스케줄이 없으면 기본 근무 정책 사용
+        try {
+            UserWorkPolicyDto userPolicy = getUserWorkPolicy(userId, null);
+            if (userPolicy.getWorkPolicy() != null) {
+                WorkPolicyDto workPolicy = userPolicy.getWorkPolicy();
+                LocalTime startTime = workPolicy.getStartTime();
+                
+                // 근무 시간을 계산하여 종료 시간 도출
+                LocalTime endTime;
+                if (workPolicy.getWorkHours() != null && workPolicy.getWorkMinutes() != null) {
+                    int totalMinutes = workPolicy.getWorkHours() * 60 + workPolicy.getWorkMinutes();
+                    endTime = startTime.plusMinutes(totalMinutes);
+                } else if (workPolicy.getWorkHours() != null) {
+                    endTime = startTime.plusHours(workPolicy.getWorkHours());
+                } else {
+                    // 기본값: 8시간 근무
+                    endTime = startTime.plusHours(8);
+                }
+                
+                return WorkTimeInfoDto.builder()
+                    .startTime(startTime)
+                    .endTime(endTime)
+                    .build();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get user work policy for userId: {}, date: {}", userId, date, e);
+        }
+        
+        // 기본값
+        return WorkTimeInfoDto.builder()
+            .startTime(LocalTime.of(9, 0))
+            .endTime(LocalTime.of(18, 0))
+            .build();
+    }
+    
+    /**
      * 사용자 ID를 통해 해당 사용자의 근무 정책 정보를 조회
      */
     public UserWorkPolicyDto getUserWorkPolicy(Long userId, String authorization) {
         try {
             // 1. User Service에서 사용자 정보 조회
-            Map<String, Object> userResponse = userServiceClient.getUserById(userId, authorization);
+            Map<String, Object> userResponse = userServiceClient.getUserById(userId);
             
             if (userResponse == null) {
                 log.warn("User not found with id: {}", userId);
@@ -79,9 +137,15 @@ public class WorkScheduleService {
                     .workPolicy(workPolicy)
                     .build();
                     
+        } catch (feign.FeignException.Unauthorized e) {
+            log.error("Unauthorized access to user service for userId: {}. Please check JWT token.", userId);
+            throw new RuntimeException("인증이 필요합니다. JWT 토큰을 확인해주세요.", e);
+        } catch (feign.FeignException.ServiceUnavailable e) {
+            log.error("User service is unavailable for userId: {}. Service may be down.", userId);
+            throw new RuntimeException("사용자 서비스에 연결할 수 없습니다. 서비스가 실행 중인지 확인해주세요.", e);
         } catch (Exception e) {
             log.error("Error fetching user work policy for userId: {}", userId, e);
-            throw new RuntimeException("Failed to fetch user work policy", e);
+            throw new RuntimeException("사용자 근무 정책 조회에 실패했습니다.", e);
         }
     }
     
@@ -94,7 +158,7 @@ public class WorkScheduleService {
     public ScheduleResponseDto createSchedule(CreateScheduleRequestDto requestDto, String authorization) {
         try {
             // 1. 사용자 존재 여부 확인
-            Map<String, Object> userResponse = userServiceClient.getUserById(requestDto.getUserId(), authorization);
+            Map<String, Object> userResponse = userServiceClient.getUserById(requestDto.getUserId());
             if (userResponse == null) {
                 throw new RuntimeException("User not found with id: " + requestDto.getUserId());
             }
@@ -249,7 +313,7 @@ public class WorkScheduleService {
     public WorkTimeAdjustment createWorkTimeAdjustment(AdjustWorkTimeRequestDto requestDto) {
         try {
             // 1. 사용자 존재 여부 확인
-            Map<String, Object> userResponse = userServiceClient.getUserById(requestDto.getUserId(), "Bearer token");
+            Map<String, Object> userResponse = userServiceClient.getUserById(requestDto.getUserId());
             if (userResponse == null) {
                 throw new RuntimeException("User not found with id: " + requestDto.getUserId());
             }
@@ -450,7 +514,7 @@ public class WorkScheduleService {
                         .endDate(currentDate)
                         .startTime(startTime)
                         .endTime(endTime)
-                        .scheduleType("WORK")
+                        .scheduleType(ScheduleType.WORK)
                         .color("#007bff")
                         .isAllDay(false)
                         .isRecurring(false)
@@ -504,7 +568,7 @@ public class WorkScheduleService {
                         .endDate(currentDate)
                         .startTime(workPolicy.getBreakStartTime())
                         .endTime(breakEndTime)
-                        .scheduleType("BREAK")
+                        .scheduleType(ScheduleType.WORK) // BREAK는 WORK 타입으로 처리
                         .color("#ffc107")
                         .isAllDay(false)
                         .isRecurring(false)
@@ -555,7 +619,7 @@ public class WorkScheduleService {
                         .endDate(currentDate)
                         .startTime(LocalTime.of(0, 0))
                         .endTime(LocalTime.of(23, 59))
-                        .scheduleType("HOLIDAY")
+                        .scheduleType(ScheduleType.VACATION) // HOLIDAY는 VACATION으로 처리
                         .color("#dc3545")
                         .isAllDay(true)
                         .isRecurring(false)
@@ -603,7 +667,7 @@ public class WorkScheduleService {
                         .endDate(currentDate)
                         .startTime(workPolicy.getCoreTimeStart())
                         .endTime(workPolicy.getCoreTimeEnd())
-                        .scheduleType("CORE_TIME")
+                        .scheduleType(ScheduleType.WORK) // CORE_TIME은 WORK로 처리
                         .color("#28a745")
                         .isAllDay(false)
                         .isRecurring(false)
@@ -664,7 +728,7 @@ public class WorkScheduleService {
                         .endDate(currentDate)
                         .startTime(workPolicy.getStartTime())
                         .endTime(workPolicy.getStartTimeEnd())
-                        .scheduleType("FLEXIBLE_WORK_TIME")
+                        .scheduleType(ScheduleType.WORK) // FLEXIBLE_WORK_TIME은 WORK로 처리
                         .color("#17a2b8")
                         .isAllDay(false)
                         .isRecurring(false)

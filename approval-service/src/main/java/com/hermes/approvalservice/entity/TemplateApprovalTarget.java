@@ -31,6 +31,7 @@ public class TemplateApprovalTarget {
     private Integer managerLevel;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isReference = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
