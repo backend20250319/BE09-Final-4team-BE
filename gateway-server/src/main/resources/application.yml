@@ -12,6 +12,10 @@ spring:
               uri: lb://user-service
               predicates:
                 - Path=/api/users/**
+            - id: user-service-auth
+              uri: lb://user-service
+              predicates:
+                - Path=/api/auth/**
             - id: news-crawler-service
               uri: lb://news-crawler-service
               predicates:
