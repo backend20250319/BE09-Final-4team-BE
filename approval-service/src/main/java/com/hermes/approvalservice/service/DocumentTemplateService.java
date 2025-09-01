@@ -69,10 +69,8 @@ public class DocumentTemplateService {
     }
 
     public TemplateResponse getTemplateById(Long id) {
-        DocumentTemplate template = templateRepository.findByIdWithDetails(id);
-        if (template == null) {
-            throw new NotFoundException("템플릿을 찾을 수 없습니다.");
-        }
+        DocumentTemplate template = templateRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("템플릿을 찾을 수 없습니다."));
         return convertToResponse(template);
     }
 
