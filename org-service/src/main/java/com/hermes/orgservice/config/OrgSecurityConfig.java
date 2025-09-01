@@ -1,4 +1,4 @@
-package com.hermes.userservice.config;
+package com.hermes.orgservice.config;
 
 import com.hermes.auth.config.BaseSecurityConfig;
 import org.springframework.context.annotation.Configuration;
@@ -8,12 +8,11 @@ import org.springframework.security.config.annotation.web.configurers.AuthorizeH
 
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true)
-public class UserSecurityConfig extends BaseSecurityConfig {
+public class OrgSecurityConfig extends BaseSecurityConfig {
     
     @Override
     protected void configureAuthorization(
         AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth
     ) {
-        auth.requestMatchers("/api/auth/**").permitAll();
     }
 }

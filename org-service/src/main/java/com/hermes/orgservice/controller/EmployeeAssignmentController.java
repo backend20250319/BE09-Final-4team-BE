@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Slf4j
 @RestController
@@ -21,6 +22,7 @@ public class EmployeeAssignmentController {
 
     private final EmployeeAssignmentService employeeAssignmentService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResult<EmployeeAssignmentDto>> createAssignment(@Valid @RequestBody CreateAssignmentRequest request) {
         log.info("Create employee assignment API called: employeeId={}, organizationId={}", 
@@ -71,6 +73,7 @@ public class EmployeeAssignmentController {
         return ResponseEntity.ok(ApiResult.success("조직 리더 목록 조회 성공", assignments));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{assignmentId}")
     public ResponseEntity<ApiResult<EmployeeAssignmentDto>> updateAssignment(
             @PathVariable Long assignmentId,
@@ -80,6 +83,7 @@ public class EmployeeAssignmentController {
         return ResponseEntity.ok(ApiResult.success("배정 정보 수정 성공", updatedAssignment));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{assignmentId}")
     public ResponseEntity<ApiResult<Void>> deleteAssignment(@PathVariable Long assignmentId) {
         log.info("Delete employee assignment API called: assignmentId={}", assignmentId);
