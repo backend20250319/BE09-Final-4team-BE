@@ -1,10 +1,10 @@
 package com.hermes.userservice.controller;
 
 import com.hermes.auth.dto.ApiResponse;
-import com.hermes.auth.dto.LoginRequestDto;
 import com.hermes.auth.dto.RefreshRequest;
 import com.hermes.auth.dto.TokenResponse;
 import com.hermes.auth.principal.UserPrincipal;
+import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
