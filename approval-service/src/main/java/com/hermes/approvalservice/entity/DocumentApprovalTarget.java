@@ -33,9 +33,11 @@ public class DocumentApprovalTarget {
     private Integer managerLevel;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isReference = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isApproved = false;
 
     @Column

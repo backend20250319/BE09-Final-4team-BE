@@ -27,9 +27,11 @@ public class TemplateCategory {
     private String description;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer sortOrder = 0;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<DocumentTemplate> templates = new ArrayList<>();
 
     @Column(nullable = false)
