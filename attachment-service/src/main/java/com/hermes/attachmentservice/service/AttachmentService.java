@@ -1,14 +1,13 @@
 package com.hermes.attachmentservice.service;
 
 
-import com.hermes.attachmentservice.dto.UploadResponse;
 import com.hermes.attachmentservice.entity.AttachmentFile;
 import com.hermes.attachmentservice.properties.AttachmentProperties;
 import com.hermes.attachmentservice.repository.AttachmentFileRepository;
 import com.hermes.attachmentservice.exception.FileNotFoundException;
 import com.hermes.attachmentservice.exception.FileUploadException;
 import com.hermes.attachmentservice.exception.FileStorageException;
-import com.hermes.attachment.dto.AttachmentMetadata;
+import com.hermes.attachment.dto.AttachmentInfoResponse;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -31,25 +30,21 @@ public class AttachmentService {
 
   private final AttachmentFileRepository attachmentFileRepository;
   private final AttachmentProperties attachmentProperties;
-  private final String downloadBaseUrl;
 
   public AttachmentService(AttachmentFileRepository attachmentFileRepository,
       AttachmentProperties attachmentProperties) {
     this.attachmentFileRepository = attachmentFileRepository;
     this.attachmentProperties = attachmentProperties;
-    this.downloadBaseUrl =
-        "http://" + attachmentProperties.getHost() + ":" + attachmentProperties.getDownloadPort()
-            + attachmentProperties.getBaseDir();
   }
 
 
   @Transactional
-  public List<UploadResponse> uploadFiles(List<MultipartFile> files, Long uploadedBy) throws IOException {
+  public List<AttachmentInfoResponse> uploadFiles(List<MultipartFile> files, Long uploadedBy) {
     if (files == null || files.isEmpty()) {
       throw new FileUploadException("업로드할 파일이 없습니다");
     }
 
-    List<UploadResponse> uploadedFileIds = new ArrayList<>();
+    List<AttachmentInfoResponse> uploadedResponses = new ArrayList<>();
     List<String> uploadedStoredNames = new ArrayList<>();
 
     // FTP 연결 재사용으로 효율성 향상
@@ -81,10 +76,6 @@ public class AttachmentService {
             throw new FileUploadException("FTP 업로드 실패: " + file.getOriginalFilename());
           }
 
-          // 성공 후에만 리스트에 추가 (데이터 일관성 보장)
-          uploadedFileIds.add(UploadResponse.builder().fileId(fileId).build());
-          uploadedStoredNames.add(storedName);
-
           // DB 저장
           AttachmentFile attachmentFile = AttachmentFile.builder()
               .fileId(fileId)
@@ -97,6 +88,16 @@ public class AttachmentService {
               .build();
 
           attachmentFileRepository.save(attachmentFile);
+          
+          // 성공 후에만 리스트에 추가 (데이터 일관성 보장)
+          AttachmentInfoResponse response = new AttachmentInfoResponse();
+          response.setFileId(fileId);
+          response.setFileName(file.getOriginalFilename());
+          response.setFileSize(file.getSize());
+          response.setContentType(file.getContentType());
+          
+          uploadedResponses.add(response);
+          uploadedStoredNames.add(storedName);
 
         } catch (Exception e) {
           // 실패 시 이미 업로드된 파일들 롤백
@@ -109,21 +110,21 @@ public class AttachmentService {
       throw new FileUploadException("FTP 연결 오류", e);
     }
 
-    return uploadedFileIds;
+    return uploadedResponses;
   }
 
   @Transactional(readOnly = true)
-  public AttachmentMetadata getFileMetadata(String fileId) {
+  public AttachmentInfoResponse getFileMetadata(String fileId) {
     AttachmentFile file = attachmentFileRepository.findById(fileId)
         .orElseThrow(() -> new FileNotFoundException(fileId));
     
-    return AttachmentMetadata.builder()
-        .fileId(file.getFileId())
-        .originalFileName(file.getOriginalFileName())
-        .fileSize(file.getFileSize())
-        .contentType(file.getContentType())
-        .filePath(downloadBaseUrl + "/" + file.getStoredName())
-        .build();
+    AttachmentInfoResponse response = new AttachmentInfoResponse();
+    response.setFileId(file.getFileId());
+    response.setFileName(file.getOriginalFileName());
+    response.setFileSize(file.getFileSize());
+    response.setContentType(file.getContentType());
+    
+    return response;
   }
 
   @Transactional(readOnly = true)
