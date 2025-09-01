@@ -27,23 +27,23 @@ public class DocumentTemplateService {
     private final TemplateApprovalTargetRepository targetRepository;
     private final AttachmentClientService attachmentService;
 
-    public List<TemplateResponse> getAllTemplates(boolean isAdmin) {
+    public List<TemplateSummaryResponse> getAllTemplates(boolean isAdmin) {
         List<DocumentTemplate> templates = isAdmin 
             ? templateRepository.findAll()
             : templateRepository.findByIsHiddenFalse();
         
         return templates.stream()
-                .map(this::convertToResponse)
+                .map(this::convertToSummaryResponse)
                 .toList();
     }
 
-    public List<TemplateResponse> getTemplatesByCategory(Long categoryId, boolean isAdmin) {
+    public List<TemplateSummaryResponse> getTemplatesByCategory(Long categoryId, boolean isAdmin) {
         List<DocumentTemplate> templates = isAdmin
             ? templateRepository.findByCategoryId(categoryId)
             : templateRepository.findByCategoryIdAndIsHiddenFalse(categoryId);
         
         return templates.stream()
-                .map(this::convertToResponse)
+                .map(this::convertToSummaryResponse)
                 .toList();
     }
 
@@ -61,7 +61,7 @@ public class DocumentTemplateService {
                     response.setCategoryId(entry.getKey().getId());
                     response.setCategoryName(entry.getKey().getName());
                     response.setTemplates(entry.getValue().stream()
-                            .map(this::convertToResponse)
+                            .map(this::convertToSummaryResponse)
                             .toList());
                     return response;
                 })
@@ -327,6 +327,31 @@ public class DocumentTemplateService {
                     return targetResponse;
                 })
                 .toList());
+
+        return response;
+    }
+
+    private TemplateSummaryResponse convertToSummaryResponse(DocumentTemplate template) {
+        TemplateSummaryResponse response = new TemplateSummaryResponse();
+        response.setId(template.getId());
+        response.setTitle(template.getTitle());
+        response.setIcon(template.getIcon());
+        response.setDescription(template.getDescription());
+        response.setUseBody(template.getUseBody());
+        response.setUseAttachment(template.getUseAttachment());
+        response.setAllowTargetChange(template.getAllowTargetChange());
+        response.setIsHidden(template.getIsHidden());
+        response.setCreatedAt(template.getCreatedAt());
+        response.setUpdatedAt(template.getUpdatedAt());
+
+        if (template.getCategory() != null) {
+            CategoryResponse categoryResponse = new CategoryResponse();
+            categoryResponse.setId(template.getCategory().getId());
+            categoryResponse.setName(template.getCategory().getName());
+            categoryResponse.setDescription(template.getCategory().getDescription());
+            categoryResponse.setSortOrder(template.getCategory().getSortOrder());
+            response.setCategory(categoryResponse);
+        }
 
         return response;
     }
