@@ -1,6 +1,5 @@
 package com.hermes.approvalservice.dto.request;
 
-import com.hermes.attachment.dto.AttachmentInfoRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,7 +29,7 @@ public class CreateTemplateRequest {
     private Boolean allowTargetChange;
     
     @Valid
-    private List<AttachmentInfoRequest> referenceFiles;
+    private List<@NotBlank(message = "파일 ID는 필수입니다") String> referenceFiles;
     
     private Long categoryId;
     

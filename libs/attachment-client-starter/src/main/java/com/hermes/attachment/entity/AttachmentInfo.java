@@ -16,7 +16,7 @@ public class AttachmentInfo {
     private String fileId;
 
     @Column(nullable = false, length = 255)
-    private String displayFileName;
+    private String fileName;
 
     @Column(nullable = false)
     private Long fileSize;
