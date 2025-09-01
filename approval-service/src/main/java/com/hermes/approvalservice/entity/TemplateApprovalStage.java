@@ -30,5 +30,6 @@ public class TemplateApprovalStage {
     private DocumentTemplate template;
 
     @OneToMany(mappedBy = "approvalStage", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<TemplateApprovalTarget> approvalTargets = new ArrayList<>();
 }

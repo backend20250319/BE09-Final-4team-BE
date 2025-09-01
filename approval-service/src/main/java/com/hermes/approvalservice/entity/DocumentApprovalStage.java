@@ -27,6 +27,7 @@ public class DocumentApprovalStage {
     private String stageName;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isCompleted = false;
 
     @Column
@@ -37,5 +38,6 @@ public class DocumentApprovalStage {
     private ApprovalDocument document;
 
     @OneToMany(mappedBy = "approvalStage", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<DocumentApprovalTarget> approvalTargets = new ArrayList<>();
 }

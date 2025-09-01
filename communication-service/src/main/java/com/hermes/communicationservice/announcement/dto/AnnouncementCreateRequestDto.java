@@ -21,6 +21,7 @@ public class AnnouncementCreateRequestDto {
   @Size(max = 100)
   private String displayAuthor;
   private String content;
+  @Builder.Default
   private List<String> fileIds = new ArrayList<>();
 
 }
