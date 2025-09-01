@@ -16,6 +16,7 @@ Hermes is a Spring Boot microservices system implementing a multi-tenant archite
 - **org-service**: Organization hierarchy and employee assignment management
 - **attendance-service**: Employee attendance tracking and work hour management  
 - **news-crawler-service**: News article crawling and management
+- **news-crawler-service**: News article crawling and management
 - **tenant-service**: Multi-tenant management and schema operations
 - **approval-service**: Document approval workflow and template management
 - **companyinfo-service**: Company information and settings management

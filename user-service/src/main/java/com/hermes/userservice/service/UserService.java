@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import com.hermes.userservice.dto.MainProfileResponseDto;
+import com.hermes.userservice.dto.DetailProfileResponseDto;
 
 @Slf4j
 @Service
@@ -32,19 +34,23 @@ public class UserService {
     private final OrganizationIntegrationService organizationIntegrationService;
     private final WorkPolicyIntegrationService workPolicyIntegrationService;
 
-
     @Transactional(readOnly = true)
     public UserResponseDto getUserById(Long userId) {
         log.info("사용자 상세 조회 요청 (근무정책 및 조직 정보 포함): userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-        
-        // 원격 DB에서 조직 정보 가져오기
+
         List<Map<String, Object>> remoteOrganizations = organizationIntegrationService.getUserOrganizations(userId);
-        
-        // 근무정책 정보 가져오기
-        WorkPolicyResponseDto workPolicy = workPolicyIntegrationService.getWorkPolicyById(user.getWorkPolicyId());
-        
+
+        WorkPolicyResponseDto workPolicy = null;
+        if (user.getWorkPolicyId() != null) {
+            try {
+                workPolicy = workPolicyIntegrationService.getWorkPolicyById(user.getWorkPolicyId());
+            } catch (Exception e) {
+                log.warn("근무 정책 조회 실패, null로 처리: userId={}, workPolicyId={}", userId, user.getWorkPolicyId(), e);
+            }
+        }
+
         return userMapper.toResponseDto(user, remoteOrganizations, workPolicy);
     }
 
@@ -62,7 +68,6 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
-        // DTO 필드가 null이 아닌 경우에만 업데이트 로직 적용
         if (userUpdateDto.getEmail() != null && !Objects.equals(user.getEmail(), userUpdateDto.getEmail())) {
             if (userRepository.findByEmail(userUpdateDto.getEmail()).isPresent()) {
                 throw new DuplicateEmailException("이미 존재하는 이메일입니다: " + userUpdateDto.getEmail());
@@ -94,15 +99,20 @@ public class UserService {
         log.info("전체 사용자 목록 조회 요청 (근무정책 및 조직 정보 포함)");
         List<User> users = userRepository.findAll();
         
-        // N+1 문제 해결: 모든 사용자의 조직 정보를 한 번에 가져오기
         Map<Long, List<Map<String, Object>>> allOrganizations = organizationIntegrationService.getAllUsersOrganizations();
         
         return users.stream()
                 .map(user -> {
                     List<Map<String, Object>> userOrganizations = allOrganizations.getOrDefault(user.getId(), List.of());
                     
-                    // 근무정책 정보 가져오기 (N+1 문제 발생 - 추후 개선 필요)
-                    WorkPolicyResponseDto workPolicy = workPolicyIntegrationService.getWorkPolicyById(user.getWorkPolicyId());
+                    WorkPolicyResponseDto workPolicy = null;
+                    if (user.getWorkPolicyId() != null) {
+                        try {
+                            workPolicy = workPolicyIntegrationService.getWorkPolicyById(user.getWorkPolicyId());
+                        } catch (Exception e) {
+                            log.warn("근무 정책 조회 실패, null로 처리: userId={}, workPolicyId={}", user.getId(), user.getWorkPolicyId(), e);
+                        }
+                    }
                     
                     return userMapper.toResponseDto(user, userOrganizations, workPolicy);
                 })
@@ -114,5 +124,23 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         user.updateWorkPolicyId(workPolicyId);
         return userRepository.save(user);
+    }
+
+    @Transactional(readOnly = true)
+    public MainProfileResponseDto getMainProfile(Long userId) {
+        log.info("공개 프로필 조회 요청: userId={}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        return userMapper.toMainProfileDto(user);
+    }
+
+    @Transactional(readOnly = true)
+    public DetailProfileResponseDto getDetailProfile(Long userId) {
+        log.info("상세 프로필 조회 요청: userId={}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        return userMapper.toDetailProfileDto(user);
     }
 }

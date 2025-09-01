@@ -11,8 +11,6 @@ spring:
 
 server:
   port: 8086
-  servlet:
-    context-path: /communication-api
 
 eureka:
   client:

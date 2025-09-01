@@ -6,8 +6,7 @@ import lombok.Data;
 public class AttachmentInfoResponse {
     
     private String fileId;
-    private String displayFileName;
+    private String fileName;
     private Long fileSize;
     private String contentType;
-    private String downloadUrl;
 }
