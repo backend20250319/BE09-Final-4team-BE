@@ -23,7 +23,7 @@ spring:
             - id: communication-service
               uri: lb://communication-service
               predicates:
-                - Path=/api/announcements/**,/api/comments/**
+                - Path=/api/announcements/**,/api/comments/**,/api/notifications/**
             - id: attendance-service
               uri: lb://attendance-service
               predicates:
