@@ -46,7 +46,7 @@ public class AuthService {
 
         Role userRole = getUserRole(user);
         // TODO: tenantId
-        String accessToken = jwtTokenService.createAccessToken(user.getId(), user.getEmail(), userRole, null);
+        String accessToken = jwtTokenService.createAccessToken(user.getId(), userRole, null);
         String refreshToken = jwtTokenService.createRefreshToken();
 
         // 기존 RefreshToken이 있으면 삭제 (이중 로그인 방지)
@@ -105,7 +105,7 @@ public class AuthService {
         
         Role userRole = getUserRole(user);
         // TODO: tenantId
-        String newAccessToken = jwtTokenService.createAccessToken(user.getId(), email, userRole, null);
+        String newAccessToken = jwtTokenService.createAccessToken(user.getId(), userRole, null);
 
         // Refresh Token Rotation: 새로운 RefreshToken 생성
         String newRefreshToken = jwtTokenService.createRefreshToken();

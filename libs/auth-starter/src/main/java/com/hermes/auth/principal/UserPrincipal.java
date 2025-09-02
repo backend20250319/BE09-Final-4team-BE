@@ -24,10 +24,6 @@ public class UserPrincipal implements UserDetails {
     
     @EqualsAndHashCode.Include
     private Long userId;
-    
-    @EqualsAndHashCode.Include
-    private String email;
-    
     private Role role;
     private String tenantId;
     
@@ -44,7 +40,7 @@ public class UserPrincipal implements UserDetails {
     
     @Override
     public String getUsername() {
-        return email;
+        return null;
     }
     
     @Override

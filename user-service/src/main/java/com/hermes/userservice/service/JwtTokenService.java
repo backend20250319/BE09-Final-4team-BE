@@ -33,7 +33,7 @@ public class JwtTokenService {
     /**
      * 액세스 토큰 생성
      */
-    public String createAccessToken(Long userId, String email, Role role, String tenantId) {
+    public String createAccessToken(Long userId, Role role, String tenantId) {
         Instant now = Instant.now();
         Instant expiration = now.plus(jwtProperties.getAccessTokenTTL(), ChronoUnit.SECONDS);
 
@@ -45,7 +45,6 @@ public class JwtTokenService {
         }
 
         return Jwts.builder()
-                .subject(email)
                 .claims(claims)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiration))
