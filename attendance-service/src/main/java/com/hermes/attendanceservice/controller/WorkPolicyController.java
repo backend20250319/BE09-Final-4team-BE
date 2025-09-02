@@ -6,6 +6,13 @@ import com.hermes.attendanceservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.attendanceservice.entity.workpolicy.WorkPolicy;
 import com.hermes.attendanceservice.entity.workpolicy.WorkType;
 import com.hermes.attendanceservice.repository.workpolicy.WorkPolicyRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,16 +25,22 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/workpolicy")
+@Tag(name = "Work Policy", description = "근무 정책 관리 API")
 public class WorkPolicyController {
     
     private final WorkPolicyRepository workPolicyRepository;
     
-    /**
-     * 근무 정책 생성
-     */
+    @Operation(summary = "근무 정책 생성", description = "새로운 근무 정책을 생성합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "근무 정책 생성 성공",
+            content = @Content(schema = @Schema(implementation = WorkPolicyResponseDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "403", description = "권한 없음")
+    })
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResult<WorkPolicyResponseDto> createWorkPolicy(@Valid @RequestBody WorkPolicyRequestDto requestDto) {
+    public ApiResult<WorkPolicyResponseDto> createWorkPolicy(
+            @Parameter(description = "근무 정책 생성 정보") @Valid @RequestBody WorkPolicyRequestDto requestDto) {
         try {
             log.info("Creating work policy: {}", requestDto.getName());
             
@@ -71,9 +84,12 @@ public class WorkPolicyController {
         }
     }
     
-    /**
-     * 전체 근무 정책 목록 조회
-     */
+    @Operation(summary = "전체 근무 정책 목록 조회", description = "모든 근무 정책 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "근무 정책 목록 조회 성공",
+            content = @Content(schema = @Schema(implementation = WorkPolicyResponseDto.class))),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
     @GetMapping
     public ApiResult<List<WorkPolicyResponseDto>> getAllWorkPolicies() {
         try {
@@ -92,11 +108,15 @@ public class WorkPolicyController {
         }
     }
     
-    /**
-     * WorkPolicy ID로 근무 정책 정보 조회
-     */
+    @Operation(summary = "근무 정책 조회", description = "ID로 특정 근무 정책을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "근무 정책 조회 성공",
+            content = @Content(schema = @Schema(implementation = WorkPolicyResponseDto.class))),
+        @ApiResponse(responseCode = "404", description = "근무 정책을 찾을 수 없음")
+    })
     @GetMapping("/{workPolicyId}")
-    public ApiResult<WorkPolicyResponseDto> getWorkPolicyById(@PathVariable Long workPolicyId) {
+    public ApiResult<WorkPolicyResponseDto> getWorkPolicyById(
+            @Parameter(description = "근무 정책 ID") @PathVariable Long workPolicyId) {
         try {
             log.info("Get work policy by id: {}", workPolicyId);
             

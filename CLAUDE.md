@@ -158,7 +158,7 @@ void testUserEndpoint() {
 ```
 
 **Test Components:**
-- **@WithMockJwtUser**: Custom annotation for JWT-based test users
+- **@WithMockJwtUser**: Custom annotation for JWT-based test users 
 - **SpringSecurityTestUtils**: Programmatic test authentication setup
 - **WithMockJwtUserSecurityContextFactory**: SecurityContext factory for tests
 
