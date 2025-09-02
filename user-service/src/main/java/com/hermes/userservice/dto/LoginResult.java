@@ -1,17 +1,20 @@
-package com.hermes.auth.dto;
+package com.hermes.userservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Getter
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RefreshRequest {
+public class LoginResult {
     private String refreshToken;
+    private String accessToken;
+    private Long expiresIn;
+    private Long userId;
     private String email;
+    private String name;
+    private String role;
 }

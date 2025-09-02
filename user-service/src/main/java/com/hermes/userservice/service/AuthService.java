@@ -1,7 +1,6 @@
 package com.hermes.userservice.service;
 
-import com.hermes.auth.dto.RefreshRequest;
-import com.hermes.auth.dto.TokenResponse;
+import com.hermes.userservice.dto.LoginResult;
 import com.hermes.auth.enums.Role;
 import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.entity.RefreshToken;
@@ -34,7 +33,7 @@ public class AuthService {
     /**
      * 로그인 처리
      */
-    public TokenResponse login(LoginRequestDto loginDto) {
+    public LoginResult login(LoginRequestDto loginDto) {
         User user = userRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("해당 이메일로 등록된 사용자가 없습니다."));
 
@@ -60,7 +59,15 @@ public class AuthService {
         saveRefreshToken(user.getId(), refreshToken);
 
         log.info("[Auth Service] 로그인 성공 - userId: {}, email: {}", user.getId(), user.getEmail());
-        return new TokenResponse(accessToken, refreshToken);
+        return LoginResult.builder()
+                .refreshToken(refreshToken)
+                .accessToken(accessToken)
+                .expiresIn(jwtTokenService.getAccessTokenTTL())
+                .userId(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .role(userRole.name())
+                .build();
     }
 
     /**
@@ -87,18 +94,18 @@ public class AuthService {
     /**
      * 토큰 갱신 처리 (Refresh Token Rotation 포함)
      */
-    public TokenResponse refreshToken(RefreshRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+    public LoginResult refreshToken(String email, String refreshToken) {
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("해당 이메일로 등록된 사용자가 없습니다."));
 
         RefreshToken saved = refreshTokenRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new InvalidJwtTokenException("RefreshToken not found"));
 
-        validateRefreshToken(request.getRefreshToken(), saved, user.getId());
+        validateRefreshToken(refreshToken, saved, user.getId());
         
         Role userRole = getUserRole(user);
         // TODO: tenantId
-        String newAccessToken = jwtTokenService.createAccessToken(user.getId(), request.getEmail(), userRole, null);
+        String newAccessToken = jwtTokenService.createAccessToken(user.getId(), email, userRole, null);
 
         // Refresh Token Rotation: 새로운 RefreshToken 생성
         String newRefreshToken = jwtTokenService.createRefreshToken();
@@ -108,7 +115,15 @@ public class AuthService {
         refreshTokenRepository.flush();
         saveRefreshToken(user.getId(), newRefreshToken);
 
-        return new TokenResponse(newAccessToken, newRefreshToken);
+        return LoginResult.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .userId(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .role(userRole.name())
+                .expiresIn(jwtTokenService.getAccessTokenTTL())
+                .build();
     }
 
     private Role getUserRole(User user) {
