@@ -3,6 +3,13 @@ package com.hermes.attendanceservice.controller;
 import com.hermes.auth.principal.UserPrincipal;
 import com.hermes.attendanceservice.dto.workmonitor.WorkMonitorDto;
 import com.hermes.attendanceservice.service.workmonitor.WorkMonitorService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -17,6 +24,7 @@ import java.time.LocalDate;
 @RequestMapping("/api/work-monitor")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Work Monitor", description = "근무 모니터링 API")
 public class WorkMonitorController {
     
     private final WorkMonitorService workMonitorService;
@@ -32,9 +40,12 @@ public class WorkMonitorController {
         return null;
     }
     
-    /**
-     * 오늘 날짜의 근무 모니터링 데이터 조회
-     */
+    @Operation(summary = "오늘 근무 모니터링 조회", description = "오늘 날짜의 근무 모니터링 데이터를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "근무 모니터링 조회 성공",
+            content = @Content(schema = @Schema(implementation = WorkMonitorDto.class))),
+        @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @GetMapping("/today")
     public ResponseEntity<WorkMonitorDto> getTodayWorkMonitor() {
         UserPrincipal user = getUserPrincipal();
@@ -49,12 +60,15 @@ public class WorkMonitorController {
         return ResponseEntity.ok(workMonitorDto);
     }
     
-    /**
-     * 특정 날짜의 근무 모니터링 데이터 조회
-     */
+    @Operation(summary = "특정 날짜 근무 모니터링 조회", description = "특정 날짜의 근무 모니터링 데이터를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "근무 모니터링 조회 성공",
+            content = @Content(schema = @Schema(implementation = WorkMonitorDto.class))),
+        @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @GetMapping("/{date}")
     public ResponseEntity<WorkMonitorDto> getWorkMonitorByDate(
-            @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
+            @Parameter(description = "날짜 (YYYY-MM-DD)") @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
         UserPrincipal user = getUserPrincipal();
         if (user == null) {
             log.error("User authentication failed - UserPrincipal is null");
@@ -67,12 +81,15 @@ public class WorkMonitorController {
         return ResponseEntity.ok(workMonitorDto);
     }
     
-    /**
-     * 출석 버튼 클릭 시 근무 모니터링 데이터 갱신
-     */
+    @Operation(summary = "근무 모니터링 데이터 갱신", description = "특정 날짜의 근무 모니터링 데이터를 갱신합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "근무 모니터링 갱신 성공",
+            content = @Content(schema = @Schema(implementation = WorkMonitorDto.class))),
+        @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @PostMapping("/update/{date}")
     public ResponseEntity<WorkMonitorDto> updateWorkMonitorData(
-            @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
+            @Parameter(description = "날짜 (YYYY-MM-DD)") @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
         UserPrincipal user = getUserPrincipal();
         if (user == null) {
             log.error("User authentication failed - UserPrincipal is null");
@@ -85,9 +102,12 @@ public class WorkMonitorController {
         return ResponseEntity.ok(workMonitorDto);
     }
     
-    /**
-     * 오늘 날짜의 근무 모니터링 데이터 갱신
-     */
+    @Operation(summary = "오늘 근무 모니터링 데이터 갱신", description = "오늘 날짜의 근무 모니터링 데이터를 갱신합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "근무 모니터링 갱신 성공",
+            content = @Content(schema = @Schema(implementation = WorkMonitorDto.class))),
+        @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @PostMapping("/update/today")
     public ResponseEntity<WorkMonitorDto> updateTodayWorkMonitorData() {
         UserPrincipal user = getUserPrincipal();

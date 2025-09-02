@@ -10,6 +10,13 @@ import com.hermes.attendanceservice.dto.workschedule.UserWorkPolicyDto;
 import com.hermes.attendanceservice.entity.workschedule.WorkTimeAdjustment;
 import com.hermes.attendanceservice.service.workschedule.WorkScheduleService;
 import com.hermes.auth.principal.UserPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -26,17 +33,22 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/work-schedule")
 @RequiredArgsConstructor
+@Tag(name = "Work Schedule", description = "근무 스케줄 관리 API")
 public class WorkScheduleController {
     
     private final WorkScheduleService workScheduleService;
     
-    /**
-     * 사용자 ID를 통해 해당 사용자의 근무 정책 정보를 조회
-     */
+    @Operation(summary = "사용자 근무 정책 조회", description = "특정 사용자의 근무 정책 정보를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "근무 정책 조회 성공",
+            content = @Content(schema = @Schema(implementation = UserWorkPolicyDto.class))),
+        @ApiResponse(responseCode = "403", description = "권한 없음"),
+        @ApiResponse(responseCode = "404", description = "근무 정책을 찾을 수 없음")
+    })
     @GetMapping("/users/{userId}/work-policy")
     public ResponseEntity<ApiResult<UserWorkPolicyDto>> getUserWorkPolicy(
-            @PathVariable Long userId,
-            @AuthenticationPrincipal UserPrincipal user) {
+            @Parameter(description = "사용자 ID") @PathVariable Long userId,
+            @Parameter(description = "인증된 사용자 정보") @AuthenticationPrincipal UserPrincipal user) {
         try {
             // 본인 또는 관리자만 조회 가능
             if (!user.getUserId().equals(userId) && !user.getRole().name().equals("ADMIN")) {
@@ -57,13 +69,17 @@ public class WorkScheduleController {
         }
     }
     
-    /**
-     * 새로운 스케줄 생성
-     */
+    @Operation(summary = "스케줄 생성", description = "새로운 근무 스케줄을 생성합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "스케줄 생성 성공",
+            content = @Content(schema = @Schema(implementation = ScheduleResponseDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "403", description = "권한 없음")
+    })
     @PostMapping("/schedules")
     public ResponseEntity<ApiResult<ScheduleResponseDto>> createSchedule(
-            @Valid @RequestBody CreateScheduleRequestDto requestDto,
-            @AuthenticationPrincipal UserPrincipal user) {
+            @Parameter(description = "스케줄 생성 정보") @Valid @RequestBody CreateScheduleRequestDto requestDto,
+            @Parameter(description = "인증된 사용자 정보") @AuthenticationPrincipal UserPrincipal user) {
         try {
             // 본인 또는 관리자만 생성 가능
             if (!user.getUserId().equals(requestDto.getUserId()) && !user.getRole().name().equals("ADMIN")) {
@@ -79,15 +95,19 @@ public class WorkScheduleController {
         }
     }
     
-    /**
-     * Work Policy 기반 고정 스케줄 생성
-     */
+    @Operation(summary = "고정 스케줄 생성", description = "Work Policy 기반으로 고정 스케줄을 생성합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "고정 스케줄 생성 성공",
+            content = @Content(schema = @Schema(implementation = ScheduleResponseDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "403", description = "권한 없음")
+    })
     @PostMapping("/users/{userId}/fixed-schedules")
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
     public ResponseEntity<ApiResult<List<ScheduleResponseDto>>> createFixedSchedules(
-            @PathVariable Long userId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @Parameter(description = "사용자 ID") @PathVariable Long userId,
+            @Parameter(description = "시작 날짜 (YYYY-MM-DD)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "종료 날짜 (YYYY-MM-DD)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         try {
             log.info("Creating fixed schedules for userId: {} from {} to {}", userId, startDate, endDate);
             List<ScheduleResponseDto> results = workScheduleService.createFixedSchedulesFromWorkPolicy(userId, startDate, endDate);

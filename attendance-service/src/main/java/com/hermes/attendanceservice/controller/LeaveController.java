@@ -5,6 +5,13 @@ import com.hermes.attendanceservice.dto.leave.CreateLeaveRequestDto;
 import com.hermes.attendanceservice.dto.leave.LeaveRequestResponseDto;
 import com.hermes.attendanceservice.service.leave.LeaveService;
 import com.hermes.auth.principal.UserPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,19 +24,22 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/leaves")
 @RequiredArgsConstructor
+@Tag(name = "Leave", description = "휴가 신청 관리 API")
 public class LeaveController {
     
     private final LeaveService leaveService;
     
-    /**
-     * 휴가 신청을 생성합니다.
-     * @param createDto 휴가 신청 생성 DTO
-     * @return 생성된 휴가 신청 응답
-     */
+    @Operation(summary = "휴가 신청 생성", description = "새로운 휴가 신청을 생성합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "휴가 신청 생성 성공",
+            content = @Content(schema = @Schema(implementation = LeaveRequestResponseDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "403", description = "권한 없음")
+    })
     @PostMapping
     public ApiResult<LeaveRequestResponseDto> createLeaveRequest(
-            @Valid @RequestBody CreateLeaveRequestDto createDto,
-            @AuthenticationPrincipal UserPrincipal user) {
+            @Parameter(description = "휴가 신청 정보") @Valid @RequestBody CreateLeaveRequestDto createDto,
+            @Parameter(description = "인증된 사용자 정보") @AuthenticationPrincipal UserPrincipal user) {
         try {
             // 본인만 휴가 신청 가능
             if (!user.getUserId().equals(createDto.getEmployeeId())) {
@@ -53,17 +63,19 @@ public class LeaveController {
         }
     }
     
-    /**
-     * 휴가 신청을 수정합니다.(기존 신청 삭제 후 새로 생성)
-     * @param requestId 기존 휴가 신청 ID
-     * @param createDto 새로운 휴가 신청 내용
-     * @return 수정된 휴가 신청 응답
-     */
+    @Operation(summary = "휴가 신청 수정", description = "기존 휴가 신청을 수정합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "휴가 신청 수정 성공",
+            content = @Content(schema = @Schema(implementation = LeaveRequestResponseDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "403", description = "권한 없음"),
+        @ApiResponse(responseCode = "404", description = "휴가 신청을 찾을 수 없음")
+    })
     @PutMapping("/{requestId}")
     @PreAuthorize("hasRole('ADMIN') or #createDto.employeeId == authentication.principal.userId")
     public ApiResult<LeaveRequestResponseDto> modifyLeaveRequest(
-            @PathVariable Long requestId,
-            @Valid @RequestBody CreateLeaveRequestDto createDto) {
+            @Parameter(description = "휴가 신청 ID") @PathVariable Long requestId,
+            @Parameter(description = "수정할 휴가 신청 정보") @Valid @RequestBody CreateLeaveRequestDto createDto) {
         try {
             log.info("휴가 신청 수정 요청: requestId={}, employeeId={}, leaveType={}", 
                     requestId, createDto.getEmployeeId(), createDto.getLeaveType());
@@ -81,15 +93,16 @@ public class LeaveController {
         }
     }
     
-    /**
-     * 휴가 신청을 조회합니다.
-     * @param requestId 휴가 신청 ID
-     * @return 휴가 신청 상세 정보
-     */
+    @Operation(summary = "휴가 신청 조회", description = "특정 휴가 신청의 상세 정보를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "휴가 신청 조회 성공",
+            content = @Content(schema = @Schema(implementation = LeaveRequestResponseDto.class))),
+        @ApiResponse(responseCode = "404", description = "휴가 신청을 찾을 수 없음")
+    })
     @GetMapping("/{requestId}")
     public ApiResult<LeaveRequestResponseDto> getLeaveRequest(
-            @PathVariable Long requestId,
-            @AuthenticationPrincipal UserPrincipal user) {
+            @Parameter(description = "휴가 신청 ID") @PathVariable Long requestId,
+            @Parameter(description = "인증된 사용자 정보") @AuthenticationPrincipal UserPrincipal user) {
         try {
             log.info("휴가 신청 조회 요청: requestId={}", requestId);
             
