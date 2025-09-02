@@ -32,6 +32,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.Map;
+import java.util.HashMap;
+import com.hermes.userservice.dto.ColleagueSearchRequestDto;
+import com.hermes.userservice.dto.ColleagueResponseDto;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 @Slf4j
 @RestController
@@ -197,5 +203,58 @@ public class UserController {
         log.info("상세 프로필 조회 요청: userId={}", userId);
         DetailProfileResponseDto profile = userService.getDetailProfile(userId);
         return ResponseEntity.ok(ApiResult.success("상세 프로필 조회 성공", profile));
+    }
+
+    @GetMapping("/colleagues")
+    @Operation(summary = "동료 목록 조회", description = "검색 조건에 따른 동료 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "동료 목록 조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
+    public ResponseEntity<ApiResult<List<ColleagueResponseDto>>> getColleagues(
+            @ModelAttribute ColleagueSearchRequestDto searchRequest) {
+        log.info("동료 목록 조회 요청: searchKeyword={}, department={}, position={}",
+                searchRequest.getSearchKeyword(), searchRequest.getDepartment(), searchRequest.getPosition());
+
+        List<ColleagueResponseDto> colleagues = userService.getColleagues(searchRequest);
+        return ResponseEntity.ok(ApiResult.success("동료 목록 조회 성공", colleagues));
+    }
+
+    @GetMapping("/count")
+    @Operation(summary = "전체 직원 수 조회", description = "시스템에 등록된 전체 직원 수를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "전체 직원 수 조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 실패"),
+        @ApiResponse(responseCode = "403", description = "권한 부족")
+    })
+    public ResponseEntity<ApiResult<Map<String, Object>>> getTotalUsers(
+            @RequestHeader("Authorization") String authorization) {
+        log.info("전체 직원 수 조회 요청");
+
+        long totalUsers = userService.getTotalEmployees();
+        Map<String, Object> response = Map.of("totalUsers", totalUsers);
+        return ResponseEntity.ok(ApiResult.success("전체 직원 수 조회 성공", response));
+    }
+
+    @GetMapping("/{userId}/simple")
+    @Operation(summary = "간단한 사용자 정보 조회", description = "attendance-service에서 사용하는 간단한 사용자 정보를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "사용자 정보 조회 성공"),
+        @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
+    public ResponseEntity<Map<String, Object>> getUserSimple(@PathVariable Long userId) {
+        log.info("간단한 사용자 정보 조회 요청: userId={}", userId);
+        try {
+            UserResponseDto userDto = userService.getUserById(userId);
+
+            Map<String, Object> simpleUser = new HashMap<>();
+            simpleUser.put("id", userDto.getId());
+            simpleUser.put("workPolicyId", userDto.getWorkPolicyId());
+
+            return ResponseEntity.ok(simpleUser);
+        } catch (Exception e) {
+            log.error("간단한 사용자 정보 조회 실패: userId={}, error={}", userId, e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
     }
 }
