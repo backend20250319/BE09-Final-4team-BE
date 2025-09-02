@@ -983,32 +983,10 @@ public class WorkScheduleService {
     private ColleagueScheduleResponseDto.ScheduleEventDto convertToScheduleEventDto(Schedule schedule) {
         return ColleagueScheduleResponseDto.ScheduleEventDto.builder()
                 .scheduleId(schedule.getId())
-                .title(getScheduleTitle(schedule.getScheduleType()))
+                .title(schedule.getScheduleType().toString())
                 .startTime(schedule.getStartTime())
                 .endTime(schedule.getEndTime())
                 .scheduleType(schedule.getScheduleType().toString())
                 .build();
-    }
-    
-    /**
-     * 스케줄 타입에 따른 제목 반환
-     */
-    private String getScheduleTitle(ScheduleType scheduleType) {
-        switch (scheduleType) {
-            case WORK:
-                return "근무";
-            case OUT_OF_OFFICE:
-                return "외근";
-            case BUSINESS_TRIP:
-                return "출장";
-            case SICK_LEAVE:
-                return "병가";
-            case VACATION:
-                return "휴가";
-            case OVERTIME:
-                return "초과근무";
-            default:
-                return "기타";
-        }
     }
 } 
