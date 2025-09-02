@@ -2,7 +2,7 @@ package com.hermes.userservice.service;
 
 import com.hermes.auth.JwtProperties;
 import com.hermes.auth.enums.Role;
-import com.hermes.userservice.exception.JwtValidationException;
+import com.hermes.userservice.exception.InvalidTokenException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +36,7 @@ public class JwtTokenService {
      */
     public String createAccessToken(Long userId, Role role, String tenantId) {
         Instant now = Instant.now();
-        Instant expiration = now.plus(jwtProperties.getAccessTokenTTL(), ChronoUnit.SECONDS);
+        Instant expiration = now.plus(getAccessTokenTTL(), ChronoUnit.SECONDS);
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
@@ -58,7 +58,7 @@ public class JwtTokenService {
      */
     public String createRefreshToken(Long userId) {
         Instant now = Instant.now();
-        Instant expiration = now.plus(jwtProperties.getRefreshTokenTTL(), ChronoUnit.SECONDS);
+        Instant expiration = now.plus(getRefreshTokenTTL(), ChronoUnit.SECONDS);
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
@@ -130,13 +130,13 @@ public class JwtTokenService {
             // 토큰 타입 확인
             String tokenType = claims.get("type", String.class);
             if (!"refresh".equals(tokenType)) {
-                throw new JwtValidationException("리프레시 토큰이 아닙니다.");
+                throw new InvalidTokenException("리프레시 토큰이 아닙니다.");
             }
 
             return claims.get("userId", Long.class);
 
         } catch (JwtException e) {
-            throw new JwtValidationException("유효하지 않은 토큰", e);
+            throw new InvalidTokenException("유효하지 않은 토큰", e);
         }
     }
 

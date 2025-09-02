@@ -6,8 +6,7 @@ import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.InvalidCredentialsException;
-import com.hermes.userservice.exception.InvalidJwtTokenException;
-import com.hermes.userservice.exception.JwtValidationException;
+import com.hermes.userservice.exception.InvalidTokenException;
 import com.hermes.userservice.exception.UserNotFoundException;
 import com.hermes.userservice.repository.RefreshTokenRepository;
 import com.hermes.userservice.repository.UserRepository;
@@ -74,21 +73,15 @@ public class AuthService {
      * 로그아웃 처리
      */
     public void logout(Long userId) {
-        try {
-            // userId로 RefreshToken을 찾아서 삭제
-            refreshTokenRepository.findByUserId(userId)
-                    .ifPresent(refreshTokenRepository::delete);
+        // userId로 RefreshToken을 찾아서 삭제
+        refreshTokenRepository.findByUserId(userId)
+                .ifPresent(refreshTokenRepository::delete);
 
-            // Token Blacklist는 삭제함
-            // 매 요청마다 블랙리스트를 확인해야 하는데, 성능에 안좋기 때문
-            // 대신 Access Token의 TTL을 짧게 설정하는 것으로 어느정도 대응 가능
-            
-            log.info("[Auth Service] 로그아웃 완료 - userId: {}", userId);
+        // Token Blacklist는 삭제함
+        // 매 요청마다 블랙리스트를 확인해야 하는데, 성능에 안좋기 때문
+        // 대신 Access Token의 TTL을 짧게 설정하는 것으로 어느정도 대응 가능
 
-        } catch (Exception e) {
-            log.error("[Auth Service] 로그아웃 처리 중 오류 발생 - userId: {}, error: {}", userId, e.getMessage());
-            throw new InvalidJwtTokenException("로그아웃 처리 중 오류가 발생했습니다.", e);
-        }
+        log.info("[Auth Service] 로그아웃 완료 - userId: {}", userId);
     }
 
     /**
@@ -102,7 +95,7 @@ public class AuthService {
                 .orElseThrow(() -> new UserNotFoundException("해당 사용자가 존재하지 않습니다."));
 
         RefreshToken stored = refreshTokenRepository.findByUserId(userId)
-                .orElseThrow(() -> new InvalidJwtTokenException("RefreshToken not found"));
+                .orElseThrow(() -> new InvalidTokenException("RefreshToken not found"));
 
         validateStoredRefreshToken(refreshToken, stored);
         
@@ -148,12 +141,12 @@ public class AuthService {
     private void validateStoredRefreshToken(String refreshToken, RefreshToken stored) {
         // 토큰 해시값 비교
         if (!jwtTokenService.matchesToken(refreshToken, stored.getTokenHash())) {
-            throw new JwtValidationException("유효하지 않은 RefreshToken입니다.");
+            throw new InvalidTokenException("유효하지 않은 RefreshToken입니다.");
         }
 
         // DB 만료시간 확인 (추가 보안)
         if (stored.isExpired()) {
-            throw new JwtValidationException("만료된 RefreshToken입니다.");
+            throw new InvalidTokenException("만료된 RefreshToken입니다.");
         }
     }
 }
