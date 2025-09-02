@@ -76,9 +76,9 @@ public class JwtTokenService {
     }
 
     /**
-     * RefreshToken 해시 생성 (SHA-256)
+     * 토큰 해시 생성 (SHA-256)
      */
-    public String hashRefreshToken(String token) {
+    public String hashToken(String token) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
@@ -97,10 +97,10 @@ public class JwtTokenService {
     }
 
     /**
-     * RefreshToken 검증 (해시 비교)
+     * 토큰 검증 (해시 비교)
      */
-    public boolean verifyRefreshToken(String rawToken, String hashedToken) {
-        String rawTokenHash = hashRefreshToken(rawToken);
+    public boolean verifyToken(String rawToken, String hashedToken) {
+        String rawTokenHash = hashToken(rawToken);
         return rawTokenHash.equals(hashedToken);
     }
 

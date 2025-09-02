@@ -11,12 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "토큰 갱신 요청 DTO", example = "{\"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\", \"email\": \"kim@example.com\"}")
+@Schema(description = "토큰 갱신 요청 DTO (RefreshToken은 HttpOnly 쿠키에서 자동 추출)", example = "{\"email\": \"kim@example.com\"}")
 public class RefreshRequestDto {
-    
-    @NotBlank(message = "리프레시 토큰은 필수입니다.")
-    @Schema(description = "리프레시 토큰", required = true, example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
-    private String refreshToken;
     
     @NotBlank(message = "이메일은 필수입니다.")
     @Schema(description = "사용자 이메일", required = true, example = "kim@example.com")
