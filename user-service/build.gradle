@@ -35,6 +35,8 @@ dependencies {
     implementation project(':libs:events')
     // implementation project(':libs:mt-starter')
     
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.11'
+    
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     

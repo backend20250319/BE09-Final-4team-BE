@@ -21,6 +21,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import com.hermes.userservice.dto.MainProfileResponseDto;
 import com.hermes.userservice.dto.DetailProfileResponseDto;
+import com.hermes.userservice.dto.ColleagueResponseDto;
+import com.hermes.userservice.dto.ColleagueSearchRequestDto;
 
 @Slf4j
 @Service
@@ -142,5 +144,55 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         
         return userMapper.toDetailProfileDto(user);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ColleagueResponseDto> getColleagues(ColleagueSearchRequestDto searchRequest) {
+        log.info("동료 목록 조회 요청: searchKeyword={}, department={}, position={}", 
+                searchRequest.getSearchKeyword(), searchRequest.getDepartment(), searchRequest.getPosition());
+        
+        List<User> users = userRepository.findAll();
+        
+        return users.stream()
+                .filter(user -> {
+                    if (searchRequest.getSearchKeyword() != null && !searchRequest.getSearchKeyword().trim().isEmpty()) {
+                        String keyword = searchRequest.getSearchKeyword().toLowerCase();
+                        return user.getName().toLowerCase().contains(keyword) ||
+                               (user.getPosition() != null && user.getPosition().getName().toLowerCase().contains(keyword)) ||
+                               (user.getEmail() != null && user.getEmail().toLowerCase().contains(keyword));
+                    }
+                    return true;
+                })
+                .filter(user -> {
+                    if (searchRequest.getDepartment() != null && !searchRequest.getDepartment().trim().isEmpty()) {
+                        return true;
+                    }
+                    return true;
+                })
+                .filter(user -> {
+                    if (searchRequest.getPosition() != null && !searchRequest.getPosition().trim().isEmpty()) {
+                        return user.getPosition() != null && 
+                               user.getPosition().getName().toLowerCase().contains(searchRequest.getPosition().toLowerCase());
+                    }
+                    return true;
+                })
+                .map(user -> ColleagueResponseDto.builder()
+                        .userId(user.getId())
+                        .name(user.getName())
+                        .email(user.getEmail())
+                        .phoneNumber(user.getPhone())
+                        .position(user.getPosition() != null ? user.getPosition().getName() : null)
+                        .department("")
+                        .avatar(user.getProfileImageUrl())
+                        .employeeNumber("")
+                        .status("ACTIVE")
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public long getTotalEmployees() {
+        log.info("전체 직원 수 조회");
+        return userRepository.count();
     }
 }

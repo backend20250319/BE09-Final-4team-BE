@@ -15,5 +15,6 @@ public class UserSecurityConfig extends BaseSecurityConfig {
         AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth
     ) {
         auth.requestMatchers("/api/auth/**").permitAll();
+        auth.requestMatchers("/api/users/count").hasRole("ADMIN");
     }
 }
