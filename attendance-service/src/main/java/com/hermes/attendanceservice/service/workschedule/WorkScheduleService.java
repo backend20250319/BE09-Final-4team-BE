@@ -983,7 +983,6 @@ public class WorkScheduleService {
     private ColleagueScheduleResponseDto.ScheduleEventDto convertToScheduleEventDto(Schedule schedule) {
         return ColleagueScheduleResponseDto.ScheduleEventDto.builder()
                 .scheduleId(schedule.getId())
-                .title(schedule.getScheduleType().toString())
                 .startTime(schedule.getStartTime())
                 .endTime(schedule.getEndTime())
                 .scheduleType(schedule.getScheduleType().toString())
