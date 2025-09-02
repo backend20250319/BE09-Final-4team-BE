@@ -11,11 +11,7 @@ spring:
             - id: user-service
               uri: lb://user-service
               predicates:
-                - Path=/api/users/**
-            - id: user-service-auth
-              uri: lb://user-service
-              predicates:
-                - Path=/api/auth/**
+                - Path=/api/users/**,/api/auth/**
             - id: news-crawler-service
               uri: lb://news-crawler-service
               predicates:
@@ -31,23 +27,12 @@ spring:
             - id: attendance-service
               uri: lb://attendance-service
               predicates:
-                - Path=/api/attendance/**
-            - id: attendance-leaves-service
-              uri: lb://attendance-service
-              predicates:
-                - Path=/api/leaves/**
-            - id: attendance-workpolicy-service
-              uri: lb://attendance-service
-              predicates:
-                - Path=/api/workpolicy/**
-            - id: attendance-work-schedule-service
-              uri: lb://attendance-service
-              predicates:
-                - Path=/api/work-schedule/**
+                - Path=/api/attendance/**,/api/leaves/**,/api/workpolicy/**,/api/work-schedule/**
             - id: attachment-service
               uri: lb://attachment-service
               predicates:
                 - Path=/api/attachment/**
+
             # API 문서 라우팅
             - id: user-service-docs
               uri: lb://user-service
@@ -103,6 +88,7 @@ spring:
                 - Path=/v3/api-docs/communication-service
               filters:
                 - RewritePath=/v3/api-docs/communication-service, /v3/api-docs
+
           globalcors:
             cors-configurations:
               '[/**]':
