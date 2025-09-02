@@ -23,7 +23,7 @@ import java.util.List;
 public class UserPrincipal implements UserDetails {
     
     @EqualsAndHashCode.Include
-    private Long userId;
+    private Long id;
     private Role role;
     private String tenantId;
     

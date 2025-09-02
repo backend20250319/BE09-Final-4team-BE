@@ -84,8 +84,8 @@ public class AuthController {
                     .body(ApiResult.success("이미 로그아웃된 상태입니다.", null));
         }
         
-        log.info("로그아웃 요청: userId={}", user.getUserId());
-        authService.logout(user.getUserId());
+        log.info("로그아웃 요청: userId={}", user.getId());
+        authService.logout(user.getId());
         
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, deleteRefreshTokenCookie.toString())
