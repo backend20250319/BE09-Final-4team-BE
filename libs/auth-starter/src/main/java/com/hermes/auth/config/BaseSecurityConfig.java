@@ -5,6 +5,7 @@ import com.hermes.api.common.ApiResult;
 import com.hermes.auth.JwtProperties;
 import com.hermes.auth.jwt.JwtAuthenticationConverter;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +23,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.SecretKey;
 
 /**
  * Spring Security 기본 설정을 제공하는 추상 클래스
@@ -81,10 +82,8 @@ public abstract class BaseSecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        SecretKeySpec secretKey = new SecretKeySpec(
-            Decoders.BASE64.decode(jwtProperties.getSecret()),
-            "HmacSHA256"
-        );
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecret());
+        SecretKey secretKey = Keys.hmacShaKeyFor(keyBytes);
         return NimbusJwtDecoder.withSecretKey(secretKey).build();
     }
 
