@@ -17,7 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Slf4j
 @Service
@@ -47,7 +47,7 @@ public class AuthService {
         Role userRole = getUserRole(user);
         // TODO: tenantId
         String accessToken = jwtTokenService.createAccessToken(user.getId(), userRole, null);
-        String refreshToken = jwtTokenService.createRefreshToken();
+        String refreshToken = jwtTokenService.createRefreshToken(user.getId());
 
         // 기존 RefreshToken이 있으면 삭제 (이중 로그인 방지)
         // 추후 다중 로그인을 지원하려면 device_id 같은 정보를 추가하여 여러 개의 Refresh Token을 관리할 수 있도록 개선 필요
@@ -94,26 +94,29 @@ public class AuthService {
     /**
      * 토큰 갱신 처리 (Refresh Token Rotation 포함)
      */
-    public LoginResult refreshToken(String email, String refreshToken) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("해당 이메일로 등록된 사용자가 없습니다."));
+    public LoginResult refreshToken(String refreshToken) {
+        // refreshToken을 검증하고 userId 추출
+        Long userId = jwtTokenService.validateAndGetUserIdFromRefreshToken(refreshToken);
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("해당 사용자가 존재하지 않습니다."));
 
-        RefreshToken saved = refreshTokenRepository.findByUserId(user.getId())
+        RefreshToken stored = refreshTokenRepository.findByUserId(userId)
                 .orElseThrow(() -> new InvalidJwtTokenException("RefreshToken not found"));
 
-        validateRefreshToken(refreshToken, saved, user.getId());
+        validateStoredRefreshToken(refreshToken, stored);
         
         Role userRole = getUserRole(user);
         // TODO: tenantId
-        String newAccessToken = jwtTokenService.createAccessToken(user.getId(), userRole, null);
+        String newAccessToken = jwtTokenService.createAccessToken(userId, userRole, null);
 
         // Refresh Token Rotation: 새로운 RefreshToken 생성
-        String newRefreshToken = jwtTokenService.createRefreshToken();
+        String newRefreshToken = jwtTokenService.createRefreshToken(userId);
         
         // 기존 RefreshToken 삭제하고 새로운 것으로 교체
-        refreshTokenRepository.delete(saved);
+        refreshTokenRepository.delete(stored);
         refreshTokenRepository.flush();
-        saveRefreshToken(user.getId(), newRefreshToken);
+        saveRefreshToken(userId, newRefreshToken);
 
         return LoginResult.builder()
                 .accessToken(newAccessToken)
@@ -137,20 +140,19 @@ public class AuthService {
                 RefreshToken.builder()
                         .userId(userId)
                         .tokenHash(hashedRefreshToken)
-                        .expiration(LocalDateTime.now().plusSeconds(jwtTokenService.getRefreshTokenTTL()))
+                        .expiration(Instant.now().plusSeconds(jwtTokenService.getRefreshTokenTTL()))
                         .build()
         );
     }
 
-    private void validateRefreshToken(String refreshToken, RefreshToken saved, Long userId) {
-        // 해시된 토큰 검증
-        if (!jwtTokenService.verifyToken(refreshToken, saved.getTokenHash())) {
-            log.warn("⚠️ [Auth Service] 유효하지 않은 RefreshToken - userId: {}", userId);
+    private void validateStoredRefreshToken(String refreshToken, RefreshToken stored) {
+        // 토큰 해시값 비교
+        if (!jwtTokenService.matchesToken(refreshToken, stored.getTokenHash())) {
             throw new JwtValidationException("유효하지 않은 RefreshToken입니다.");
         }
 
-        if (saved.isExpired()) {
-            log.warn("⚠️ [Auth Service] 만료된 RefreshToken - userId: {}", userId);
+        // DB 만료시간 확인 (추가 보안)
+        if (stored.isExpired()) {
             throw new JwtValidationException("만료된 RefreshToken입니다.");
         }
     }
