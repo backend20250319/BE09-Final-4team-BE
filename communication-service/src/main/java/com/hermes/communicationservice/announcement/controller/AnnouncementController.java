@@ -26,11 +26,12 @@ public class AnnouncementController {
   @PostMapping
   public ResponseEntity<ApiResult<AnnouncementResponseDto>> createAnnouncement(
       @RequestBody AnnouncementCreateRequestDto request,
-      @AuthenticationPrincipal UserPrincipal user) {
+      @AuthenticationPrincipal UserPrincipal user,
+      @RequestHeader("Authorization") String authorization) {
     log.info("POST /announcements 호출 - title: {}", request.getTitle());
 
     AnnouncementResponseDto response = announcementService.createAnnouncement(request,
-        user.getUserId());
+        user.getUserId(), authorization);
 
     log.info("공지사항 생성 완료 - id: {}", response.getId());
     return ResponseEntity.status(HttpStatus.CREATED)

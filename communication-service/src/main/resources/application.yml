@@ -4,6 +4,13 @@ spring:
   config:
     import: optional:configserver:http://localhost:8888
 
+hermes:
+  notification:
+    enabled: true
+    exchange: notification.exchange
+    queue: notification.create
+    routing-key: notification.create
+
   jpa:
     hibernate:
       ddl-auto: update

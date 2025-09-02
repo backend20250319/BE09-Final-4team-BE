@@ -3,6 +3,7 @@ package com.hermes.communicationservice.client;
 
 import com.hermes.api.common.ApiResult;
 import com.hermes.communicationservice.client.dto.MainProfileResponseDto;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +23,12 @@ public class UserServiceClientFallback implements UserServiceClient {
             .build();
 
         return ApiResult.failure("user-service 응답 실패 (fallback)", fallbackProfile);
+    }
+
+    @Override
+    public ApiResult<List<Long>> getAllUserIds(String authorization) {
+        log.error("user-service getAllUserIds 호출 실패, fallback 실행");
+        return ApiResult.failure("user-service 응답 실패 (getAllUserIds fallback)", List.of());
     }
 
 }

@@ -5,9 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
-@SpringBootApplication(scanBasePackages = {"com.hermes.communicationservice",
-    "com.hermes.ftpstarter"})
-@EnableFeignClients(basePackages = "com.hermes.userserviceclient")
+@SpringBootApplication
+@EnableFeignClients(basePackages = "com.hermes.communicationservice.client")
 @EnableJpaAuditing
 public class CommunicationServiceApplication {
 

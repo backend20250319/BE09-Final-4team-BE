@@ -7,6 +7,11 @@ import com.hermes.communicationservice.announcement.dto.AnnouncementSummaryDto;
 import com.hermes.communicationservice.announcement.dto.AnnouncementUpdateRequestDto;
 import com.hermes.communicationservice.announcement.entity.Announcement;
 import com.hermes.communicationservice.announcement.repository.AnnouncementRepository;
+import com.hermes.communicationservice.client.UserServiceClient;
+import com.hermes.notification.dto.NotificationRequest;
+import com.hermes.notification.enums.NotificationType;
+import com.hermes.notification.publisher.NotificationPublisher;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,11 +28,13 @@ import com.hermes.communicationservice.announcement.exception.AnnouncementNotFou
 public class AnnouncementService {
 
   private final AnnouncementRepository announcementRepository;
+  private final NotificationPublisher notificationPublisher;
+  private final UserServiceClient userServiceClient;
 
 
   // 생성
   @Transactional
-  public AnnouncementResponseDto createAnnouncement(AnnouncementCreateRequestDto request, Long authorId) {
+  public AnnouncementResponseDto createAnnouncement(AnnouncementCreateRequestDto request, Long authorId, String authorization) {
 
     Announcement announcement = Announcement.builder()
         .title(request.getTitle())
@@ -38,6 +45,28 @@ public class AnnouncementService {
         .build();
     Announcement saved = announcementRepository.save(announcement);
 
+    // 전사원에게 알림 발송
+    try {
+      if (authorization != null && !authorization.isEmpty()) {
+        List<Long> userIds = userServiceClient.getAllUserIds(authorization).getData();
+        if (userIds != null && !userIds.isEmpty()) {
+          NotificationRequest notificationRequest = NotificationRequest.builder()
+              .userIds(userIds)
+              .type(NotificationType.ANNOUNCEMENT)
+              .content("[공지사항] " + saved.getTitle())
+              .referenceId(saved.getId())
+              .createdAt(LocalDateTime.now())
+              .build();
+
+          notificationPublisher.publish(notificationRequest);
+          log.info("공지사항 생성 알림 발송 완료 - 공지 ID: {}, 대상자 수: {}", saved.getId(), userIds.size());
+        }
+      } else {
+        log.warn("Authorization 토큰이 없어 알림 발송을 건너뜁니다. - 공지 ID: {}", saved.getId());
+      }
+    } catch (Exception e) {
+      log.error("공지사항 알림 발송 실패 - 공지 ID: {}, 오류: {}", saved.getId(), e.getMessage());
+    }
 
     return AnnouncementResponseDto.builder()
         .id(saved.getId())
