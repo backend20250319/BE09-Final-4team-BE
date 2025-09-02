@@ -39,7 +39,6 @@ public class ColleagueScheduleResponseDto {
     @AllArgsConstructor
     public static class ScheduleEventDto {
         private Long scheduleId;
-        private String title; // "근무", "휴게", "외근", "출장", "재택"
         private LocalTime startTime;
         private LocalTime endTime;
         private String scheduleType; // WORK, BREAK, EXTERNAL_WORK, BUSINESS_TRIP, WORK_FROM_HOME
