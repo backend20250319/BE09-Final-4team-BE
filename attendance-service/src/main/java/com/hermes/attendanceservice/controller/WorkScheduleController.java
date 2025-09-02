@@ -2,6 +2,7 @@ package com.hermes.attendanceservice.controller;
 
 import com.hermes.api.common.ApiResult;
 import com.hermes.attendanceservice.dto.workschedule.AdjustWorkTimeRequestDto;
+import com.hermes.attendanceservice.dto.workschedule.ColleagueScheduleResponseDto;
 import com.hermes.attendanceservice.dto.workschedule.CreateScheduleRequestDto;
 import com.hermes.attendanceservice.dto.workschedule.ScheduleResponseDto;
 import com.hermes.attendanceservice.dto.workschedule.UpdateScheduleRequestDto;
@@ -227,6 +228,36 @@ public class WorkScheduleController {
         } catch (Exception e) {
             log.error("Error creating work time adjustment for userId: {}", requestDto.getUserId(), e);
             return ResponseEntity.ok(ApiResult.failure("근무 시간 조정 요청 생성 중 오류가 발생했습니다."));
+        }
+    }
+    
+    /**
+     * 동료 근무표 조회
+     */
+    @GetMapping("/colleagues/{colleagueId}/schedules")
+    public ResponseEntity<ApiResult<ColleagueScheduleResponseDto>> getColleagueSchedule(
+            @PathVariable Long colleagueId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @AuthenticationPrincipal UserPrincipal user) {
+        try {
+            log.info("Fetching colleague schedule for colleagueId: {} from {} to {}", colleagueId, startDate, endDate);
+            
+            // 본인 또는 관리자만 조회 가능
+            if (!user.getUserId().equals(colleagueId) && !user.getRole().name().equals("ADMIN")) {
+                return ResponseEntity.ok(ApiResult.failure("권한이 없습니다."));
+            }
+            
+            ColleagueScheduleResponseDto result = workScheduleService.getColleagueSchedule(colleagueId, startDate, endDate);
+            
+            if (result == null) {
+                return ResponseEntity.ok(ApiResult.failure("동료의 근무표를 찾을 수 없습니다."));
+            }
+            
+            return ResponseEntity.ok(ApiResult.success("동료 근무표 조회 성공", result));
+        } catch (Exception e) {
+            log.error("Error fetching colleague schedule for colleagueId: {} from {} to {}", colleagueId, startDate, endDate, e);
+            return ResponseEntity.ok(ApiResult.failure("동료 근무표 조회 중 오류가 발생했습니다."));
         }
     }
 } 

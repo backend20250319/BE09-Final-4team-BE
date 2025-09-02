@@ -4,6 +4,7 @@ import com.hermes.api.common.ApiResult;
 import com.hermes.approvalservice.dto.request.CreateTemplateRequest;
 import com.hermes.approvalservice.dto.request.UpdateTemplateRequest;
 import com.hermes.approvalservice.dto.response.TemplateResponse;
+import com.hermes.approvalservice.dto.response.TemplateSummaryResponse;
 import com.hermes.approvalservice.dto.response.TemplatesByCategoryResponse;
 import com.hermes.approvalservice.service.DocumentTemplateService;
 import com.hermes.auth.principal.UserPrincipal;
@@ -35,10 +36,10 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "200", description = "템플릿 목록 조회 성공"),
             @ApiResponse(responseCode = "403", description = "권한 없음")
     })
-    public ResponseEntity<ApiResult<List<TemplateResponse>>> getTemplates(
+    public ResponseEntity<ApiResult<List<TemplateSummaryResponse>>> getTemplates(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 ID (선택사항)") @RequestParam(required = false) Long categoryId) {
-        List<TemplateResponse> templates;
+        List<TemplateSummaryResponse> templates;
         boolean isAdmin = user.isAdmin();
         
         if (categoryId != null) {

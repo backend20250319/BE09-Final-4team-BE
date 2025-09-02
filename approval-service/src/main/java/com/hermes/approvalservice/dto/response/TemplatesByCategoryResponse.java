@@ -9,5 +9,5 @@ public class TemplatesByCategoryResponse {
     
     private Long categoryId;
     private String categoryName;
-    private List<TemplateResponse> templates;
+    private List<TemplateSummaryResponse> templates;
 }

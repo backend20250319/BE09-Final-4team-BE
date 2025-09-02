@@ -27,23 +27,23 @@ public class DocumentTemplateService {
     private final TemplateApprovalTargetRepository targetRepository;
     private final AttachmentClientService attachmentService;
 
-    public List<TemplateResponse> getAllTemplates(boolean isAdmin) {
+    public List<TemplateSummaryResponse> getAllTemplates(boolean isAdmin) {
         List<DocumentTemplate> templates = isAdmin 
             ? templateRepository.findAll()
             : templateRepository.findByIsHiddenFalse();
         
         return templates.stream()
-                .map(this::convertToResponse)
+                .map(this::convertToSummaryResponse)
                 .toList();
     }
 
-    public List<TemplateResponse> getTemplatesByCategory(Long categoryId, boolean isAdmin) {
+    public List<TemplateSummaryResponse> getTemplatesByCategory(Long categoryId, boolean isAdmin) {
         List<DocumentTemplate> templates = isAdmin
             ? templateRepository.findByCategoryId(categoryId)
             : templateRepository.findByCategoryIdAndIsHiddenFalse(categoryId);
         
         return templates.stream()
-                .map(this::convertToResponse)
+                .map(this::convertToSummaryResponse)
                 .toList();
     }
 
@@ -61,7 +61,7 @@ public class DocumentTemplateService {
                     response.setCategoryId(entry.getKey().getId());
                     response.setCategoryName(entry.getKey().getName());
                     response.setTemplates(entry.getValue().stream()
-                            .map(this::convertToResponse)
+                            .map(this::convertToSummaryResponse)
                             .toList());
                     return response;
                 })
@@ -69,10 +69,8 @@ public class DocumentTemplateService {
     }
 
     public TemplateResponse getTemplateById(Long id) {
-        DocumentTemplate template = templateRepository.findByIdWithDetails(id);
-        if (template == null) {
-            throw new NotFoundException("템플릿을 찾을 수 없습니다.");
-        }
+        DocumentTemplate template = templateRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("템플릿을 찾을 수 없습니다."));
         return convertToResponse(template);
     }
 
@@ -268,8 +266,92 @@ public class DocumentTemplateService {
             response.setCategory(categoryResponse);
         }
 
-        // Convert fields, stages, and targets to responses
-        // (Implementation details omitted for brevity)
+        // Convert fields to responses
+        response.setFields(template.getFields().stream()
+                .map(field -> {
+                    TemplateFieldResponse fieldResponse = new TemplateFieldResponse();
+                    fieldResponse.setId(field.getId());
+                    fieldResponse.setName(field.getName());
+                    fieldResponse.setFieldType(field.getFieldType());
+                    fieldResponse.setRequired(field.getRequired());
+                    fieldResponse.setFieldOrder(field.getFieldOrder());
+                    fieldResponse.setOptions(field.getOptions());
+                    return fieldResponse;
+                })
+                .toList());
+
+        // Convert approval stages to responses
+        response.setApprovalStages(template.getApprovalStages().stream()
+                .map(stage -> {
+                    ApprovalStageResponse stageResponse = new ApprovalStageResponse();
+                    stageResponse.setId(stage.getId());
+                    stageResponse.setStageOrder(stage.getStageOrder());
+                    stageResponse.setStageName(stage.getStageName());
+                    stageResponse.setIsCompleted(false); // 템플릿에서는 완료 상태 없음
+                    stageResponse.setCompletedAt(null);
+                    
+                    // Convert stage's approval targets
+                    stageResponse.setApprovalTargets(stage.getApprovalTargets().stream()
+                            .map(target -> {
+                                ApprovalTargetResponse targetResponse = new ApprovalTargetResponse();
+                                targetResponse.setId(target.getId());
+                                targetResponse.setTargetType(target.getTargetType());
+                                targetResponse.setUserId(target.getUserId());
+                                targetResponse.setOrganizationId(target.getOrganizationId());
+                                targetResponse.setManagerLevel(target.getManagerLevel());
+                                targetResponse.setIsReference(target.getIsReference());
+                                targetResponse.setIsApproved(false); // 템플릿에서는 승인 상태 없음
+                                targetResponse.setApprovedBy(null);
+                                targetResponse.setApprovedAt(null);
+                                return targetResponse;
+                            })
+                            .toList());
+                    
+                    return stageResponse;
+                })
+                .toList());
+
+        // Convert reference targets to responses
+        response.setReferenceTargets(template.getReferenceTargets().stream()
+                .map(target -> {
+                    ApprovalTargetResponse targetResponse = new ApprovalTargetResponse();
+                    targetResponse.setId(target.getId());
+                    targetResponse.setTargetType(target.getTargetType());
+                    targetResponse.setUserId(target.getUserId());
+                    targetResponse.setOrganizationId(target.getOrganizationId());
+                    targetResponse.setManagerLevel(target.getManagerLevel());
+                    targetResponse.setIsReference(target.getIsReference());
+                    targetResponse.setIsApproved(false); // 템플릿에서는 승인 상태 없음
+                    targetResponse.setApprovedBy(null);
+                    targetResponse.setApprovedAt(null);
+                    return targetResponse;
+                })
+                .toList());
+
+        return response;
+    }
+
+    private TemplateSummaryResponse convertToSummaryResponse(DocumentTemplate template) {
+        TemplateSummaryResponse response = new TemplateSummaryResponse();
+        response.setId(template.getId());
+        response.setTitle(template.getTitle());
+        response.setIcon(template.getIcon());
+        response.setDescription(template.getDescription());
+        response.setUseBody(template.getUseBody());
+        response.setUseAttachment(template.getUseAttachment());
+        response.setAllowTargetChange(template.getAllowTargetChange());
+        response.setIsHidden(template.getIsHidden());
+        response.setCreatedAt(template.getCreatedAt());
+        response.setUpdatedAt(template.getUpdatedAt());
+
+        if (template.getCategory() != null) {
+            CategoryResponse categoryResponse = new CategoryResponse();
+            categoryResponse.setId(template.getCategory().getId());
+            categoryResponse.setName(template.getCategory().getName());
+            categoryResponse.setDescription(template.getCategory().getDescription());
+            categoryResponse.setSortOrder(template.getCategory().getSortOrder());
+            response.setCategory(categoryResponse);
+        }
 
         return response;
     }

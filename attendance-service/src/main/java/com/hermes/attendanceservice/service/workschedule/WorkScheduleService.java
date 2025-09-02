@@ -2,6 +2,7 @@ package com.hermes.attendanceservice.service.workschedule;
 
 import com.hermes.attendanceservice.client.UserServiceClient;
 import com.hermes.attendanceservice.dto.workschedule.AdjustWorkTimeRequestDto;
+import com.hermes.attendanceservice.dto.workschedule.ColleagueScheduleResponseDto;
 import com.hermes.attendanceservice.dto.workschedule.CreateScheduleRequestDto;
 import com.hermes.attendanceservice.dto.workschedule.ScheduleResponseDto;
 import com.hermes.attendanceservice.dto.workschedule.UpdateScheduleRequestDto;
@@ -904,6 +905,87 @@ public class WorkScheduleService {
                 .holidays(responseDto.getHolidays())
                 .isHolidayFixed(responseDto.getIsHolidayFixed())
                 .isBreakFixed(responseDto.getIsBreakFixed())
+                .build();
+    }
+    
+    /**
+     * 동료 근무표 조회
+     */
+    public ColleagueScheduleResponseDto getColleagueSchedule(Long colleagueId, LocalDate startDate, LocalDate endDate) {
+        try {
+            // 1. 동료 정보 조회 (User Service에서)
+            Map<String, Object> colleagueInfo = userServiceClient.getUserById(colleagueId, null);
+            if (colleagueInfo == null) {
+                log.error("Colleague not found: {}", colleagueId);
+                return null;
+            }
+            
+            // 2. 동료의 스케줄 조회
+            List<Schedule> schedules = scheduleRepository.findByUserIdAndDateRange(colleagueId, "ACTIVE", startDate, endDate);
+            
+            // 3. 일별 스케줄로 그룹화
+            Map<LocalDate, List<Schedule>> schedulesByDate = schedules.stream()
+                    .collect(Collectors.groupingBy(Schedule::getStartDate));
+            
+            // 4. 응답 DTO 생성
+            List<ColleagueScheduleResponseDto.DailyScheduleDto> dailySchedules = new ArrayList<>();
+            
+            LocalDate currentDate = startDate;
+            while (!currentDate.isAfter(endDate)) {
+                List<Schedule> daySchedules = schedulesByDate.getOrDefault(currentDate, new ArrayList<>());
+                
+                List<ColleagueScheduleResponseDto.ScheduleEventDto> events = daySchedules.stream()
+                        .map(this::convertToScheduleEventDto)
+                        .collect(Collectors.toList());
+                
+                ColleagueScheduleResponseDto.DailyScheduleDto dailySchedule = ColleagueScheduleResponseDto.DailyScheduleDto.builder()
+                        .date(currentDate)
+                        .dayOfWeek(currentDate.getDayOfWeek().getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH))
+                        .events(events)
+                        .build();
+                
+                dailySchedules.add(dailySchedule);
+                currentDate = currentDate.plusDays(1);
+            }
+            
+            // Map에서 필요한 정보 추출
+            String colleagueName = (String) colleagueInfo.get("name");
+            String colleaguePosition = "";
+            String colleagueDepartment = "";
+            String colleagueAvatar = (String) colleagueInfo.get("profileImageUrl");
+            
+            // position 정보 추출
+            if (colleagueInfo.get("position") != null) {
+                Map<String, Object> position = (Map<String, Object>) colleagueInfo.get("position");
+                colleaguePosition = (String) position.get("name");
+            }
+            
+            return ColleagueScheduleResponseDto.builder()
+                    .colleagueId(colleagueId)
+                    .colleagueName(colleagueName)
+                    .colleaguePosition(colleaguePosition)
+                    .colleagueDepartment(colleagueDepartment)
+                    .colleagueAvatar(colleagueAvatar)
+                    .startDate(startDate)
+                    .endDate(endDate)
+                    .dailySchedules(dailySchedules)
+                    .build();
+                    
+        } catch (Exception e) {
+            log.error("Error fetching colleague schedule for colleagueId: {} from {} to {}", colleagueId, startDate, endDate, e);
+            throw new RuntimeException("Failed to fetch colleague schedule", e);
+        }
+    }
+    
+    /**
+     * Schedule 엔티티를 ScheduleEventDto로 변환
+     */
+    private ColleagueScheduleResponseDto.ScheduleEventDto convertToScheduleEventDto(Schedule schedule) {
+        return ColleagueScheduleResponseDto.ScheduleEventDto.builder()
+                .scheduleId(schedule.getId())
+                .startTime(schedule.getStartTime())
+                .endTime(schedule.getEndTime())
+                .scheduleType(schedule.getScheduleType().toString())
                 .build();
     }
 } 
