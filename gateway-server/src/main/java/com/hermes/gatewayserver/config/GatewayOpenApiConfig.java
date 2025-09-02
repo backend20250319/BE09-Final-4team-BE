@@ -1,17 +1,14 @@
 package com.hermes.gatewayserver.config;
 
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.servers.Server;
-import org.springdoc.core.models.GroupedOpenApi;
-import org.springframework.beans.factory.annotation.Value;
+import org.springdoc.core.properties.AbstractSwaggerUiConfigProperties;
+import org.springdoc.core.properties.SwaggerUiConfigProperties;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.cloud.gateway.route.RouteDefinitionLocator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Gateway OpenAPI 통합 설정
@@ -19,79 +16,25 @@ import java.util.List;
 @Configuration
 public class GatewayOpenApiConfig {
 
-    @Value("${server.port:9000}")
-    private String serverPort;
-
     @Bean
-    public OpenAPI gatewayOpenAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("Hermes API Gateway")
-                        .description("모든 마이크로서비스의 통합 API 문서")
-                        .version("1.0.0")
-                        .contact(new Contact()
-                                .name("Hermes Development Team")
-                                .email("dev@hermes.com")
-                                .url("https://hermes.com"))
-                        .license(new License()
-                                .name("Apache License 2.0")
-                                .url("https://www.apache.org/licenses/LICENSE-2.0")))
-                .servers(List.of(
-                        new Server()
-                                .url("http://localhost:" + serverPort)
-                                .description("Gateway Server (Local)")
-                ));
-    }
-
-    @Bean
-    public List<GroupedOpenApi> apis() {
-        List<GroupedOpenApi> groups = new ArrayList<>();
-        
-        groups.add(GroupedOpenApi.builder()
-                .group("user-service")
-                .pathsToMatch("/api/users/**", "/api/auth/**")
-                .build());
-                
-        groups.add(GroupedOpenApi.builder()
-                .group("approval-service")
-                .pathsToMatch("/api/approval/**")
-                .build());
-                
-        groups.add(GroupedOpenApi.builder()
-                .group("tenant-service")
-                .pathsToMatch("/api/tenant/**")
-                .build());
-
-        groups.add(GroupedOpenApi.builder()
-                .group("org-service")
-                .pathsToMatch("/api/org/**")
-                .build());
-
-        groups.add(GroupedOpenApi.builder()
-                .group("attendance-service")
-                .pathsToMatch("/api/attendance/**")
-                .build());
-
-        groups.add(GroupedOpenApi.builder()
-                .group("news-service")
-                .pathsToMatch("/api/news/**")
-                .build());
-
-        groups.add(GroupedOpenApi.builder()
-                .group("leave-service")
-                .pathsToMatch("/api/leave/**")
-                .build());
-
-        groups.add(GroupedOpenApi.builder()
-                .group("companyinfo-service")
-                .pathsToMatch("/api/companyinfo/**")
-                .build());
-
-        groups.add(GroupedOpenApi.builder()
-                .group("communication-service")
-                .pathsToMatch("/api/communication/**")
-                .build());
-                
-        return groups;
+    public CommandLineRunner openApiGroups(
+            RouteDefinitionLocator locator,
+            SwaggerUiConfigProperties swaggerUiConfigProperties) {
+        return args -> {
+            Set<AbstractSwaggerUiConfigProperties.SwaggerUrl> urls = new HashSet<>();
+            
+            // 각 서비스의 OpenAPI 문서 URL 추가
+            urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("user-service", "/v3/api-docs/user-service", "user-service"));
+            urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("approval-service", "/v3/api-docs/approval-service", "approval-service"));
+            urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("tenant-service", "/v3/api-docs/tenant-service", "tenant-service"));
+            urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("org-service", "/v3/api-docs/org-service", "org-service"));
+            urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("attendance-service", "/v3/api-docs/attendance-service", "attendance-service"));
+            urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("news-service", "/v3/api-docs/news-service", "news-service"));
+            urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("leave-service", "/v3/api-docs/leave-service", "leave-service"));
+            urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("companyinfo-service", "/v3/api-docs/companyinfo-service", "companyinfo-service"));
+            urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("communication-service", "/v3/api-docs/communication-service", "communication-service"));
+            
+            swaggerUiConfigProperties.setUrls(urls);
+        };
     }
 }
