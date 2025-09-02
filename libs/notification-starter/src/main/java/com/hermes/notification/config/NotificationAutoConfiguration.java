@@ -1,5 +1,6 @@
 package com.hermes.notification.config;
 
+import com.hermes.notification.publisher.NotificationPublisher;
 import com.hermes.notification.sender.NotificationSender;
 import com.hermes.notification.sender.RabbitNotificationSender;
 import org.springframework.amqp.core.Binding;
@@ -15,11 +16,11 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
+@AutoConfiguration
 @EnableRabbit
 @ComponentScan(basePackages = "com.hermes.notification")
 @ConditionalOnProperty(name = "hermes.notification.enabled", havingValue = "true")
@@ -77,6 +78,12 @@ public class NotificationAutoConfiguration {
     factory.setConnectionFactory(connectionFactory);
     factory.setMessageConverter(new Jackson2JsonMessageConverter());
     return factory;
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public NotificationPublisher notificationPublisher(NotificationSender notificationSender) {
+    return new NotificationPublisher(notificationSender);
   }
 
 }
