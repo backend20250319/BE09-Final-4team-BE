@@ -1,7 +1,9 @@
 package com.hermes.communicationservice.announcement.entity;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hermes.communicationservice.comment.entity.Comment;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -17,6 +19,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -39,7 +43,9 @@ public class Announcement {
 
   private String displayAuthor; // 화면에 공지 작성자로 표시될 이름
 
-  private String content;
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "content", columnDefinition = "jsonb")
+  private JsonNode content;
 
   @CreatedDate
   private LocalDateTime createdAt; // 공지사항 발행 시간

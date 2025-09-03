@@ -1,6 +1,6 @@
 package com.hermes.communicationservice.announcement.dto;
 
-import java.util.ArrayList;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +18,7 @@ public class AnnouncementUpdateRequestDto {
   private String title;
   @Size(max = 100)
   private String displayAuthor;
-  private String content;
+  private JsonNode content;
   private List<String> fileIds;
 
 }
