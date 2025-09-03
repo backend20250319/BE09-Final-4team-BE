@@ -25,6 +25,7 @@ Hermes is a Spring Boot microservices system implementing a multi-tenant archite
 - **auth-starter**: Spring Boot Starter for JWT authentication and authorization with auto-configuration
 - **mt-starter**: Multi-tenancy auto-configuration starter with RabbitMQ event-driven schema management
 - **attachment-client-starter**: Attachment service integration and file handling utilities with auto-configuration
+- **notification-starter**: RabbitMQ-based asynchronous notification system with auto-configuration
 - **api-common**: Common API response classes and utilities
 - **events**: Event models for inter-service communication
 
@@ -189,6 +190,47 @@ public interface UserRepository extends JpaRepository<User, Long> {
 ```
 
 **📋 For detailed configuration options, events, and advanced usage, see [`libs/mt-starter/README.md`](libs/mt-starter/README.md)**
+
+## Notification System
+
+### Quick Setup
+Add notification-starter dependency and minimal configuration:
+
+```gradle
+dependencies {
+    implementation project(':libs:notification-starter')
+}
+```
+
+```yaml
+hermes:
+  notification:
+    enabled: true
+```
+
+### Key Usage Pattern
+Inject NotificationPublisher and send notifications:
+
+```java
+@Service
+public class MyService {
+    private final NotificationPublisher notificationPublisher;
+    
+    public void sendNotification() {
+        NotificationRequest request = NotificationRequest.builder()
+            .userIds(Arrays.asList(1L, 2L, 3L))
+            .type(NotificationType.ANNOUNCEMENT)
+            .content("Notification content")
+            .referenceId(123L)
+            .createdAt(LocalDateTime.now())
+            .build();
+            
+        NotificationResponse response = notificationPublisher.publish(request);
+    }
+}
+```
+
+**📋 For detailed configuration, notification types, and error handling, see [`libs/notification-starter/README.md`](libs/notification-starter/README.md)**
 
 ## Development Patterns
 
