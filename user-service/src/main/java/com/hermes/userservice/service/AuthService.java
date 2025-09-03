@@ -48,14 +48,9 @@ public class AuthService {
         String accessToken = jwtTokenService.createAccessToken(user.getId(), userRole, null);
         String refreshToken = jwtTokenService.createRefreshToken(user.getId());
 
-        // 기존 RefreshToken이 있으면 삭제 (이중 로그인 방지)
+        // 기존 RefreshToken이 있으면 업데이트, 없으면 새로 생성 (이중 로그인 방지)
         // 추후 다중 로그인을 지원하려면 device_id 같은 정보를 추가하여 여러 개의 Refresh Token을 관리할 수 있도록 개선 필요
-        refreshTokenRepository.findByUserId(user.getId()).ifPresent(entity -> {
-            refreshTokenRepository.delete(entity);
-            refreshTokenRepository.flush();
-        });
-
-        saveRefreshToken(user.getId(), refreshToken);
+        saveOrUpdateRefreshToken(user.getId(), refreshToken);
 
         log.info("[Auth Service] 로그인 성공 - userId: {}, email: {}", user.getId(), user.getEmail());
         return LoginResult.builder()
@@ -94,10 +89,7 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("해당 사용자가 존재하지 않습니다."));
 
-        RefreshToken stored = refreshTokenRepository.findByUserId(userId)
-                .orElseThrow(() -> new InvalidTokenException("RefreshToken not found"));
-
-        validateStoredRefreshToken(refreshToken, stored);
+        validateStoredRefreshToken(userId, refreshToken);
         
         Role userRole = getUserRole(user);
         // TODO: tenantId
@@ -106,10 +98,8 @@ public class AuthService {
         // Refresh Token Rotation: 새로운 RefreshToken 생성
         String newRefreshToken = jwtTokenService.createRefreshToken(userId);
         
-        // 기존 RefreshToken 삭제하고 새로운 것으로 교체
-        refreshTokenRepository.delete(stored);
-        refreshTokenRepository.flush();
-        saveRefreshToken(userId, newRefreshToken);
+        // 기존 RefreshToken을 새로운 것으로 교체
+        saveOrUpdateRefreshToken(userId, newRefreshToken);
 
         return LoginResult.builder()
                 .accessToken(newAccessToken)
@@ -126,19 +116,32 @@ public class AuthService {
         return user.getIsAdmin() ? Role.ADMIN : Role.USER;
     }
 
-    private void saveRefreshToken(Long userId, String refreshToken) {
+    private void saveOrUpdateRefreshToken(Long userId, String refreshToken) {
         // RefreshToken을 해시화하여 저장 (보안 강화)
         String hashedRefreshToken = jwtTokenService.hashToken(refreshToken);
-        refreshTokenRepository.save(
-                RefreshToken.builder()
-                        .userId(userId)
-                        .tokenHash(hashedRefreshToken)
-                        .expiration(Instant.now().plusSeconds(jwtTokenService.getRefreshTokenTTL()))
-                        .build()
-        );
+        Instant expiration = Instant.now().plusSeconds(jwtTokenService.getRefreshTokenTTL());
+        
+        // 기존 토큰이 있으면 업데이트, 없으면 새로 생성 (upsert)
+        RefreshToken existingToken = refreshTokenRepository.findByUserId(userId).orElse(null);
+        if (existingToken != null) {
+            existingToken.setTokenHash(hashedRefreshToken);
+            existingToken.setExpiration(expiration);
+            refreshTokenRepository.save(existingToken);
+        } else {
+            refreshTokenRepository.save(
+                    RefreshToken.builder()
+                            .userId(userId)
+                            .tokenHash(hashedRefreshToken)
+                            .expiration(expiration)
+                            .build()
+            );
+        }
     }
 
-    private void validateStoredRefreshToken(String refreshToken, RefreshToken stored) {
+    private void validateStoredRefreshToken(Long userId, String refreshToken) {
+        RefreshToken stored = refreshTokenRepository.findByUserId(userId)
+                .orElseThrow(() -> new InvalidTokenException("RefreshToken not found"));
+
         // 토큰 해시값 비교
         if (!jwtTokenService.matchesToken(refreshToken, stored.getTokenHash())) {
             throw new InvalidTokenException("유효하지 않은 RefreshToken입니다.");
