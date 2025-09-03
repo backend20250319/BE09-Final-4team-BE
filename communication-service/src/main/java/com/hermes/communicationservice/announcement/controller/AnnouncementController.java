@@ -44,9 +44,8 @@ public class AnnouncementController {
       @RequestHeader("Authorization") String authorization) {
     log.info("POST /announcements 호출 - title: {}", request.getTitle());
 
-    AnnouncementResponseDto response = announcementService.createAnnouncement(request,
-        user.getUserId(), authorization);
-        user.getId());
+    AnnouncementResponseDto response =
+        announcementService.createAnnouncement(request, user.getId(), authorization);
 
     log.info("공지사항 생성 완료 - id: {}", response.getId());
     return ResponseEntity.status(HttpStatus.CREATED)

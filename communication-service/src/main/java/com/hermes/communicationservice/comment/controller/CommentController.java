@@ -37,10 +37,11 @@ public class CommentController {
     @PostMapping("/announcements/{announcementId}/comments")
     public ResponseEntity<CommentResponseDto> createComment(
             @Parameter(description = "공지사항 ID", required = true, example = "1") @PathVariable Long announcementId,
-            @Parameter(description = "댓글 생성 요청 정보", required = true) @Valid @RequestBody CommentCreateDto createDto) {
+            @Parameter(description = "댓글 생성 요청 정보", required = true) @Valid @RequestBody CommentCreateDto createDto,
+            @RequestHeader("Authorization") String authorization) {
         log.info("댓글 생성 요청: announcementId={}, createDto={}", announcementId, createDto);
 
-        CommentResponseDto response = commentService.createComment(announcementId, createDto);
+        CommentResponseDto response = commentService.createComment(announcementId, createDto, authorization);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -54,10 +55,11 @@ public class CommentController {
     })
     @GetMapping("/announcements/{announcementId}/comments")
     public ResponseEntity<List<CommentResponseDto>> getCommentsByAnnouncementId(
-            @Parameter(description = "공지사항 ID", required = true, example = "1") @PathVariable Long announcementId) {
+            @Parameter(description = "공지사항 ID", required = true, example = "1") @PathVariable Long announcementId,
+            @RequestHeader("Authorization") String authorization) {
         log.info("공지사항 댓글 목록 조회 요청: announcementId={}", announcementId);
 
-        List<CommentResponseDto> comments = commentService.getCommentsByAnnouncementId(announcementId);
+        List<CommentResponseDto> comments = commentService.getCommentsByAnnouncementId(announcementId, authorization);
 
         return ResponseEntity.ok(comments);
     }

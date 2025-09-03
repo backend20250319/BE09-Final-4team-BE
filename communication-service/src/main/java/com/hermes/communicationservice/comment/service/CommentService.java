@@ -32,7 +32,7 @@ public class CommentService {
 
   // 댓글 생성
   @Transactional
-  public CommentResponseDto createComment(Long announcementId, CommentCreateDto createDto) {
+  public CommentResponseDto createComment(Long announcementId, CommentCreateDto createDto, String authorization) {
     log.info("댓글 생성 요청 - announcementId={}, authorId={}", announcementId, createDto.getAuthorId());
 
     Announcement announcement = findAnnouncementById(announcementId);
@@ -44,7 +44,7 @@ public class CommentService {
         .build();
 
     Comment savedComment = commentRepository.save(comment);
-    UserBasicInfo userInfo = fetchUserBasicInfo(createDto.getAuthorId());
+    UserBasicInfo userInfo = fetchUserBasicInfo(createDto.getAuthorId(), authorization);
 
     return commentMapper.toCommentResponseDtoWithUser(savedComment, userInfo);
   }
@@ -61,7 +61,7 @@ public class CommentService {
   }
 
   // 공지사항 ID로 댓글 목록 조회
-  public List<CommentResponseDto> getCommentsByAnnouncementId(Long announcementId) {
+  public List<CommentResponseDto> getCommentsByAnnouncementId(Long announcementId, String authorization) {
     log.info("공지사항 댓글 목록 조회 요청 - announcementId={}", announcementId);
 
     return commentRepository.findByAnnouncement_IdOrderById(announcementId)
@@ -69,7 +69,7 @@ public class CommentService {
         .map(
             comment
                 -> commentMapper.toCommentResponseDtoWithUser
-                (comment, fetchUserBasicInfo(comment.getAuthorId())))
+                (comment, fetchUserBasicInfo(comment.getAuthorId(), authorization)))
         .collect(Collectors.toList());
   }
 
@@ -78,9 +78,9 @@ public class CommentService {
         .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다: " + announcementId));
   }
 
-  private UserBasicInfo fetchUserBasicInfo(Long userId) {
+  private UserBasicInfo fetchUserBasicInfo(Long userId, String authorization) {
     try {
-      ApiResult<MainProfileResponseDto> response = userServiceClient.getMainProfile(userId);
+      ApiResult<MainProfileResponseDto> response = userServiceClient.getMainProfile(userId, authorization);
       if (response != null && response.getData() != null && response.getData().getId() != null) {
         return commentMapper.toUserBasicInfo(response.getData());
       }
@@ -91,7 +91,7 @@ public class CommentService {
     return UserBasicInfo.builder()
         .id(userId)
         .name("알 수 없음")
-        .profileUrl("")
+        .profileImageUrl("")
         .build();
   }
 }

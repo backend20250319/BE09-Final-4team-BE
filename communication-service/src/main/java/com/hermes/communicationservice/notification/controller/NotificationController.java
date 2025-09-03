@@ -39,11 +39,11 @@ public class NotificationController {
       @AuthenticationPrincipal UserPrincipal user,
       @Parameter(description = "마지막으로 조회한 알림 ID (커서)", example = "100") @RequestParam(required = false) Long lastId,
       @Parameter(description = "조회할 알림 개수", example = "20") @RequestParam(defaultValue = "20") int size) {
-    log.info("GET /notifications 호출 - userId: {}, lastId: {}, size: {}", user.getUserId(), lastId,
+    log.info("GET /notifications 호출 - userId: {}, lastId: {}, size: {}", user.getId(), lastId,
         size);
 
     List<NotificationResponseDto> notifications = notificationService.getNotifications(
-        user.getUserId(), lastId, size);
+        user.getId(), lastId, size);
 
     log.info("알림 목록 조회 완료 - count: {}", notifications.size());
     return ResponseEntity.ok(ApiResult.success("알림 목록 조회 완료", notifications));
@@ -58,9 +58,9 @@ public class NotificationController {
   @GetMapping("/unread")
   public ResponseEntity<ApiResult<Boolean>> hasUnreadNotifications(
       @AuthenticationPrincipal UserPrincipal user) {
-    log.info("GET /notifications/unread 호출 - userId: {}", user.getUserId());
+    log.info("GET /notifications/unread 호출 - userId: {}", user.getId());
 
-    boolean hasUnread = notificationService.hasUnreadNotifications(user.getUserId());
+    boolean hasUnread = notificationService.hasUnreadNotifications(user.getId());
 
     log.info("읽지 않은 알림 존재 확인 완료 - hasUnread: {}", hasUnread);
     return ResponseEntity.ok(ApiResult.success("읽지 않은 알림 존재 확인 완료", hasUnread));
@@ -78,9 +78,9 @@ public class NotificationController {
   public ResponseEntity<ApiResult<Boolean>> markAsRead(
       @Parameter(description = "알림 ID", required = true, example = "1") @PathVariable Long id,
       @AuthenticationPrincipal UserPrincipal user) {
-    log.info("PATCH /notifications/{}/read 호출 - userId: {}", id, user.getUserId());
+    log.info("PATCH /notifications/{}/read 호출 - userId: {}", id, user.getId());
 
-    boolean success = notificationService.markAsRead(id, user.getUserId());
+    boolean success = notificationService.markAsRead(id, user.getId());
 
     log.info("알림 읽음 처리 완료 - success: {}", success);
     return ResponseEntity.ok(ApiResult.success("알림 읽음 처리 완료", success));
