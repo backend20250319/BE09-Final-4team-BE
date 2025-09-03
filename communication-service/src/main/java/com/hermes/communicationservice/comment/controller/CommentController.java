@@ -1,6 +1,7 @@
 package com.hermes.communicationservice.comment.controller;
 
 import com.hermes.auth.principal.UserPrincipal;
+import com.hermes.communicationservice.comment.dto.CommentCreateDto;
 import com.hermes.communicationservice.comment.dto.CommentResponseDto;
 import com.hermes.communicationservice.comment.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import jakarta.validation.Valid;
 import java.util.List;
 
 @Slf4j
@@ -37,12 +39,12 @@ public class CommentController {
     @PostMapping("/announcements/{announcementId}/comments")
     public ResponseEntity<CommentResponseDto> createComment(
             @Parameter(description = "공지사항 ID", required = true, example = "1") @PathVariable Long announcementId,
-            @Parameter(description = "댓글 내용", required = true) @RequestBody String content,
+            @Parameter(description = "댓글 생성 요청 정보", required = true) @Valid @RequestBody CommentCreateDto request,
             @AuthenticationPrincipal UserPrincipal user,
             @RequestHeader("Authorization") String authorization) {
-        log.info("댓글 생성 요청: announcementId={}, content={}, authorId={}", announcementId, content, user.getId());
+        log.info("댓글 생성 요청: announcementId={}, content={}, authorId={}", announcementId, request.getContent(), user.getId());
 
-        CommentResponseDto response = commentService.createComment(announcementId, content, user.getId(), authorization);
+        CommentResponseDto response = commentService.createComment(announcementId, request.getContent(), user.getId(), authorization);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
