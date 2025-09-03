@@ -31,7 +31,7 @@ spring:
             - id: attachment-service
               uri: lb://attachment-service
               predicates:
-                - Path=/api/attachment/**
+                - Path=/api/attachments/**
             - id: org-service
               uri: lb://org-service
               predicates:
