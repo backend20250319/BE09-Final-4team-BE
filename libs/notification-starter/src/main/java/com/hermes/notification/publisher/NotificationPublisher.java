@@ -8,13 +8,12 @@ import com.hermes.notification.exception.NotificationSendException;
 import com.hermes.notification.sender.NotificationSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Component
+
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationPublisher {
