@@ -1,6 +1,6 @@
 package com.hermes.communicationservice.comment.controller;
 
-import com.hermes.communicationservice.comment.dto.CommentCreateDto;
+import com.hermes.auth.principal.UserPrincipal;
 import com.hermes.communicationservice.comment.dto.CommentResponseDto;
 import com.hermes.communicationservice.comment.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 @Slf4j
@@ -37,11 +38,11 @@ public class CommentController {
     @PostMapping("/announcements/{announcementId}/comments")
     public ResponseEntity<CommentResponseDto> createComment(
             @Parameter(description = "공지사항 ID", required = true, example = "1") @PathVariable Long announcementId,
-            @Parameter(description = "댓글 생성 요청 정보", required = true) @Valid @RequestBody CommentCreateDto createDto,
-            @RequestHeader("Authorization") String authorization) {
-        log.info("댓글 생성 요청: announcementId={}, createDto={}", announcementId, createDto);
+            @Parameter(description = "댓글 내용", required = true) @RequestBody String content,
+            @AuthenticationPrincipal UserPrincipal user) {
+        log.info("댓글 생성 요청: announcementId={}, content={}, authorId={}", announcementId, content, user.getId());
 
-        CommentResponseDto response = commentService.createComment(announcementId, createDto, authorization);
+        CommentResponseDto response = commentService.createComment(announcementId, content, user.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -56,10 +57,10 @@ public class CommentController {
     @GetMapping("/announcements/{announcementId}/comments")
     public ResponseEntity<List<CommentResponseDto>> getCommentsByAnnouncementId(
             @Parameter(description = "공지사항 ID", required = true, example = "1") @PathVariable Long announcementId,
-            @RequestHeader("Authorization") String authorization) {
+            @AuthenticationPrincipal UserPrincipal user) {
         log.info("공지사항 댓글 목록 조회 요청: announcementId={}", announcementId);
 
-        List<CommentResponseDto> comments = commentService.getCommentsByAnnouncementId(announcementId, authorization);
+        List<CommentResponseDto> comments = commentService.getCommentsByAnnouncementId(announcementId, user);
 
         return ResponseEntity.ok(comments);
     }
@@ -74,10 +75,11 @@ public class CommentController {
     })
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(
-            @Parameter(description = "댓글 ID", required = true, example = "1") @PathVariable Long commentId) {
+            @Parameter(description = "댓글 ID", required = true, example = "1") @PathVariable Long commentId,
+            @AuthenticationPrincipal UserPrincipal user) {
         log.info("댓글 삭제 요청: commentId={}", commentId);
         
-        commentService.deleteComment(commentId);
+        commentService.deleteComment(commentId, user);
         
         return ResponseEntity.noContent().build();
     }
