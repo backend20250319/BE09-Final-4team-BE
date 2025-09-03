@@ -45,7 +45,7 @@ public class DocumentCommentController {
     public ResponseEntity<ApiResult<List<DocumentCommentResponse>>> getComments(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long documentId) {
-        Long userId = user.getUserId();
+        Long userId = user.getId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
@@ -76,7 +76,7 @@ public class DocumentCommentController {
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long documentId,
             @Parameter(description = "댓글 작성 요청 정보", required = true) @Valid @RequestBody CreateCommentRequest request) {
-        Long userId = user.getUserId();
+        Long userId = user.getId();
         
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));

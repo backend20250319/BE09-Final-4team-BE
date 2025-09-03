@@ -16,4 +16,7 @@ public class ColleagueResponseDto {
     private String phoneNumber;
     private String position;
     private String department;
+    private String avatar;
+    private String employeeNumber;
+    private String status;
 }

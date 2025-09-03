@@ -69,7 +69,7 @@ public class MyController {
     public ApiResult<UserProfile> getProfile(
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        Long userId = user.getUserId();
+        Long userId = user.getId();
         String email = user.getEmail();
         boolean isAdmin = user.isAdmin();
         String tenantId = user.getTenantId();

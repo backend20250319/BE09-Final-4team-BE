@@ -33,10 +33,10 @@ public class AttachmentController {
             @RequestParam("files") List<MultipartFile> files,
             @AuthenticationPrincipal UserPrincipal user) {
         
-        log.info("파일 업로드 요청 - 파일 수: {}, 업로더: {}", files.size(), user.getUserId());
+        log.info("파일 업로드 요청 - 파일 수: {}, 업로더: {}", files.size(), user.getId());
         
         try {
-            List<AttachmentInfoResponse> response = attachmentService.uploadFiles(files, user.getUserId());
+            List<AttachmentInfoResponse> response = attachmentService.uploadFiles(files, user.getId());
             return ResponseEntity.ok(ApiResult.success(response));
         } catch (Exception e) {
             log.error("파일 업로드 실패: {}", e.getMessage(), e);

@@ -50,7 +50,7 @@ public class ApprovalDocumentController {
             @Parameter(description = "조회 시작 날짜 (yyyy-MM-dd)") @RequestParam(required = false) LocalDate startDate,
             @Parameter(description = "조회 종료 날짜 (yyyy-MM-dd)") @RequestParam(required = false) LocalDate endDate,
             @Parameter(description = "페이지네이션 정보 (기본 크기: 20)") @PageableDefault(size = 20) Pageable pageable) {
-        Long userId = user.getUserId();
+        Long userId = user.getId();
         Page<DocumentSummaryResponse> documents = documentService.getDocumentsForUser(
                 userId, user, status, search, startDate, endDate, pageable);
         return ResponseEntity.ok(ApiResult.success("문서 목록을 조회했습니다.", documents));
@@ -69,7 +69,7 @@ public class ApprovalDocumentController {
     public ResponseEntity<ApiResult<DocumentResponse>> getDocumentById(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id) {
-        Long userId = user.getUserId();
+        Long userId = user.getId();
         DocumentResponse document = documentService.getDocumentById(id, userId, user);
         return ResponseEntity.ok(ApiResult.success("문서를 조회했습니다.", document));
     }
@@ -85,7 +85,7 @@ public class ApprovalDocumentController {
     public ResponseEntity<ApiResult<DocumentResponse>> createDocument(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 작성 요청 정보", required = true) @Valid @RequestBody CreateDocumentRequest request) {
-        Long userId = user.getUserId();
+        Long userId = user.getId();
         DocumentResponse document = documentService.createDocument(request, userId);
         return ResponseEntity.ok(ApiResult.success("문서를 작성했습니다.", document));
     }
@@ -104,7 +104,7 @@ public class ApprovalDocumentController {
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "문서 수정 요청 정보", required = true) @Valid @RequestBody UpdateDocumentRequest request) {
-        Long userId = user.getUserId();
+        Long userId = user.getId();
         DocumentResponse document = documentService.updateDocument(id, request, userId, user);
         return ResponseEntity.ok(ApiResult.success("문서를 수정했습니다.", document));
     }
@@ -122,7 +122,7 @@ public class ApprovalDocumentController {
     public ResponseEntity<ApiResult<Void>> submitDocument(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id) {
-        Long userId = user.getUserId();
+        Long userId = user.getId();
         documentService.submitDocument(id, userId);
         return ResponseEntity.ok(ApiResult.success("문서를 제출했습니다."));
     }
@@ -142,7 +142,7 @@ public class ApprovalDocumentController {
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "승인 처리 요청 정보") @RequestBody ApprovalActionRequest request) {
-        Long userId = user.getUserId();
+        Long userId = user.getId();
         approvalProcessService.approveDocument(id, userId, user, request);
         return ResponseEntity.ok(ApiResult.success("문서를 승인했습니다."));
     }
@@ -162,7 +162,7 @@ public class ApprovalDocumentController {
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "반려 처리 요청 정보", required = true) @RequestBody ApprovalActionRequest request) {
-        Long userId = user.getUserId();
+        Long userId = user.getId();
         approvalProcessService.rejectDocument(id, userId, user, request);
         return ResponseEntity.ok(ApiResult.success("문서를 반려했습니다."));
     }

@@ -22,16 +22,14 @@ public class WithMockJwtUserSecurityContextFactory implements WithSecurityContex
     public SecurityContext createSecurityContext(WithMockJwtUser annotation) {
         // UserPrincipal 생성
         UserPrincipal principal = UserPrincipal.builder()
-                .userId(annotation.userId())
-                .email(annotation.email())
+                .id(annotation.userId())
                 .role(Role.fromString(annotation.role(), Role.USER))
                 .tenantId(annotation.tenantId())
                 .build();
         
         // JWT 토큰 생성
         Map<String, Object> claims = Map.of(
-                "sub", annotation.email(),
-                "userId", annotation.userId(),
+                "id", annotation.userId(),
                 "role", annotation.role(),
                 "tenantId", annotation.tenantId()
         );
@@ -51,7 +49,7 @@ public class WithMockJwtUserSecurityContextFactory implements WithSecurityContex
         
         // JwtAuthenticationToken 생성
         JwtAuthenticationToken authentication = new JwtAuthenticationToken(
-                jwt, authorities, annotation.email()
+                jwt, authorities, String.valueOf(annotation.userId())
         );
         authentication.setDetails(principal);
         
