@@ -25,11 +25,6 @@ public @interface WithMockJwtUser {
     long userId() default 1L;
     
     /**
-     * 사용자 이메일
-     */
-    String email() default "test@example.com";
-    
-    /**
      * 사용자 역할 (ADMIN, USER)
      */
     String role() default "USER";

@@ -54,7 +54,7 @@ public class WorkMonitorController {
             return ResponseEntity.status(401).build();
         }
         
-        log.info("Fetching today's work monitor data for user: {}", user.getUserId());
+        log.info("Fetching today's work monitor data for user: {}", user.getId());
         
         WorkMonitorDto workMonitorDto = workMonitorService.getTodayWorkMonitor();
         return ResponseEntity.ok(workMonitorDto);
@@ -75,7 +75,7 @@ public class WorkMonitorController {
             return ResponseEntity.status(401).build();
         }
         
-        log.info("Fetching work monitor data for date: {} by user: {}", date, user.getUserId());
+        log.info("Fetching work monitor data for date: {} by user: {}", date, user.getId());
         
         WorkMonitorDto workMonitorDto = workMonitorService.getWorkMonitorByDate(date);
         return ResponseEntity.ok(workMonitorDto);
@@ -96,7 +96,7 @@ public class WorkMonitorController {
             return ResponseEntity.status(401).build();
         }
         
-        log.info("Updating work monitor data for date: {} by user: {}", date, user.getUserId());
+        log.info("Updating work monitor data for date: {} by user: {}", date, user.getId());
         
         WorkMonitorDto workMonitorDto = workMonitorService.updateWorkMonitorData(date);
         return ResponseEntity.ok(workMonitorDto);
@@ -116,7 +116,7 @@ public class WorkMonitorController {
             return ResponseEntity.status(401).build();
         }
         
-        log.info("Updating today's work monitor data by user: {}", user.getUserId());
+        log.info("Updating today's work monitor data by user: {}", user.getId());
         
         WorkMonitorDto workMonitorDto = workMonitorService.updateWorkMonitorData(LocalDate.now());
         return ResponseEntity.ok(workMonitorDto);
