@@ -13,7 +13,7 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
 
   @Query("select new com.hermes.communicationservice.announcement.dto.AnnouncementSummaryDto(" +
       "a.id, a.title, a.displayAuthor, a.views, size(a.comments), a.createdAt) " +
-      "from Announcement a" + " order by a.id asc")
+      "from Announcement a" + " order by a.id desc")
   List<AnnouncementSummaryDto> findAllAnnouncementSummary();
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
@@ -22,4 +22,6 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
 
   @Query("SELECT a FROM Announcement a LEFT JOIN FETCH a.fileIds WHERE a.id = :id")
   Optional<Announcement> findByIdWithFileIds(@Param("id") Long id);
+
+  List<AnnouncementSummaryDto> findByTitleContaining(String keyword);
 }

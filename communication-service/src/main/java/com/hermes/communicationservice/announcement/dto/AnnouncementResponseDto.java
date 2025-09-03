@@ -20,6 +20,7 @@ public class AnnouncementResponseDto {
     private String displayAuthor;
     private JsonNode content;
     private LocalDateTime createdAt;
+    private int views;
     private List<String> fileIds;
 
 }

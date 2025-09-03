@@ -8,6 +8,7 @@ import com.hermes.communicationservice.announcement.dto.AnnouncementUpdateReques
 import com.hermes.communicationservice.announcement.entity.Announcement;
 import com.hermes.communicationservice.announcement.repository.AnnouncementRepository;
 import com.hermes.communicationservice.client.UserServiceClient;
+import com.hermes.communicationservice.notification.service.NotificationService;
 import com.hermes.notification.dto.NotificationRequest;
 import com.hermes.notification.enums.NotificationType;
 import com.hermes.notification.publisher.NotificationPublisher;
@@ -30,6 +31,7 @@ public class AnnouncementService {
   private final AnnouncementRepository announcementRepository;
   private final NotificationPublisher notificationPublisher;
   private final UserServiceClient userServiceClient;
+  private final NotificationService notificationService;
 
 
   // 생성
@@ -74,6 +76,7 @@ public class AnnouncementService {
         .displayAuthor(saved.getDisplayAuthor())
         .content(saved.getContent())
         .createdAt(saved.getCreatedAt())
+        .views(saved.getViews())
         .fileIds(new ArrayList<>(saved.getFileIds()))
         .build();
   }
@@ -96,6 +99,7 @@ public class AnnouncementService {
         .displayAuthor(announcement.getDisplayAuthor())
         .content(announcement.getContent())
         .createdAt(announcement.getCreatedAt())
+        .views(announcement.getViews() + 1)
         .fileIds(new ArrayList<>(announcement.getFileIds()))
         .build();
 
@@ -139,6 +143,7 @@ public class AnnouncementService {
         .displayAuthor(announcement.getDisplayAuthor())
         .content(announcement.getContent())
         .createdAt(announcement.getCreatedAt())
+        .views(announcement.getViews())
         .fileIds(new ArrayList<>(announcement.getFileIds()))
         .build();
 
@@ -150,11 +155,21 @@ public class AnnouncementService {
     Announcement announcement = announcementRepository.findById(id)
         .orElseThrow(() -> new AnnouncementNotFoundException(id));
 
+    // 공지사항 관련 알림 삭제
+    notificationService.deleteNotificationsByReferenceId(id, NotificationType.ANNOUNCEMENT);
+
+    // 공지사항 삭제
     announcementRepository.delete(announcement);
 
     log.info("공지사항 삭제 완료 - id: {}", id);
-
   }
+
+  // 공지 제목으로 검색
+  @Transactional(readOnly = true)
+  public List<AnnouncementSummaryDto> searchAnnouncement(String keyword) {
+    return announcementRepository.findByTitleContaining(keyword);
+  }
+
 
 }
 

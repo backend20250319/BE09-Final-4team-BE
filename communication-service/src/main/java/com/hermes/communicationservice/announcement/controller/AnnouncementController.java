@@ -123,4 +123,18 @@ public class AnnouncementController {
     return ResponseEntity.ok(ApiResult.success("공지사항 삭제 완료", null));
   }
 
+  @Operation(summary = "공지사항 검색", description = "공지사항 제목으로 검색합니다.")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "공지사항 검색 성공"),
+      @ApiResponse(responseCode = "401", description = "인증 실패"),
+      @ApiResponse(responseCode = "403", description = "권한 부족"),
+      @ApiResponse(responseCode = "404", description = "공지사항을 찾을 수 없음"),
+      @ApiResponse(responseCode = "500", description = "서버 내부 오류")
+  })
+  @GetMapping("/search")
+  public ResponseEntity<ApiResult<List<AnnouncementSummaryDto>>> searchAnnouncements(@RequestParam("keyword") String keyword) {
+    List<AnnouncementSummaryDto> responses = announcementService.searchAnnouncement(keyword);
+    return ResponseEntity.ok(ApiResult.success(responses));
+  }
+
 }
