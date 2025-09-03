@@ -51,7 +51,7 @@ public class WorkScheduleController {
             @Parameter(description = "인증된 사용자 정보") @AuthenticationPrincipal UserPrincipal user) {
         try {
             // 본인 또는 관리자만 조회 가능
-            if (!user.getUserId().equals(userId) && !user.getRole().name().equals("ADMIN")) {
+            if (!user.getId().equals(userId) && !user.getRole().name().equals("ADMIN")) {
                 return ResponseEntity.ok(ApiResult.failure("권한이 없습니다."));
             }
             
@@ -82,7 +82,7 @@ public class WorkScheduleController {
             @Parameter(description = "인증된 사용자 정보") @AuthenticationPrincipal UserPrincipal user) {
         try {
             // 본인 또는 관리자만 생성 가능
-            if (!user.getUserId().equals(requestDto.getUserId()) && !user.getRole().name().equals("ADMIN")) {
+            if (!user.getId().equals(requestDto.getUserId()) && !user.getRole().name().equals("ADMIN")) {
                 return ResponseEntity.ok(ApiResult.failure("권한이 없습니다."));
             }
             
@@ -238,7 +238,7 @@ public class WorkScheduleController {
             @AuthenticationPrincipal UserPrincipal user) {
         try {
             // 본인만 조정 요청 가능
-            if (!user.getUserId().equals(requestDto.getUserId())) {
+            if (!user.getId().equals(requestDto.getUserId())) {
                 return ResponseEntity.ok(ApiResult.failure("권한이 없습니다."));
             }
             
@@ -264,7 +264,7 @@ public class WorkScheduleController {
             log.info("Fetching colleague schedule for colleagueId: {} from {} to {}", colleagueId, startDate, endDate);
             
             // 본인 또는 관리자만 조회 가능
-            if (!user.getUserId().equals(colleagueId) && !user.getRole().name().equals("ADMIN")) {
+            if (!user.getId().equals(colleagueId) && !user.getRole().name().equals("ADMIN")) {
                 return ResponseEntity.ok(ApiResult.failure("권한이 없습니다."));
             }
             

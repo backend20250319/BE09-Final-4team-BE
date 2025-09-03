@@ -34,5 +34,5 @@ public class AuthCookieProperties {
     /**
      * 쿠키 경로
      */
-    private String path = "/";
+    private String path = "/api/auth/refresh";
 }

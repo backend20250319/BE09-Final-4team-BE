@@ -52,6 +52,13 @@ public class GlobalExceptionHandler {
                 .body(ApiResult.failure(ex.getMessage()));
     }
 
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ApiResult<Void>> handleInvalidTokenException(InvalidTokenException ex) {
+        log.warn("유효하지 않은 토큰: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResult.failure(ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResult<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();

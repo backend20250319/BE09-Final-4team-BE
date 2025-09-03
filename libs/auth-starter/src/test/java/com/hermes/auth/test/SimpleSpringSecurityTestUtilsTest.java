@@ -69,13 +69,12 @@ class SimpleSpringSecurityTestUtilsTest {
     @Test
     void testGetCurrentTestUserPrincipal() {
         // When
-        SpringSecurityTestUtils.setAuthenticatedUser(100L, "test@example.com", "ADMIN", "tenant-123");
+        SpringSecurityTestUtils.setAuthenticatedUser(100L, "ADMIN", "tenant-123");
         
         // Then
         UserPrincipal principal = SpringSecurityTestUtils.getCurrentTestUserPrincipal();
         assertNotNull(principal);
-        assertEquals(100L, principal.getUserId());
-        assertEquals("test@example.com", principal.getEmail());
+        assertEquals(100L, principal.getId());
         assertEquals("ADMIN", principal.getRoleString());
         assertEquals("tenant-123", principal.getTenantId());
     }

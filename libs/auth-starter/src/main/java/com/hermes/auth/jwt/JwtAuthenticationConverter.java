@@ -27,38 +27,32 @@ public class JwtAuthenticationConverter implements Converter<Jwt, AbstractAuthen
     public AbstractAuthenticationToken convert(Jwt jwt) {
         try {
             // JWT 클레임에서 사용자 정보 추출
-            String email = jwt.getSubject();
-            Object userIdObj = jwt.getClaim("userId");
-            Object roleObj = jwt.getClaim("role");
-            Object tenantIdObj = jwt.getClaim("tenantId");
-            
+            String userIdStr = jwt.getClaimAsString("userId");
+            String roleStr = jwt.getClaimAsString("role");
+            String tenantId = jwt.getClaimAsString("tenantId");
+
             // userId 파싱
-            Long userId = null;
-            if (userIdObj != null) {
-                try {
-                    userId = Long.parseLong(userIdObj.toString());
-                } catch (NumberFormatException e) {
-                    log.warn("Invalid userId format in JWT token: {}", userIdObj);
-                    throw new IllegalArgumentException("Invalid userId format in JWT token: " + userIdObj);
-                }
+            Long userId;
+            try {
+                userId = Long.parseLong(userIdStr);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid userId format in JWT subject: {}", userIdStr);
+                throw new IllegalArgumentException("Invalid userId format in JWT subject: " + userIdStr);
             }
             
             // Role 파싱
-            Role role = Role.fromString(roleObj != null ? roleObj.toString() : null, Role.USER);
-            
-            // TenantId 추출
-            String tenantId = tenantIdObj != null ? tenantIdObj.toString() : null;
+            Role role = Role.fromString(roleStr, Role.USER);
             
             // UserPrincipal 생성
-            UserPrincipal principal = new UserPrincipal(userId, email, role, tenantId);
+            UserPrincipal principal = new UserPrincipal(userId, role, tenantId);
             
             // GrantedAuthority 생성
             Collection<GrantedAuthority> authorities = List.of(
                 new SimpleGrantedAuthority("ROLE_" + role.name())
             );
             
-            log.debug("JWT converted to authentication: userId={}, email={}, role={}, tenantId={}", 
-                     userId, email, role, tenantId);
+            log.debug("JWT converted to authentication: userId={}, role={}, tenantId={}", 
+                     userId, role, tenantId);
 
             return new AbstractAuthenticationToken(authorities) {
                 @Override

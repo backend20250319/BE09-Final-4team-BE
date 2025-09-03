@@ -50,7 +50,7 @@ public class AttendanceController {
             @Parameter(description = "인증된 사용자 정보") @AuthenticationPrincipal UserPrincipal user) {
         try {
             // 본인만 출근 기록 가능
-            if (!user.getUserId().equals(request.getUserId())) {
+            if (!user.getId().equals(request.getUserId())) {
                 return ApiResult.failure("권한이 없습니다.");
             }
             
@@ -74,7 +74,7 @@ public class AttendanceController {
             @Parameter(description = "인증된 사용자 정보") @AuthenticationPrincipal UserPrincipal user) {
         try {
             // 본인만 퇴근 기록 가능
-            if (!user.getUserId().equals(request.getUserId())) {
+            if (!user.getId().equals(request.getUserId())) {
                 return ApiResult.failure("권한이 없습니다.");
             }
             

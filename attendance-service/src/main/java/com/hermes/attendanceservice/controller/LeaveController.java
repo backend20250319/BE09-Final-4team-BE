@@ -18,7 +18,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -42,7 +41,7 @@ public class LeaveController {
             @Parameter(description = "인증된 사용자 정보") @AuthenticationPrincipal UserPrincipal user) {
         try {
             // 본인만 휴가 신청 가능
-            if (!user.getUserId().equals(createDto.getEmployeeId())) {
+            if (!user.getId().equals(createDto.getEmployeeId())) {
                 return ApiResult.failure("권한이 없습니다.");
             }
             
@@ -113,7 +112,7 @@ public class LeaveController {
             }
             
             // 본인 또는 관리자만 조회 가능
-            if (!user.getUserId().equals(response.getEmployeeId()) && !user.getRole().name().equals("ADMIN")) {
+            if (!user.getId().equals(response.getEmployeeId()) && !user.getRole().name().equals("ADMIN")) {
                 return ApiResult.failure("권한이 없습니다.");
             }
             

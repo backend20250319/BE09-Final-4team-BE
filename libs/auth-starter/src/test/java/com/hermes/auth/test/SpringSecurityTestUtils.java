@@ -24,15 +24,13 @@ public class SpringSecurityTestUtils {
     /**
      * 테스트용 사용자 정보를 SecurityContext에 설정합니다.
      * 
-     * @param userId 사용자 ID
-     * @param email 사용자 이메일
+     * @param id 사용자 ID
      * @param role 사용자 역할 (ADMIN, USER)
      * @param tenantId 테넌트 ID
      */
-    public static void setAuthenticatedUser(Long userId, String email, String role, String tenantId) {
+    public static void setAuthenticatedUser(Long id, String role, String tenantId) {
         UserPrincipal principal = UserPrincipal.builder()
-                .userId(userId)
-                .email(email)
+                .id(id)
                 .role(Role.fromString(role, Role.USER))
                 .tenantId(tenantId)
                 .build();
@@ -53,26 +51,23 @@ public class SpringSecurityTestUtils {
     /**
      * 테스트용 사용자 정보를 설정합니다. (기본 테넌트 ID 사용)
      * 
-     * @param userId 사용자 ID
-     * @param email 사용자 이메일
+     * @param id 사용자 ID
      * @param role 사용자 역할 (ADMIN, USER)
      */
-    public static void setAuthenticatedUser(Long userId, String email, String role) {
-        setAuthenticatedUser(userId, email, role, "test-tenant");
+    public static void setAuthenticatedUser(Long id, String role) {
+        setAuthenticatedUser(id, role, "test-tenant");
     }
     
     /**
      * JWT 토큰을 사용한 인증 정보를 설정합니다.
      * 
-     * @param userId 사용자 ID
-     * @param email 사용자 이메일
+     * @param id 사용자 ID
      * @param role 사용자 역할
      * @param tenantId 테넌트 ID
      */
-    public static void setJwtAuthenticatedUser(Long userId, String email, String role, String tenantId) {
+    public static void setJwtAuthenticatedUser(Long id, String role, String tenantId) {
         Map<String, Object> claims = Map.of(
-                "sub", email,
-                "userId", userId,
+                "id", id,
                 "role", role,
                 "tenantId", tenantId
         );
@@ -86,8 +81,7 @@ public class SpringSecurityTestUtils {
                 .build();
         
         UserPrincipal principal = UserPrincipal.builder()
-                .userId(userId)
-                .email(email)
+                .id(id)
                 .role(Role.fromString(role, Role.USER))
                 .tenantId(tenantId)
                 .build();
@@ -97,7 +91,7 @@ public class SpringSecurityTestUtils {
         );
         
         JwtAuthenticationToken authentication = new JwtAuthenticationToken(
-                jwt, authorities, email
+                jwt, authorities, String.valueOf(id)
         );
         authentication.setDetails(principal);
         
@@ -109,10 +103,10 @@ public class SpringSecurityTestUtils {
     /**
      * 관리자 사용자로 설정합니다.
      * 
-     * @param userId 사용자 ID
+     * @param id 사용자 ID
      */
-    public static void setAdminUser(Long userId) {
-        setAuthenticatedUser(userId, "admin@test.com", "ADMIN");
+    public static void setAdminUser(Long id) {
+        setAuthenticatedUser(id, "ADMIN");
     }
     
     /**
@@ -125,10 +119,10 @@ public class SpringSecurityTestUtils {
     /**
      * 일반 사용자로 설정합니다.
      * 
-     * @param userId 사용자 ID
+     * @param id 사용자 ID
      */
-    public static void setUserUser(Long userId) {
-        setAuthenticatedUser(userId, "user@test.com", "USER");
+    public static void setUserUser(Long id) {
+        setAuthenticatedUser(id, "USER");
     }
     
     /**
@@ -166,7 +160,7 @@ public class SpringSecurityTestUtils {
         
         Object principal = auth.getPrincipal();
         if (principal instanceof UserPrincipal) {
-            return ((UserPrincipal) principal).getUserId();
+            return ((UserPrincipal) principal).getId();
         }
         
         return null;

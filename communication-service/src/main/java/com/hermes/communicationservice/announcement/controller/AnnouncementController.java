@@ -46,6 +46,7 @@ public class AnnouncementController {
 
     AnnouncementResponseDto response = announcementService.createAnnouncement(request,
         user.getUserId(), authorization);
+        user.getId());
 
     log.info("공지사항 생성 완료 - id: {}", response.getId());
     return ResponseEntity.status(HttpStatus.CREATED)
@@ -100,7 +101,7 @@ public class AnnouncementController {
 
     log.info("PATCH /announcements/{} 호출", id);
     AnnouncementResponseDto updated = announcementService.updateAnnouncement(request, id,
-        user.getUserId());
+        user.getId());
     return ResponseEntity.ok(ApiResult.success("공지사항 수정 완료", updated));
 
   }

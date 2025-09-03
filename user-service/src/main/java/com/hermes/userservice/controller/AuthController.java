@@ -2,7 +2,6 @@ package com.hermes.userservice.controller;
 
 import com.hermes.api.common.ApiResult;
 import com.hermes.userservice.dto.LoginRequestDto;
-import com.hermes.userservice.dto.RefreshRequestDto;
 import com.hermes.userservice.dto.LoginResponse;
 import com.hermes.userservice.dto.LoginResult;
 import com.hermes.auth.principal.UserPrincipal;
@@ -84,8 +83,8 @@ public class AuthController {
                     .body(ApiResult.success("이미 로그아웃된 상태입니다.", null));
         }
         
-        log.info("로그아웃 요청: userId={}", user.getUserId());
-        authService.logout(user.getUserId());
+        log.info("로그아웃 요청: userId={}", user.getId());
+        authService.logout(user.getId());
         
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, deleteRefreshTokenCookie.toString())
@@ -97,20 +96,17 @@ public class AuthController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "토큰 갱신 성공", 
                      content = @Content(schema = @Schema(implementation = LoginResponse.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터 또는 RefreshToken 쿠키 없음"),
+        @ApiResponse(responseCode = "400", description = "RefreshToken 쿠키 없음"),
         @ApiResponse(responseCode = "401", description = "토큰 갱신 실패 (만료된 또는 잘못된 리프레시 토큰)")
     })
-    public ResponseEntity<ApiResult<LoginResponse>> refresh(
-            @Parameter(description = "토큰 갱신 요청 정보", required = true) 
-            @Valid @RequestBody RefreshRequestDto refreshRequest,
-            HttpServletRequest request) {
+    public ResponseEntity<ApiResult<LoginResponse>> refresh(HttpServletRequest request) {
         log.info("토큰 갱신 요청");
         
         // 쿠키에서 RefreshToken 추출
         String refreshToken = authCookieService.getRefreshTokenFromRequest(request)
                 .orElseThrow(() -> new IllegalArgumentException("RefreshToken 쿠키가 없습니다."));
         
-        LoginResult loginResult = authService.refreshToken(refreshRequest.getEmail(), refreshToken);
+        LoginResult loginResult = authService.refreshToken(refreshToken);
         
         // 새로운 RefreshToken을 HttpOnly 쿠키로 설정
         ResponseCookie refreshTokenCookie = authCookieService.createRefreshTokenCookie(loginResult.getRefreshToken());
