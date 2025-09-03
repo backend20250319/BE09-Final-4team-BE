@@ -86,7 +86,7 @@ public class AnnouncementService {
   public AnnouncementResponseDto getAnnouncement(Long id) {
 
     // 1. 공지사항 엔터티 조회
-    Announcement announcement = announcementRepository.findByIdWithFileIds(id)
+    Announcement announcement = announcementRepository.findByIdWithComments(id)
         .orElseThrow(() -> new AnnouncementNotFoundException(id));
 
     // 2. 조회수 증가

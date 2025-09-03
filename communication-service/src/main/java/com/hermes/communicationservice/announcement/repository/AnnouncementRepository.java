@@ -11,17 +11,18 @@ import org.springframework.data.repository.query.Param;
 
 public interface AnnouncementRepository extends JpaRepository<Announcement, Long> {
 
-  @Query("select new com.hermes.communicationservice.announcement.dto.AnnouncementSummaryDto(" +
-      "a.id, a.title, a.displayAuthor, a.views, size(a.comments), a.createdAt) " +
-      "from Announcement a" + " order by a.id desc")
+  @Query("SELECT new com.hermes.communicationservice.announcement.dto.AnnouncementSummaryDto(" +
+      "a.id, a.title, a.displayAuthor, a.views, " +
+      "(SELECT COUNT(c) FROM Comment c WHERE c.announcement.id = a.id), a.createdAt) " +
+      "FROM Announcement a ORDER BY a.id DESC")
   List<AnnouncementSummaryDto> findAllAnnouncementSummary();
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("update Announcement a set a.views = a.views + 1 where a.id = :id")
   int increaseViews(@Param("id") Long id);
 
-  @Query("SELECT a FROM Announcement a LEFT JOIN FETCH a.fileIds WHERE a.id = :id")
-  Optional<Announcement> findByIdWithFileIds(@Param("id") Long id);
+  @Query("SELECT a FROM Announcement a LEFT JOIN FETCH a.comments WHERE a.id = :id")
+  Optional<Announcement> findByIdWithComments(@Param("id") Long id);
 
   List<AnnouncementSummaryDto> findByTitleContaining(String keyword);
 }
