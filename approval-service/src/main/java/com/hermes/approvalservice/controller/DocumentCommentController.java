@@ -1,6 +1,5 @@
 package com.hermes.approvalservice.controller;
 
-import com.hermes.api.common.ApiResult;
 import com.hermes.approvalservice.dto.request.CreateCommentRequest;
 import com.hermes.approvalservice.dto.response.DocumentCommentResponse;
 import com.hermes.approvalservice.entity.ApprovalDocument;
@@ -42,7 +41,7 @@ public class DocumentCommentController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @GetMapping
-    public ResponseEntity<ApiResult<List<DocumentCommentResponse>>> getComments(
+    public ResponseEntity<List<DocumentCommentResponse>> getComments(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long documentId) {
         Long userId = user.getId();
@@ -51,7 +50,7 @@ public class DocumentCommentController {
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
         
         if (!permissionService.canViewDocument(document, userId, user)) {
-            return ResponseEntity.status(403).body(ApiResult.rejected("문서 조회 권한이 없습니다."));
+            return ResponseEntity.status(403).build();
         }
 
         List<DocumentCommentResponse> comments = commentRepository.findByDocumentIdOrderByCreatedAtAsc(documentId)
@@ -59,7 +58,7 @@ public class DocumentCommentController {
                 .map(this::convertToResponse)
                 .toList();
 
-        return ResponseEntity.ok(ApiResult.success("댓글 목록을 조회했습니다.", comments));
+        return ResponseEntity.ok(comments);
     }
 
     @Operation(summary = "문서 댓글 작성", description = "지정한 문서에 새로운 댓글을 작성합니다.")
@@ -72,7 +71,7 @@ public class DocumentCommentController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PostMapping
-    public ResponseEntity<ApiResult<DocumentCommentResponse>> createComment(
+    public ResponseEntity<DocumentCommentResponse> createComment(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long documentId,
             @Parameter(description = "댓글 작성 요청 정보", required = true) @Valid @RequestBody CreateCommentRequest request) {
@@ -82,7 +81,7 @@ public class DocumentCommentController {
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
         
         if (!permissionService.canViewDocument(document, userId, user)) {
-            return ResponseEntity.status(403).body(ApiResult.rejected("댓글 작성 권한이 없습니다."));
+            return ResponseEntity.status(403).build();
         }
 
         DocumentComment comment = DocumentComment.builder()
@@ -94,7 +93,7 @@ public class DocumentCommentController {
         DocumentComment savedComment = commentRepository.save(comment);
         DocumentCommentResponse response = convertToResponse(savedComment);
 
-        return ResponseEntity.ok(ApiResult.success("댓글을 작성했습니다.", response));
+        return ResponseEntity.ok(response);
     }
 
     private DocumentCommentResponse convertToResponse(DocumentComment comment) {

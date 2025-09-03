@@ -1,6 +1,5 @@
 package com.hermes.approvalservice.controller;
 
-import com.hermes.api.common.ApiResult;
 import com.hermes.approvalservice.dto.request.CreateCategoryRequest;
 import com.hermes.approvalservice.dto.request.UpdateCategoryRequest;
 import com.hermes.approvalservice.dto.response.CategoryResponse;
@@ -35,7 +34,7 @@ public class TemplateCategoryController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @GetMapping
-    public ResponseEntity<ApiResult<List<CategoryResponse>>> getCategories(
+    public ResponseEntity<List<CategoryResponse>> getCategories(
             @AuthenticationPrincipal UserPrincipal user) {
         List<CategoryResponse> categories;
         
@@ -45,7 +44,7 @@ public class TemplateCategoryController {
             categories = categoryService.getCategoriesWithVisibleTemplates();
         }
         
-        return ResponseEntity.ok(ApiResult.success("카테고리 목록을 조회했습니다.", categories));
+        return ResponseEntity.ok(categories);
     }
 
     @Operation(summary = "카테고리 상세 조회", description = "지정한 ID의 카테고리 상세 정보를 조회합니다.")
@@ -56,10 +55,10 @@ public class TemplateCategoryController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResult<CategoryResponse>> getCategoryById(
+    public ResponseEntity<CategoryResponse> getCategoryById(
             @Parameter(description = "카테고리 ID", required = true) @PathVariable Long id) {
         CategoryResponse category = categoryService.getCategoryById(id);
-        return ResponseEntity.ok(ApiResult.success("카테고리를 조회했습니다.", category));
+        return ResponseEntity.ok(category);
     }
 
     @Operation(summary = "카테고리 생성", description = "새로운 템플릿 카테고리를 생성합니다. (관리자만 가능)")
@@ -72,11 +71,11 @@ public class TemplateCategoryController {
     })
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResult<CategoryResponse>> createCategory(
+    public ResponseEntity<CategoryResponse> createCategory(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 생성 요청 정보", required = true) @Valid @RequestBody CreateCategoryRequest request) {
         CategoryResponse category = categoryService.createCategory(request);
-        return ResponseEntity.ok(ApiResult.success("카테고리를 생성했습니다.", category));
+        return ResponseEntity.ok(category);
     }
 
     @Operation(summary = "카테고리 수정", description = "기존 템플릿 카테고리를 수정합니다. (관리자만 가능)")
@@ -90,12 +89,12 @@ public class TemplateCategoryController {
     })
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResult<CategoryResponse>> updateCategory(
+    public ResponseEntity<CategoryResponse> updateCategory(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 ID", required = true) @PathVariable Long id, 
             @Parameter(description = "카테고리 수정 요청 정보", required = true) @Valid @RequestBody UpdateCategoryRequest request) {
         CategoryResponse category = categoryService.updateCategory(id, request);
-        return ResponseEntity.ok(ApiResult.success("카테고리를 수정했습니다.", category));
+        return ResponseEntity.ok(category);
     }
 
     @Operation(summary = "카테고리 삭제", description = "기존 템플릿 카테고리를 삭제합니다. (관리자만 가능)")
@@ -109,10 +108,10 @@ public class TemplateCategoryController {
     })
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResult<Void>> deleteCategory(
+    public ResponseEntity<Void> deleteCategory(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 ID", required = true) @PathVariable Long id) {
         categoryService.deleteCategory(id);
-        return ResponseEntity.ok(ApiResult.success("카테고리를 삭제했습니다."));
+        return ResponseEntity.ok().build();
     }
 }

@@ -1,6 +1,5 @@
 package com.hermes.approvalservice.controller;
 
-import com.hermes.api.common.ApiResult;
 import com.hermes.approvalservice.dto.request.CreateTemplateRequest;
 import com.hermes.approvalservice.dto.request.UpdateTemplateRequest;
 import com.hermes.approvalservice.dto.response.TemplateResponse;
@@ -36,7 +35,7 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "200", description = "템플릿 목록 조회 성공"),
             @ApiResponse(responseCode = "403", description = "권한 없음")
     })
-    public ResponseEntity<ApiResult<List<TemplateSummaryResponse>>> getTemplates(
+    public ResponseEntity<List<TemplateSummaryResponse>> getTemplates(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 ID (선택사항)") @RequestParam(required = false) Long categoryId) {
         List<TemplateSummaryResponse> templates;
@@ -48,7 +47,7 @@ public class DocumentTemplateController {
             templates = templateService.getAllTemplates(isAdmin);
         }
         
-        return ResponseEntity.ok(ApiResult.success("템플릿 목록을 조회했습니다.", templates));
+        return ResponseEntity.ok(templates);
     }
 
     @GetMapping("/by-category")
@@ -56,10 +55,10 @@ public class DocumentTemplateController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "카테고리별 템플릿 목록 조회 성공")
     })
-    public ResponseEntity<ApiResult<List<TemplatesByCategoryResponse>>> getTemplatesByCategory(
+    public ResponseEntity<List<TemplatesByCategoryResponse>> getTemplatesByCategory(
             @AuthenticationPrincipal UserPrincipal user) {
         List<TemplatesByCategoryResponse> templates = templateService.getTemplatesByCategory(user.isAdmin());
-        return ResponseEntity.ok(ApiResult.success("카테고리별 템플릿 목록을 조회했습니다.", templates));
+        return ResponseEntity.ok(templates);
     }
 
     @GetMapping("/{id}")
@@ -68,10 +67,10 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "200", description = "템플릿 조회 성공"),
             @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
     })
-    public ResponseEntity<ApiResult<TemplateResponse>> getTemplateById(
+    public ResponseEntity<TemplateResponse> getTemplateById(
             @Parameter(description = "템플릿 ID", required = true) @PathVariable Long id) {
         TemplateResponse template = templateService.getTemplateById(id);
-        return ResponseEntity.ok(ApiResult.success("템플릿을 조회했습니다.", template));
+        return ResponseEntity.ok(template);
     }
 
     @PostMapping
@@ -82,11 +81,11 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
             @ApiResponse(responseCode = "403", description = "관리자 권한 필요")
     })
-    public ResponseEntity<ApiResult<TemplateResponse>> createTemplate(
+    public ResponseEntity<TemplateResponse> createTemplate(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 생성 요청", required = true) @Valid @RequestBody CreateTemplateRequest request) {
         TemplateResponse template = templateService.createTemplate(request);
-        return ResponseEntity.ok(ApiResult.success("템플릿을 생성했습니다.", template));
+        return ResponseEntity.ok(template);
     }
 
     @PutMapping("/{id}")
@@ -98,12 +97,12 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "403", description = "관리자 권한 필요"),
             @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
     })
-    public ResponseEntity<ApiResult<TemplateResponse>> updateTemplate(
+    public ResponseEntity<TemplateResponse> updateTemplate(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 ID", required = true) @PathVariable Long id,
             @Parameter(description = "템플릿 수정 요청", required = true) @Valid @RequestBody UpdateTemplateRequest request) {
         TemplateResponse template = templateService.updateTemplate(id, request);
-        return ResponseEntity.ok(ApiResult.success("템플릿을 수정했습니다.", template));
+        return ResponseEntity.ok(template);
     }
 
     @PutMapping("/{id}/visibility")
@@ -114,13 +113,12 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "403", description = "관리자 권한 필요"),
             @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
     })
-    public ResponseEntity<ApiResult<Void>> updateTemplateVisibility(
+    public ResponseEntity<Void> updateTemplateVisibility(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 ID", required = true) @PathVariable Long id,
             @Parameter(description = "숨김 여부", required = true) @RequestParam boolean isHidden) {
         templateService.updateTemplateVisibility(id, isHidden);
-        String message = isHidden ? "템플릿을 숨김 처리했습니다." : "템플릿 숨김을 해제했습니다.";
-        return ResponseEntity.ok(ApiResult.success(message));
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
@@ -131,10 +129,10 @@ public class DocumentTemplateController {
             @ApiResponse(responseCode = "403", description = "관리자 권한 필요"),
             @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
     })
-    public ResponseEntity<ApiResult<Void>> deleteTemplate(
+    public ResponseEntity<Void> deleteTemplate(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "템플릿 ID", required = true) @PathVariable Long id) {
         templateService.deleteTemplate(id);
-        return ResponseEntity.ok(ApiResult.success("템플릿을 삭제했습니다."));
+        return ResponseEntity.ok().build();
     }
 }

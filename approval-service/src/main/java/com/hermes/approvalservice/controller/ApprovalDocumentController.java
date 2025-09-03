@@ -1,6 +1,5 @@
 package com.hermes.approvalservice.controller;
 
-import com.hermes.api.common.ApiResult;
 import com.hermes.approvalservice.dto.request.ApprovalActionRequest;
 import com.hermes.approvalservice.dto.request.CreateDocumentRequest;
 import com.hermes.approvalservice.dto.request.UpdateDocumentRequest;
@@ -43,7 +42,7 @@ public class ApprovalDocumentController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @GetMapping
-    public ResponseEntity<ApiResult<Page<DocumentSummaryResponse>>> getDocuments(
+    public ResponseEntity<Page<DocumentSummaryResponse>> getDocuments(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 상태 필터 (여러 개 선택 가능)") @RequestParam(required = false) List<DocumentStatus> status,
             @Parameter(description = "제목 검색 키워드") @RequestParam(required = false) String search,
@@ -53,7 +52,7 @@ public class ApprovalDocumentController {
         Long userId = user.getId();
         Page<DocumentSummaryResponse> documents = documentService.getDocumentsForUser(
                 userId, user, status, search, startDate, endDate, pageable);
-        return ResponseEntity.ok(ApiResult.success("문서 목록을 조회했습니다.", documents));
+        return ResponseEntity.ok(documents);
     }
 
 
@@ -66,12 +65,12 @@ public class ApprovalDocumentController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResult<DocumentResponse>> getDocumentById(
+    public ResponseEntity<DocumentResponse> getDocumentById(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id) {
         Long userId = user.getId();
         DocumentResponse document = documentService.getDocumentById(id, userId, user);
-        return ResponseEntity.ok(ApiResult.success("문서를 조회했습니다.", document));
+        return ResponseEntity.ok(document);
     }
 
     @Operation(summary = "문서 작성", description = "새로운 결재 문서를 작성합니다.")
@@ -82,12 +81,12 @@ public class ApprovalDocumentController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PostMapping
-    public ResponseEntity<ApiResult<DocumentResponse>> createDocument(
+    public ResponseEntity<DocumentResponse> createDocument(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 작성 요청 정보", required = true) @Valid @RequestBody CreateDocumentRequest request) {
         Long userId = user.getId();
         DocumentResponse document = documentService.createDocument(request, userId);
-        return ResponseEntity.ok(ApiResult.success("문서를 작성했습니다.", document));
+        return ResponseEntity.ok(document);
     }
 
     @Operation(summary = "문서 수정", description = "기존 결재 문서를 수정합니다. (임시저장 상태에서만 가능)")
@@ -100,13 +99,13 @@ public class ApprovalDocumentController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResult<DocumentResponse>> updateDocument(
+    public ResponseEntity<DocumentResponse> updateDocument(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "문서 수정 요청 정보", required = true) @Valid @RequestBody UpdateDocumentRequest request) {
         Long userId = user.getId();
         DocumentResponse document = documentService.updateDocument(id, request, userId, user);
-        return ResponseEntity.ok(ApiResult.success("문서를 수정했습니다.", document));
+        return ResponseEntity.ok(document);
     }
 
     @Operation(summary = "문서 제출", description = "임시저장된 문서를 결재 프로세스에 제출합니다.")
@@ -119,12 +118,12 @@ public class ApprovalDocumentController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PostMapping("/{id}/submit")
-    public ResponseEntity<ApiResult<Void>> submitDocument(
+    public ResponseEntity<Void> submitDocument(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id) {
         Long userId = user.getId();
         documentService.submitDocument(id, userId);
-        return ResponseEntity.ok(ApiResult.success("문서를 제출했습니다."));
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "문서 승인", description = "제출된 문서를 승인합니다.")
@@ -138,13 +137,13 @@ public class ApprovalDocumentController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PostMapping("/{id}/approve")
-    public ResponseEntity<ApiResult<Void>> approveDocument(
+    public ResponseEntity<Void> approveDocument(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "승인 처리 요청 정보") @RequestBody ApprovalActionRequest request) {
         Long userId = user.getId();
         approvalProcessService.approveDocument(id, userId, user, request);
-        return ResponseEntity.ok(ApiResult.success("문서를 승인했습니다."));
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "문서 반려", description = "제출된 문서를 반려합니다.")
@@ -158,12 +157,12 @@ public class ApprovalDocumentController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PostMapping("/{id}/reject")
-    public ResponseEntity<ApiResult<Void>> rejectDocument(
+    public ResponseEntity<Void> rejectDocument(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "반려 처리 요청 정보", required = true) @RequestBody ApprovalActionRequest request) {
         Long userId = user.getId();
         approvalProcessService.rejectDocument(id, userId, user, request);
-        return ResponseEntity.ok(ApiResult.success("문서를 반려했습니다."));
+        return ResponseEntity.ok().build();
     }
 }
