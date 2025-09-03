@@ -33,6 +33,7 @@ public class GatewayOpenApiConfig {
             urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("leave-service", "/v3/api-docs/leave-service", "leave-service"));
             urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("companyinfo-service", "/v3/api-docs/companyinfo-service", "companyinfo-service"));
             urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("communication-service", "/v3/api-docs/communication-service", "communication-service"));
+            urls.add(new AbstractSwaggerUiConfigProperties.SwaggerUrl("attachment-service", "/v3/api-docs/attachment-service", "attachment-service"));
             
             swaggerUiConfigProperties.setUrls(urls);
         };

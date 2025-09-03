@@ -92,6 +92,12 @@ spring:
                 - Path=/v3/api-docs/communication-service
               filters:
                 - RewritePath=/v3/api-docs/communication-service, /v3/api-docs
+            - id: attachment-service-docs
+              uri: lb://attachment-service
+              predicates:
+                - Path=/v3/api-docs/attachment-service
+              filters:
+                - RewritePath=/v3/api-docs/attachment-service, /v3/api-docs
 
           globalcors:
             cors-configurations:

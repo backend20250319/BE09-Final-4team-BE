@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 @OpenAPIDefinition(
     info = @Info(
         title = "Hermes Attachment Service API",
-        description = "파일 업로드를 위한 REST API",
+        description = "파일 업로드 및 다운로드 관리를 위한 REST API",
         version = "1.0.0"
     ),
     security = @SecurityRequirement(name = "Bearer Authentication")
