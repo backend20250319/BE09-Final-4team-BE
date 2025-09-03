@@ -24,4 +24,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
   @Query("UPDATE Notification n SET n.isRead = true WHERE n.id = :id")
   int markAsRead(@Param("id") Long id);
 
+  @Modifying
+  @Query("DELETE FROM Notification n WHERE n.referenceId = :referenceId AND n.type = :type")
+  int deleteByReferenceIdAndType(@Param("referenceId") Long referenceId, @Param("type") com.hermes.notification.enums.NotificationType type);
+
 }

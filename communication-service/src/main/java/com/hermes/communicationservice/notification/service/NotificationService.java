@@ -6,9 +6,11 @@ import com.hermes.communicationservice.notification.entity.Notification;
 import com.hermes.communicationservice.notification.exception.NotificationAccessDeniedException;
 import com.hermes.communicationservice.notification.exception.NotificationNotFoundException;
 import com.hermes.communicationservice.notification.repository.NotificationRepository;
+import com.hermes.notification.enums.NotificationType;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class NotificationService {
 
@@ -60,6 +63,15 @@ public class NotificationService {
     
     int updated = notificationRepository.markAsRead(notificationId);
     return updated > 0;
+  }
+
+  @Transactional
+  public void deleteNotificationsByReferenceId(Long referenceId, NotificationType type) {
+    log.info("알림 삭제 - referenceId: {}, type: {}", referenceId, type);
+    
+    int deletedCount = notificationRepository.deleteByReferenceIdAndType(referenceId, type);
+    
+    log.info("알림 삭제 완료 - referenceId: {}, type: {}, deletedCount: {}", referenceId, type, deletedCount);
   }
 
 }
