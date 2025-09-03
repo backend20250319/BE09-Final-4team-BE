@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 public class UserServiceClientFallback implements UserServiceClient {
 
     @Override
-    public ApiResult<MainProfileResponseDto> getMainProfile(Long userId) {
+    public ApiResult<MainProfileResponseDto> getMainProfile(Long userId, String authorization) {
         log.error("user-service 호출 실패, fallback 실행 - userId={}", userId);
 
         // 실패했을 때 기본값 리턴

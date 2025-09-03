@@ -15,9 +15,11 @@ import java.util.List;
 )
 public interface UserServiceClient {
 
-  // 기본 정보 가져오는 API (profileUrl 포함)
+  // 기본 정보 가져오는 API (profileImageUrl 포함)
   @GetMapping("/api/users/{userId}/profile")
-  ApiResult<MainProfileResponseDto> getMainProfile(@PathVariable("userId") Long userId);
+  ApiResult<MainProfileResponseDto> getMainProfile(
+      @PathVariable("userId") Long userId,
+      @RequestHeader("Authorization") String authorization);
 
   // 전체 사용자 ID 목록 조회
   @GetMapping("/api/users/ids")
