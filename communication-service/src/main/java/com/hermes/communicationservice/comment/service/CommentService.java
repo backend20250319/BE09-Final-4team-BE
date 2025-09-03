@@ -15,9 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import com.hermes.auth.principal.UserPrincipal;
 
 import java.util.List;
@@ -36,7 +33,7 @@ public class CommentService {
 
   // 댓글 생성
   @Transactional
-  public CommentResponseDto createComment(Long announcementId, String content, Long authorId) {
+  public CommentResponseDto createComment(Long announcementId, String content, Long authorId, String authorization) {
     log.info("댓글 생성 요청 - announcementId={}, authorId={}", announcementId, authorId);
 
     Announcement announcement = findAnnouncementById(announcementId);
@@ -48,7 +45,7 @@ public class CommentService {
         .build();
 
     Comment savedComment = commentRepository.save(comment);
-    UserBasicInfo userInfo = fetchUserBasicInfo(authorId);
+    UserBasicInfo userInfo = fetchUserBasicInfo(authorId, authorization);
 
     return commentMapper.toCommentResponseDtoWithUser(savedComment, userInfo, true); // 생성자는 항상 삭제 가능
   }
@@ -70,7 +67,7 @@ public class CommentService {
   }
 
   // 공지사항 ID로 댓글 목록 조회
-  public List<CommentResponseDto> getCommentsByAnnouncementId(Long announcementId, UserPrincipal user) {
+  public List<CommentResponseDto> getCommentsByAnnouncementId(Long announcementId, UserPrincipal user, String authorization) {
     log.info("공지사항 댓글 목록 조회 요청 - announcementId={}", announcementId);
 
     return commentRepository.findByAnnouncement_IdOrderById(announcementId)
@@ -78,7 +75,7 @@ public class CommentService {
         .map(
             comment
                 -> {
-                  UserBasicInfo userInfo = fetchUserBasicInfo(comment.getAuthorId());
+                  UserBasicInfo userInfo = fetchUserBasicInfo(comment.getAuthorId(), authorization);
                   boolean canDelete = user.isAdmin() || comment.getAuthorId().equals(user.getId());
                   return commentMapper.toCommentResponseDtoWithUser(comment, userInfo, canDelete);
                 })
@@ -90,15 +87,14 @@ public class CommentService {
         .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다: " + announcementId));
   }
 
-  private UserBasicInfo fetchUserBasicInfo(Long userId) {
+  private UserBasicInfo fetchUserBasicInfo(Long userId, String authorization) {
     try {
-      String token = getCurrentJwtToken();
-      if (token == null) {
-        log.warn("JWT 토큰을 찾을 수 없어 기본 사용자 정보를 반환합니다. - userId={}", userId);
+      if (authorization == null || authorization.isEmpty()) {
+        log.warn("Authorization 헤더가 비어있어 기본 사용자 정보를 반환합니다. - userId={}", userId);
         return createDefaultUserBasicInfo(userId);
       }
       
-      ApiResult<MainProfileResponseDto> response = userServiceClient.getMainProfile(userId, token);
+      ApiResult<MainProfileResponseDto> response = userServiceClient.getMainProfile(userId, authorization);
       if (response != null && response.getData() != null && response.getData().getId() != null) {
         return commentMapper.toUserBasicInfo(response.getData());
       }
@@ -117,14 +113,4 @@ public class CommentService {
         .build();
   }
   
-  /**
-   * 현재 JWT 토큰을 "Bearer " 형태로 반환합니다.
-   */
-  private String getCurrentJwtToken() {
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth instanceof JwtAuthenticationToken jwtAuth) {
-      return "Bearer " + jwtAuth.getToken().getTokenValue();
-    }
-    return null;
-  }
 }

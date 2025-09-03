@@ -15,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 @Slf4j
@@ -39,10 +38,11 @@ public class CommentController {
     public ResponseEntity<CommentResponseDto> createComment(
             @Parameter(description = "공지사항 ID", required = true, example = "1") @PathVariable Long announcementId,
             @Parameter(description = "댓글 내용", required = true) @RequestBody String content,
-            @AuthenticationPrincipal UserPrincipal user) {
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestHeader("Authorization") String authorization) {
         log.info("댓글 생성 요청: announcementId={}, content={}, authorId={}", announcementId, content, user.getId());
 
-        CommentResponseDto response = commentService.createComment(announcementId, content, user.getId());
+        CommentResponseDto response = commentService.createComment(announcementId, content, user.getId(), authorization);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -57,10 +57,11 @@ public class CommentController {
     @GetMapping("/announcements/{announcementId}/comments")
     public ResponseEntity<List<CommentResponseDto>> getCommentsByAnnouncementId(
             @Parameter(description = "공지사항 ID", required = true, example = "1") @PathVariable Long announcementId,
-            @AuthenticationPrincipal UserPrincipal user) {
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestHeader("Authorization") String authorization) {
         log.info("공지사항 댓글 목록 조회 요청: announcementId={}", announcementId);
 
-        List<CommentResponseDto> comments = commentService.getCommentsByAnnouncementId(announcementId, user);
+        List<CommentResponseDto> comments = commentService.getCommentsByAnnouncementId(announcementId, user, authorization);
 
         return ResponseEntity.ok(comments);
     }
