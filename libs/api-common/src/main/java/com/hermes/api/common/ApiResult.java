@@ -5,10 +5,16 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * @deprecated ResponseEntity에는 HTTP 상태 코드가 포함되어 있어, 이미 성공/실패를 충분히 표현할 수 있습니다.
+ *             ApiResult로 한번 더 감싸면 응답 구조를 복잡하게 만들 뿐이므로 더 이상 사용하지 않습니다.
+ *             대신 적절한 예외를 던지고, Swagger로 상태 코드를 정확하게 문서화 해주세요.
+ */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Deprecated
 public class ApiResult<T> {
 
   private String status; // SUCCESS, REJECTED, FAILURE

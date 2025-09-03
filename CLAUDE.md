@@ -26,7 +26,6 @@ Hermes is a Spring Boot microservices system implementing a multi-tenant archite
 - **mt-starter**: Multi-tenancy auto-configuration starter with RabbitMQ event-driven schema management
 - **attachment-client-starter**: Attachment service integration and file handling utilities with auto-configuration
 - **notification-starter**: RabbitMQ-based asynchronous notification system with auto-configuration
-- **api-common**: Common API response classes and utilities
 - **events**: Event models for inter-service communication
 
 ## Development Commands
@@ -87,7 +86,7 @@ public class MyServiceSecurityConfig extends BaseSecurityConfig {
 ```java
 // Controllers - use @AuthenticationPrincipal
 @PostMapping("/documents")
-public ApiResult<Document> createDocument(
+public ResponseEntity<DocumentResponse> createDocument(
     @AuthenticationPrincipal UserPrincipal user,
     @RequestBody CreateDocumentRequest request
 ) {
@@ -99,7 +98,7 @@ public ApiResult<Document> createDocument(
 // Method-level security
 @PreAuthorize("hasRole('ADMIN')")
 @GetMapping("/admin/users")
-public ApiResult<List<User>> getAllUsers() {
+public ResponseEntity<List<UserResponse>> getAllUsers() {
     // Admin-only endpoint
 }
 ```
@@ -289,5 +288,4 @@ public class OpenApiConfig {
 - **No automatic commits**: Never commit without explicit user instruction
 - **Encoding**: Always use `-Dfile.encoding=UTF-8` when building with gradlew
 - **Selective building**: Only build modified modules when testing, not the entire project
-- Always use `ApiResult<T>` from `api-common` for API responses
 - **Time Handling**: Use `Instant` only, never `LocalDateTime`. Timezone conversion is client responsibility
