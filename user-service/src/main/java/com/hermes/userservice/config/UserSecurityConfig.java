@@ -16,5 +16,6 @@ public class UserSecurityConfig extends BaseSecurityConfig {
     ) {
         auth.requestMatchers("/api/auth/**").permitAll();
         auth.requestMatchers("/api/users/count").hasRole("ADMIN");
+        auth.requestMatchers("/api/users/ids").hasRole("ADMIN");
     }
 }

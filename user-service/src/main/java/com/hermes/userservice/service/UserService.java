@@ -195,4 +195,10 @@ public class UserService {
         log.info("전체 직원 수 조회");
         return userRepository.count();
     }
+
+    @Transactional(readOnly = true)
+    public List<Long> getAllUserIds() {
+        log.info("전체 사용자 ID 목록 조회 (알림 발송용)");
+        return userRepository.findAllUserIds();
+    }
 }

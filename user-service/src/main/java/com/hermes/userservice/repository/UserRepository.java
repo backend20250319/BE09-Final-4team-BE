@@ -32,4 +32,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.userOrganizations WHERE u.email = :email")
     Optional<User> findByEmailWithOrganizations(@Param("email") String email);
+
+    @Query("SELECT u.id FROM User u")
+    List<Long> findAllUserIds();
 }

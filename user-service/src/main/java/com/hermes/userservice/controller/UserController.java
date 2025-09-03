@@ -257,4 +257,17 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/ids")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "전체 사용자 ID 목록 조회", description = "알림 발송을 위한 전체 사용자 ID 목록을 조회합니다. ADMIN 권한 필요.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "사용자 ID 목록 조회 성공"),
+        @ApiResponse(responseCode = "403", description = "권한 부족 (ADMIN 권한 필요)")
+    })
+    public ResponseEntity<ApiResult<List<Long>>> getAllUserIds() {
+        log.info("전체 사용자 ID 목록 조회 요청 (알림 발송용)");
+        List<Long> userIds = userService.getAllUserIds();
+        return ResponseEntity.ok(ApiResult.success("사용자 ID 목록 조회 성공", userIds));
+    }
 }
