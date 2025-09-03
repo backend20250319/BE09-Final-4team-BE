@@ -48,6 +48,14 @@ spring:
               uri: lb://attachment-service
               predicates:
                 - Path=/api/attachment/**
+            - id: org-service
+              uri: lb://org-service
+              predicates:
+                - Path=/api/organizations/**
+            - id: org-service-assignments
+              uri: lb://org-service
+              predicates:
+                - Path=/api/assignments/**
             # API 문서 라우팅
             - id: user-service-docs
               uri: lb://user-service

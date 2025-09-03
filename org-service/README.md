@@ -53,7 +53,7 @@
 - `assigned_at` - 배정 일시
 
 ## 서비스 포트
-- **포트**: 8083
+- **포트**: 8089
 - **서비스명**: org-service
 
 ## API 테스트
@@ -61,24 +61,24 @@
 ### 조직 생성 예시
 ```bash
 # 최상위 조직 생성
-curl -X POST http://localhost:8083/api/organizations \
+curl -X POST http://localhost:8089/api/organizations \
   -H "Content-Type: application/json" \
   -d '{"name": "개발본부"}'
 
 # 하위 조직 생성
-curl -X POST http://localhost:8083/api/organizations \
+curl -X POST http://localhost:8089/api/organizations \
   -H "Content-Type: application/json" \
   -d '{"name": "프론트엔드팀", "parentId": 1}'
 ```
 
 ### 조직 계층 구조 조회
 ```bash
-curl -X GET http://localhost:8083/api/organizations/hierarchy
+curl -X GET http://localhost:8089/api/organizations/hierarchy
 ```
 
 ### 조직 검색
 ```bash
-curl -X GET "http://localhost:8083/api/organizations/search?keyword=개발"
+curl -X GET "http://localhost:8089/api/organizations/search?keyword=개발"
 ```
 
 ## 의존성

@@ -183,9 +183,6 @@ public class UserService {
                         .phoneNumber(user.getPhone())
                         .position(user.getPosition() != null ? user.getPosition().getName() : null)
                         .department("")
-                        .avatar(user.getProfileImageUrl())
-                        .employeeNumber("")
-                        .status("ACTIVE")
                         .build())
                 .collect(Collectors.toList());
     }
