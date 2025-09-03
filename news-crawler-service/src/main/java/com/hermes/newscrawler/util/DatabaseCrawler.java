@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import io.github.bonigarcia.wdm.WebDriverManager;
 
 @Component
 @RequiredArgsConstructor
@@ -54,6 +55,7 @@ public class DatabaseCrawler implements CommandLineRunner {
 
     public List<NewsDetail> performCrawlingForLogin(String sessionId) throws Exception {
         ChromeOptions options = createChromeOptions();
+        WebDriverManager.chromedriver().setup();
         WebDriver driver = new ChromeDriver(options);
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(3));
 

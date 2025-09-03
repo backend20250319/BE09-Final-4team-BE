@@ -46,9 +46,14 @@ dependencies {
     runtimeOnly 'mysql:mysql-connector-java:8.0.33'
 
     implementation 'org.jsoup:jsoup:1.17.2'
-    implementation 'org.seleniumhq.selenium:selenium-java:4.20.0'
+    implementation 'org.seleniumhq.selenium:selenium-java:4.21.0'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
+    implementation 'io.github.bonigarcia:webdrivermanager:5.8.0' 
+
 }
 
 dependencyManagement {
