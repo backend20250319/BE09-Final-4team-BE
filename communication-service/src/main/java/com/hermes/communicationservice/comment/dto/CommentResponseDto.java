@@ -16,4 +16,5 @@ public class CommentResponseDto {
     private String content;
     private LocalDateTime createdAt;
     private UserBasicInfo userInfo;
+    private boolean canDelete;
 }

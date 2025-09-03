@@ -15,9 +15,10 @@ public interface CommentMapper {
     
     UserBasicInfo toUserBasicInfo(MainProfileResponseDto mainProfileResponseDto);
     
-    default CommentResponseDto toCommentResponseDtoWithUser(Comment comment, UserBasicInfo userInfo) {
+    default CommentResponseDto toCommentResponseDtoWithUser(Comment comment, UserBasicInfo userInfo, boolean canDelete) {
         CommentResponseDto dto = toCommentResponseDto(comment);
         dto.setUserInfo(userInfo);
+        dto.setCanDelete(canDelete);
         return dto;
     }
 }
