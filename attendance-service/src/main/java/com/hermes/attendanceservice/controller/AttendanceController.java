@@ -25,7 +25,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Map;
 
 @Slf4j
@@ -53,7 +53,6 @@ public class AttendanceController {
             if (!user.getId().equals(request.getUserId())) {
                 return ApiResult.failure("권한이 없습니다.");
             }
-            
             AttendanceResponse response = attendanceService.checkIn(request.getUserId(), request.getCheckIn());
             return ApiResult.success("출근 기록이 성공적으로 등록되었습니다.", response);
         } catch (Exception e) {
@@ -77,7 +76,6 @@ public class AttendanceController {
             if (!user.getId().equals(request.getUserId())) {
                 return ApiResult.failure("권한이 없습니다.");
             }
-            
             AttendanceResponse response = attendanceService.checkOut(request.getUserId(), request.getCheckOut());
             return ApiResult.success("퇴근 기록이 성공적으로 등록되었습니다.", response);
         } catch (Exception e) {
@@ -93,14 +91,14 @@ public class AttendanceController {
         @ApiResponse(responseCode = "403", description = "권한 없음")
     })
     @PostMapping("/attendance-status")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ApiResult<AttendanceResponse> markAttendanceStatus(
             @Parameter(description = "직원 ID") @RequestParam Long userId,
             @Parameter(description = "날짜 (YYYY-MM-DD)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "출근 상태") @RequestParam AttendanceStatus attendanceStatus,
             @Parameter(description = "자동 기록 여부") @RequestParam(defaultValue = "true") boolean autoRecorded,
-            @Parameter(description = "출근 시간 (선택사항)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkInTime,
-            @Parameter(description = "퇴근 시간 (선택사항)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOutTime) {
+            @Parameter(description = "출근 시간 (선택사항, ISO-8601 Instant)") @RequestParam(required = false) Instant checkInTime,
+            @Parameter(description = "퇴근 시간 (선택사항, ISO-8601 Instant)") @RequestParam(required = false) Instant checkOutTime) {
         try {
             AttendanceResponse response = attendanceService.markAttendanceStatus(userId, date, attendanceStatus, autoRecorded, checkInTime, checkOutTime);
             return ApiResult.success("출근 상태가 성공적으로 기록되었습니다.", response);
@@ -117,14 +115,14 @@ public class AttendanceController {
         @ApiResponse(responseCode = "403", description = "권한 없음")
     })
     @PostMapping("/work-status")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ApiResult<AttendanceResponse> markWorkStatus(
             @Parameter(description = "직원 ID") @RequestParam Long userId,
             @Parameter(description = "날짜 (YYYY-MM-DD)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "근무 상태") @RequestParam WorkStatus workStatus,
             @Parameter(description = "자동 기록 여부") @RequestParam(defaultValue = "true") boolean autoRecorded,
-            @Parameter(description = "출근 시간 (선택사항)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkInTime,
-            @Parameter(description = "퇴근 시간 (선택사항)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOutTime) {
+            @Parameter(description = "출근 시간 (선택사항, ISO-8601 Instant)") @RequestParam(required = false) Instant checkInTime,
+            @Parameter(description = "퇴근 시간 (선택사항, ISO-8601 Instant)") @RequestParam(required = false) Instant checkOutTime) {
         try {
             AttendanceResponse response = attendanceService.markWorkStatus(userId, date, workStatus, autoRecorded, checkInTime, checkOutTime);
             return ApiResult.success("근무 상태가 성공적으로 기록되었습니다.", response);
@@ -135,7 +133,7 @@ public class AttendanceController {
 
     /** 이번 주 근무 상세 */
     @GetMapping("/weekly/this")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ApiResult<WeeklyWorkDetail> getThisWeek(@RequestParam Long userId) {
         try {
             WeeklyWorkSummary summary = attendanceService.getThisWeekSummary(userId);
@@ -155,7 +153,7 @@ public class AttendanceController {
 
     /** 특정 주 (weekStart가 요일이 아니어도 자동 보정) */
     @GetMapping("/weekly")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ApiResult<WeeklyWorkDetail> getWeek(
             @RequestParam Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart) {
@@ -177,7 +175,7 @@ public class AttendanceController {
 
     /** 출근 가능 시간 조회 */
     @GetMapping("/check-in-available-time")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ApiResult<Map<String, Object>> getCheckInAvailableTime(@RequestParam Long userId) {
         try {
             Map<String, Object> response = attendanceService.getCheckInAvailableTime(userId);

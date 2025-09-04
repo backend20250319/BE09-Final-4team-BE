@@ -7,10 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.LocalTime;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "leave_requests")
@@ -58,10 +56,10 @@ public class LeaveRequest {
     private Long approverId;
     
     @Column(name = "requested_at", nullable = false)
-    private LocalDateTime requestedAt;
+    private Instant requestedAt;
     
     @Column(name = "approved_at")
-    private LocalDateTime approvedAt;
+    private Instant approvedAt;
     
     public enum RequestStatus {
         REQUESTED,   // 신청
@@ -84,7 +82,7 @@ public class LeaveRequest {
                 .totalDays(totalDays)
                 .reason(createDto.getReason())
                 .status(RequestStatus.REQUESTED)
-                .requestedAt(LocalDateTime.now())
+                .requestedAt(Instant.now())
                 .build();
     }
 } 

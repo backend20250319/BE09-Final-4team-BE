@@ -91,7 +91,7 @@ public class WorkScheduleController {
             return ResponseEntity.ok(ApiResult.success("스케줄 생성 성공", result));
         } catch (Exception e) {
             log.error("Error creating schedule for userId: {}", requestDto.getUserId(), e);
-            return ResponseEntity.ok(ApiResult.failure("스케줄 생성 중 오류가 발생했습니다."));
+            return ResponseEntity.ok(ApiResult.failure("스케줄 생성 실패: " + e.getMessage()));
         }
     }
     
@@ -103,7 +103,7 @@ public class WorkScheduleController {
         @ApiResponse(responseCode = "403", description = "권한 없음")
     })
     @PostMapping("/users/{userId}/fixed-schedules")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<ApiResult<List<ScheduleResponseDto>>> createFixedSchedules(
             @Parameter(description = "사용자 ID") @PathVariable Long userId,
             @Parameter(description = "시작 날짜 (YYYY-MM-DD)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -123,7 +123,7 @@ public class WorkScheduleController {
      * 근무시간, 휴게시간, 출근시간, 퇴근시간, 코어시간, 시차 근무 출근 가능 시간 등을 스케줄로 생성
      */
     @PostMapping("/users/{userId}/apply-work-policy")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<ApiResult<List<ScheduleResponseDto>>> applyWorkPolicyToSchedule(
             @PathVariable Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -142,7 +142,7 @@ public class WorkScheduleController {
      * 스케줄 수정
      */
     @PutMapping("/users/{userId}/schedules/{scheduleId}")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<ApiResult<ScheduleResponseDto>> updateSchedule(
             @PathVariable Long userId,
             @PathVariable Long scheduleId,
@@ -161,7 +161,7 @@ public class WorkScheduleController {
      * 스케줄 삭제
      */
     @DeleteMapping("/users/{userId}/schedules/{scheduleId}")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<ApiResult<Void>> deleteSchedule(
             @PathVariable Long userId,
             @PathVariable Long scheduleId) {
@@ -179,7 +179,7 @@ public class WorkScheduleController {
      * 사용자별 스케줄 조회 (WorkPolicy 정보 포함)
      */
     @GetMapping("/users/{userId}/schedules")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<ApiResult<List<ScheduleResponseDto>>> getUserSchedules(
             @PathVariable Long userId) {
         try {
@@ -195,7 +195,7 @@ public class WorkScheduleController {
      * 사용자별 특정 기간 스케줄 조회
      */
     @GetMapping("/users/{userId}/schedules/range")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<ApiResult<List<ScheduleResponseDto>>> getUserSchedulesByDateRange(
             @PathVariable Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -213,7 +213,7 @@ public class WorkScheduleController {
      * 스케줄 상세 조회
      */
     @GetMapping("/users/{userId}/schedules/{scheduleId}")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<ApiResult<ScheduleResponseDto>> getScheduleById(
             @PathVariable Long userId,
             @PathVariable Long scheduleId) {

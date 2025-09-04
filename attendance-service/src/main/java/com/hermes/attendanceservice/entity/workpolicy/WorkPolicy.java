@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -109,20 +109,20 @@ public class WorkPolicy {
     private List<AnnualLeave> annualLeaves = new ArrayList<>();
     
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
     
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
     }
     
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
     
     /**

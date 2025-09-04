@@ -5,7 +5,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "work_time_adjustments")
@@ -41,20 +41,20 @@ public class WorkTimeAdjustment {
     private String description;
     
     @Column(nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     
     @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
     
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
     }
     
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
     
     // 근무 시간 계산 (분 단위)

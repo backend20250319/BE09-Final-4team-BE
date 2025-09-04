@@ -5,7 +5,7 @@ import com.hermes.attendanceservice.entity.workpolicy.WorkCycle;
 import com.hermes.attendanceservice.entity.workpolicy.WorkType;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -40,8 +40,8 @@ public class WorkPolicyResponseDto {
     private Boolean isHolidayFixed;
     private Boolean isBreakFixed;
     private List<AnnualLeaveResponseDto> annualLeaves;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
     
     // 계산된 필드들
     private Integer totalWorkMinutes;

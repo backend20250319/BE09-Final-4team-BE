@@ -175,7 +175,7 @@ public class WorkScheduleService {
             );
             
             if (hasConflict) {
-                throw new RuntimeException("Schedule conflict detected for the specified time period");
+                throw new RuntimeException("동일 시간대에 기존 스케줄이 존재합니다.");
             }
             
             // 3. 스케줄 생성
@@ -239,7 +239,7 @@ public class WorkScheduleService {
             );
             
             if (hasConflict) {
-                throw new RuntimeException("Schedule conflict detected for the specified time period");
+                throw new RuntimeException("동일 시간대에 기존 스케줄이 존재합니다.");
             }
             
             // 4. 스케줄 업데이트

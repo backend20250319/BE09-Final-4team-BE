@@ -35,14 +35,17 @@ import static java.time.DayOfWeek.SUNDAY;
 @EnableScheduling
 public class AttendanceServiceImpl implements AttendanceService {
 
+    private static final ZoneId ZONE_SEOUL = ZoneId.of("Asia/Seoul");
+
     private final AttendanceRepository attendanceRepository;
     private final WorkScheduleService workScheduleService;
 
     @Override
-    public AttendanceResponse checkIn(Long userId, LocalDateTime checkInTime) {
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
-        LocalDateTime effective = (checkInTime != null ? checkInTime : now);
-        LocalDate date = effective.toLocalDate();
+    public AttendanceResponse checkIn(Long userId, Instant checkInTime) {
+        Instant now = Instant.now();
+        Instant effective = (checkInTime != null ? checkInTime : now);
+        ZonedDateTime zdt = effective.atZone(ZONE_SEOUL);
+        LocalDate date = zdt.toLocalDate();
 
         Attendance a = attendanceRepository.findByUserIdAndDate(userId, date)
                 .orElseGet(() -> Attendance.builder()
@@ -62,7 +65,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         LocalTime scheduledStartTime = workTime.getStartTime();
         
         // 출근 시간과 근무 시작 시간 비교 (30분 전부터 허용)
-        LocalTime checkInTimeOnly = effective.toLocalTime();
+        LocalTime checkInTimeOnly = zdt.toLocalTime();
         LocalTime allowedStartTime = scheduledStartTime.minusMinutes(30);
         
         // 30분 전보다 일찍 출근한 경우 에러 처리
@@ -84,10 +87,11 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
-    public AttendanceResponse checkOut(Long userId, LocalDateTime checkOutTime) {
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
-        LocalDateTime effective = (checkOutTime != null ? checkOutTime : now);
-        LocalDate date = effective.toLocalDate();
+    public AttendanceResponse checkOut(Long userId, Instant checkOutTime) {
+        Instant now = Instant.now();
+        Instant effective = (checkOutTime != null ? checkOutTime : now);
+        ZonedDateTime zdt = effective.atZone(ZONE_SEOUL);
+        LocalDate date = zdt.toLocalDate();
 
         Attendance a = attendanceRepository.findByUserIdAndDate(userId, date)
                 .orElseThrow(() -> new IllegalStateException("출근 기록이 존재하지 않습니다."));
@@ -101,7 +105,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         LocalTime scheduledEndTime = workTime.getEndTime();
         
         // 퇴근 시간이 근무 종료 시간보다 이른 경우 조퇴
-        if (effective.toLocalTime().isBefore(scheduledEndTime)) {
+        if (zdt.toLocalTime().isBefore(scheduledEndTime)) {
             a.setWorkStatus(WorkStatus.EARLY_LEAVE);
         }
 
@@ -113,8 +117,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                                                    LocalDate date,
                                                    AttendanceStatus attendanceStatus,
                                                    boolean autoRecorded,
-                                                   LocalDateTime checkInTime,
-                                                   LocalDateTime checkOutTime) {
+                                                   Instant checkInTime,
+                                                   Instant checkOutTime) {
 
         Attendance a = attendanceRepository.findByUserIdAndDate(userId, date)
                 .orElseGet(() -> Attendance.builder()
@@ -138,8 +142,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                                              LocalDate date,
                                              WorkStatus workStatus,
                                              boolean autoRecorded,
-                                             LocalDateTime checkInTime,
-                                             LocalDateTime checkOutTime) {
+                                             Instant checkInTime,
+                                             Instant checkOutTime) {
 
         Attendance a = attendanceRepository.findByUserIdAndDate(userId, date)
                 .orElseGet(() -> Attendance.builder()
@@ -161,7 +165,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     @Transactional(readOnly = true)
     public WeeklyWorkSummary getThisWeekSummary(Long userId) {
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        LocalDate today = LocalDate.now(ZONE_SEOUL);
         LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(SUNDAY));
         return getWeekSummary(userId, weekStart);
     }
@@ -245,12 +249,12 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public Map<String, Object> getCheckInAvailableTime(Long userId) {
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        LocalDate today = LocalDate.now(ZONE_SEOUL);
         WorkTimeInfoDto workTime = workScheduleService.getUserWorkTime(userId, today);
         
         LocalTime scheduledStartTime = workTime.getStartTime();
         LocalTime allowedStartTime = scheduledStartTime.minusMinutes(30);
-        LocalTime now = LocalTime.now(ZoneId.of("Asia/Seoul"));
+        LocalTime now = LocalTime.now(ZONE_SEOUL);
         
         boolean isAvailable = !now.isBefore(allowedStartTime);
         
@@ -277,6 +281,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     private List<DailyWorkSummary> createDailySummaries(List<Attendance> records, Map<LocalDate, Long> daily) {
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm:ss");
         return daily.entrySet().stream()
                 .map(entry -> {
                     LocalDate date = entry.getKey();
@@ -287,16 +292,23 @@ public class AttendanceServiceImpl implements AttendanceService {
                             .findFirst()
                             .orElse(null);
                     
+                    String checkInStr = null;
+                    String checkOutStr = null;
+                    if (record != null && record.getCheckIn() != null) {
+                        checkInStr = record.getCheckIn().atZone(ZONE_SEOUL).toLocalTime().format(timeFmt);
+                    }
+                    if (record != null && record.getCheckOut() != null) {
+                        checkOutStr = record.getCheckOut().atZone(ZONE_SEOUL).toLocalTime().format(timeFmt);
+                    }
+                    
                     return DailyWorkSummary.builder()
                             .date(date)
                             .attendanceStatus(record != null ? record.getAttendanceStatus().name() : "NO_RECORD")
                             .workStatus(record != null ? record.getWorkStatus().name() : "NO_RECORD")
                             .workMinutes(minutes.doubleValue())
                             .workHours(minutes / 60.0)
-                            .checkInTime(record != null && record.getCheckIn() != null ? 
-                                    record.getCheckIn().format(DateTimeFormatter.ofPattern("HH:mm:ss")) : null)
-                            .checkOutTime(record != null && record.getCheckOut() != null ? 
-                                    record.getCheckOut().format(DateTimeFormatter.ofPattern("HH:mm:ss")) : null)
+                            .checkInTime(checkInStr)
+                            .checkOutTime(checkOutStr)
                             .workDuration(human(minutes))
                             .build();
                 })
@@ -312,7 +324,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     // 자동 퇴근 처리 메서드
     @Scheduled(cron = "0 0 0 * * ?") // 매일 24시(자정)에 실행
     public void autoCheckOut() {
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        LocalDate today = LocalDate.now(ZONE_SEOUL);
         
         // 출근했지만 퇴근하지 않은 모든 기록 조회
         List<Attendance> incompleteRecords = attendanceRepository
@@ -325,15 +337,15 @@ public class AttendanceServiceImpl implements AttendanceService {
                     workScheduleService.getUserWorkTime(attendance.getUserId(), today);
                 LocalTime scheduledEndTime = workTime.getEndTime();
                 
-                // 스케줄된 퇴근 시간으로 자동 퇴근 처리
-                LocalDateTime autoCheckOutTime = today.atTime(scheduledEndTime);
-                attendance.setCheckOut(autoCheckOutTime);
+                // 스케줄된 퇴근 시간으로 자동 퇴근 처리 (Asia/Seoul 기준)
+                ZonedDateTime autoZdt = today.atTime(scheduledEndTime).atZone(ZONE_SEOUL);
+                attendance.setCheckOut(autoZdt.toInstant());
                 attendance.setAutoRecorded(true);
                 
                 attendanceRepository.save(attendance);
                 
                 log.info("자동 퇴근 처리: 사용자 {}, 시간: {}", 
-                    attendance.getUserId(), autoCheckOutTime);
+                    attendance.getUserId(), autoZdt);
                     
             } catch (Exception e) {
                 log.error("자동 퇴근 처리 실패: 사용자 {}", attendance.getUserId(), e);

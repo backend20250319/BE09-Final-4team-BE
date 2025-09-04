@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.LocalTime;
 
 @Data
@@ -32,6 +32,6 @@ public class LeaveRequestResponseDto {
     private String statusName;
     private Long approverId;
     private String approverName;
-    private LocalDateTime requestedAt;
-    private LocalDateTime approvedAt;
+    private Instant requestedAt;
+    private Instant approvedAt;
 } 

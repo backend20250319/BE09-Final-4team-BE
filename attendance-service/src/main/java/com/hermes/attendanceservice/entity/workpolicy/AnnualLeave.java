@@ -3,7 +3,7 @@ package com.hermes.attendanceservice.entity.workpolicy;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "annual_leave")
@@ -38,20 +38,20 @@ public class AnnualLeave {
     private Integer holidayDays; // 연당 휴가와는 다른 공휴일 일수 (고정)
     
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
     
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
     }
     
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
     
     /**

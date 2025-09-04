@@ -5,7 +5,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import com.hermes.attendanceservice.entity.workschedule.ScheduleType;
 
@@ -99,10 +99,10 @@ public class Schedule {
     private String fixedReason; // 고정 사유 (WORK_POLICY, HOLIDAY, BREAK_TIME)
     
     @Column(nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     
     @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
     
     @Column(nullable = false, length = 20)
     @Builder.Default
@@ -110,28 +110,28 @@ public class Schedule {
     
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
     }
     
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
     
     // 스케줄 상태 변경 메서드
     public void cancel() {
         this.status = "CANCELLED";
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = Instant.now();
     }
     
     public void complete() {
         this.status = "COMPLETED";
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = Instant.now();
     }
     
     public void activate() {
         this.status = "ACTIVE";
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = Instant.now();
     }
 } 

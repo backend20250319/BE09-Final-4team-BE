@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import com.hermes.attendanceservice.entity.workschedule.ScheduleType;
 
@@ -38,8 +38,8 @@ public class ScheduleResponseDto {
     private String location;
     private List<String> attendees;
     private String notes;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
     private String status; // ACTIVE, CANCELLED, COMPLETED
     private Boolean isFixed; // 고정 스케줄 여부
     private Boolean isEditable; // 편집 가능 여부
