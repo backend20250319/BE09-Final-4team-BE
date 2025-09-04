@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.dto.response;
 
+import com.hermes.approvalservice.client.dto.UserProfile;
 import com.hermes.approvalservice.enums.TargetType;
 import lombok.Data;
 
@@ -10,11 +11,11 @@ public class ApprovalTargetResponse {
     
     private Long id;
     private TargetType targetType;
-    private Long userId;
+    private UserProfile user;
     private Long organizationId;
     private Integer managerLevel;
     private Boolean isReference;
     private Boolean isApproved;
-    private Long approvedBy;
+    private UserProfile approver;
     private LocalDateTime approvedAt;
 }

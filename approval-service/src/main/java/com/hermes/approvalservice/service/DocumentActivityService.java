@@ -1,5 +1,8 @@
 package com.hermes.approvalservice.service;
 
+import com.hermes.api.common.ApiResult;
+import com.hermes.approvalservice.client.UserServiceClient;
+import com.hermes.approvalservice.client.dto.UserProfile;
 import com.hermes.approvalservice.dto.response.DocumentActivityResponse;
 import com.hermes.approvalservice.entity.ApprovalDocument;
 import com.hermes.approvalservice.entity.DocumentActivity;
@@ -17,6 +20,7 @@ import java.util.List;
 public class DocumentActivityService {
 
     private final DocumentActivityRepository activityRepository;
+    private final UserServiceClient userServiceClient;
 
     public List<DocumentActivityResponse> getActivities(Long documentId) {
         return activityRepository.findByDocumentIdOrderByCreatedAtAsc(documentId)
@@ -47,7 +51,10 @@ public class DocumentActivityService {
         DocumentActivityResponse response = new DocumentActivityResponse();
         response.setId(activity.getId());
         response.setActivityType(activity.getActivityType());
-        response.setUserId(activity.getUserId());
+        
+        ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(activity.getUserId());
+        response.setUser(userResult.getData());
+        
         response.setDescription(activity.getDescription());
         response.setReason(activity.getReason());
         response.setCreatedAt(activity.getCreatedAt());

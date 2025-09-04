@@ -1,5 +1,7 @@
 package com.hermes.approvalservice.client;
 
+import com.hermes.api.common.ApiResult;
+import com.hermes.approvalservice.client.dto.UserProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -8,19 +10,17 @@ import org.springframework.stereotype.Component;
 public class UserServiceClientFallback implements UserServiceClient {
 
     @Override
-    public UserInfo getUserById(Long id) {
-        log.warn("User service is unavailable. Returning fallback for user id: {}", id);
-        UserInfo fallback = new UserInfo();
-        fallback.setId(id);
-        fallback.setName("Unknown User");
-        fallback.setEmail("unknown@example.com");
-        fallback.setIsAdmin(false);
-        return fallback;
-    }
-
-    @Override
-    public Boolean isAdmin(Long id) {
-        log.warn("User service is unavailable. Returning fallback admin check for user id: {}", id);
-        return false;
+    public ApiResult<UserProfile> getUserProfile(Long userId) {
+        log.error("UserServiceClient fallback triggered for getUserProfile, userId: {}", userId);
+        
+        UserProfile fallbackUserProfile = UserProfile.builder()
+                .id(userId)
+                .name("사용자 정보 없음")
+                .email("")
+                .phone("")
+                .profileImageUrl("")
+                .build();
+        
+        return ApiResult.success(fallbackUserProfile);
     }
 }

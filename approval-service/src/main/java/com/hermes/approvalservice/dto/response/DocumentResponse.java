@@ -1,6 +1,7 @@
 package com.hermes.approvalservice.dto.response;
 
 import com.hermes.attachment.dto.AttachmentInfoResponse;
+import com.hermes.approvalservice.client.dto.UserProfile;
 import com.hermes.approvalservice.enums.DocumentStatus;
 import lombok.Data;
 
@@ -14,7 +15,7 @@ public class DocumentResponse {
     private String title;
     private String content;
     private DocumentStatus status;
-    private Long authorId;
+    private UserProfile author;
     private Integer currentStage;
     private TemplateResponse template;
     private List<DocumentFieldValueResponse> fieldValues;

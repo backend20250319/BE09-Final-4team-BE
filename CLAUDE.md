@@ -289,3 +289,4 @@ public class OpenApiConfig {
 - **Encoding**: Always use `-Dfile.encoding=UTF-8` when building with gradlew
 - **Selective building**: Only build modified modules when testing, not the entire project
 - **Time Handling**: Prefer `Instant` over `LocalDateTime`
+- **Feign Client**: Prefer fallback over try-catch

@@ -1,9 +1,13 @@
 package com.hermes.approvalservice.service;
 
+import com.hermes.api.common.ApiResult;
 import com.hermes.attachment.entity.AttachmentInfo;
 import com.hermes.attachment.service.AttachmentClientService;
+import com.hermes.approvalservice.client.UserServiceClient;
+import com.hermes.approvalservice.client.dto.UserProfile;
 import com.hermes.approvalservice.dto.request.CreateDocumentRequest;
 import com.hermes.approvalservice.dto.request.UpdateDocumentRequest;
+import com.hermes.approvalservice.dto.response.ApprovalTargetResponse;
 import com.hermes.approvalservice.dto.response.DocumentResponse;
 import com.hermes.approvalservice.dto.response.DocumentSummaryResponse;
 import com.hermes.approvalservice.entity.*;
@@ -33,6 +37,7 @@ public class ApprovalDocumentService {
     private final DocumentPermissionService permissionService;
     private final DocumentActivityService activityService;
     private final AttachmentClientService attachmentService;
+    private final UserServiceClient userServiceClient;
 
 
     public Page<DocumentSummaryResponse> getDocumentsForUser(Long userId, UserPrincipal user, 
@@ -150,7 +155,10 @@ public class ApprovalDocumentService {
         response.setTitle(document.getTitle());
         response.setContent(document.getContent());
         response.setStatus(document.getStatus());
-        response.setAuthorId(document.getAuthorId());
+        
+        ApiResult<UserProfile> authorResult = userServiceClient.getUserProfile(document.getAuthorId());
+        response.setAuthor(authorResult.getData());
+        
         response.setTemplateTitle(document.getTemplate().getTitle());
         response.setCurrentStage(document.getCurrentStage());
         response.setTotalStages(document.getApprovalStages().size());
@@ -173,7 +181,10 @@ public class ApprovalDocumentService {
         response.setTitle(document.getTitle());
         response.setContent(document.getContent());
         response.setStatus(document.getStatus());
-        response.setAuthorId(document.getAuthorId());
+        
+        ApiResult<UserProfile> authorResult = userServiceClient.getUserProfile(document.getAuthorId());
+        response.setAuthor(authorResult.getData());
+        
         response.setCurrentStage(document.getCurrentStage());
         response.setCreatedAt(document.getCreatedAt());
         response.setUpdatedAt(document.getUpdatedAt());
@@ -184,6 +195,31 @@ public class ApprovalDocumentService {
         response.setAttachments(attachmentService.convertToResponseList(document.getAttachments()));
         
         // Add template, field values, stages, etc.
+        return response;
+    }
+    
+    private ApprovalTargetResponse convertDocumentApprovalTargetToResponse(DocumentApprovalTarget target) {
+        ApprovalTargetResponse response = new ApprovalTargetResponse();
+        response.setId(target.getId());
+        response.setTargetType(target.getTargetType());
+        response.setOrganizationId(target.getOrganizationId());
+        response.setManagerLevel(target.getManagerLevel());
+        response.setIsReference(target.getIsReference());
+        response.setIsApproved(target.getIsApproved());
+        response.setApprovedAt(target.getApprovedAt());
+        
+        // Convert userId to UserProfileInfo
+        if (target.getUserId() != null) {
+            ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(target.getUserId());
+            response.setUser(userResult.getData());
+        }
+        
+        // Convert approvedBy to UserProfileInfo
+        if (target.getApprovedBy() != null) {
+            ApiResult<UserProfile> approverResult = userServiceClient.getUserProfile(target.getApprovedBy());
+            response.setApprover(approverResult.getData());
+        }
+        
         return response;
     }
 }
