@@ -23,6 +23,7 @@ import com.hermes.userservice.dto.MainProfileResponseDto;
 import com.hermes.userservice.dto.DetailProfileResponseDto;
 import com.hermes.userservice.dto.ColleagueResponseDto;
 import com.hermes.userservice.dto.ColleagueSearchRequestDto;
+import java.util.HashMap;
 
 @Slf4j
 @Service
@@ -63,7 +64,19 @@ public class UserService {
 
         User user = userMapper.toEntity(userCreateDto);
         User createdUser = userRepository.save(user);
-        return userMapper.toResponseDto(createdUser);
+        
+        List<Map<String, Object>> remoteOrganizations = organizationIntegrationService.getUserOrganizations(createdUser.getId());
+        
+        WorkPolicyResponseDto workPolicy = null;
+        if (createdUser.getWorkPolicyId() != null) {
+            try {
+                workPolicy = workPolicyIntegrationService.getWorkPolicyById(createdUser.getWorkPolicyId());
+            } catch (Exception e) {
+                log.warn("근무 정책 조회 실패, null로 처리: userId={}, workPolicyId={}", createdUser.getId(), createdUser.getWorkPolicyId(), e);
+            }
+        }
+        
+        return userMapper.toResponseDto(createdUser, remoteOrganizations, workPolicy);
     }
 
     public UserResponseDto updateUser(Long userId, UserUpdateDto userUpdateDto) {
@@ -87,7 +100,7 @@ public class UserService {
         User updatedUser = userRepository.save(user);
         return userMapper.toResponseDto(updatedUser);
     }
-    
+
     public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException("삭제할 사용자를 찾을 수 없습니다: " + userId);
@@ -100,13 +113,22 @@ public class UserService {
     public List<UserResponseDto> getAllUsers() {
         log.info("전체 사용자 목록 조회 요청 (근무정책 및 조직 정보 포함)");
         List<User> users = userRepository.findAll();
-        
-        Map<Long, List<Map<String, Object>>> allOrganizations = organizationIntegrationService.getAllUsersOrganizations();
-        
+
+        // 조직 정보 조회
+        Map<Long, List<Map<String, Object>>> allOrganizations = new HashMap<>();
+        try {
+            allOrganizations = organizationIntegrationService.getAllUsersOrganizations();
+        } catch (Exception e) {
+            log.error("조직 정보 조회 실패, 빈 맵으로 처리: {}", e.getMessage());
+        }
+
+        // final 변수로 복사하여 람다에서 사용
+        final Map<Long, List<Map<String, Object>>> finalOrganizations = allOrganizations;
+
         return users.stream()
                 .map(user -> {
-                    List<Map<String, Object>> userOrganizations = allOrganizations.getOrDefault(user.getId(), List.of());
-                    
+                    List<Map<String, Object>> userOrganizations = finalOrganizations.getOrDefault(user.getId(), List.of());
+
                     WorkPolicyResponseDto workPolicy = null;
                     if (user.getWorkPolicyId() != null) {
                         try {
@@ -115,7 +137,7 @@ public class UserService {
                             log.warn("근무 정책 조회 실패, null로 처리: userId={}, workPolicyId={}", user.getId(), user.getWorkPolicyId(), e);
                         }
                     }
-                    
+
                     return userMapper.toResponseDto(user, userOrganizations, workPolicy);
                 })
                 .collect(Collectors.toList());
@@ -133,7 +155,7 @@ public class UserService {
         log.info("공개 프로필 조회 요청: userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-        
+
         return userMapper.toMainProfileDto(user);
     }
 
@@ -142,24 +164,24 @@ public class UserService {
         log.info("상세 프로필 조회 요청: userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-        
+
         return userMapper.toDetailProfileDto(user);
     }
 
     @Transactional(readOnly = true)
     public List<ColleagueResponseDto> getColleagues(ColleagueSearchRequestDto searchRequest) {
-        log.info("동료 목록 조회 요청: searchKeyword={}, department={}, position={}", 
+        log.info("동료 목록 조회 요청: searchKeyword={}, department={}, position={}",
                 searchRequest.getSearchKeyword(), searchRequest.getDepartment(), searchRequest.getPosition());
-        
+
         List<User> users = userRepository.findAll();
-        
+
         return users.stream()
                 .filter(user -> {
                     if (searchRequest.getSearchKeyword() != null && !searchRequest.getSearchKeyword().trim().isEmpty()) {
                         String keyword = searchRequest.getSearchKeyword().toLowerCase();
                         return user.getName().toLowerCase().contains(keyword) ||
-                               (user.getPosition() != null && user.getPosition().getName().toLowerCase().contains(keyword)) ||
-                               (user.getEmail() != null && user.getEmail().toLowerCase().contains(keyword));
+                                (user.getPosition() != null && user.getPosition().getName().toLowerCase().contains(keyword)) ||
+                                (user.getEmail() != null && user.getEmail().toLowerCase().contains(keyword));
                     }
                     return true;
                 })
@@ -171,8 +193,8 @@ public class UserService {
                 })
                 .filter(user -> {
                     if (searchRequest.getPosition() != null && !searchRequest.getPosition().trim().isEmpty()) {
-                        return user.getPosition() != null && 
-                               user.getPosition().getName().toLowerCase().contains(searchRequest.getPosition().toLowerCase());
+                        return user.getPosition() != null &&
+                                user.getPosition().getName().toLowerCase().contains(searchRequest.getPosition().toLowerCase());
                     }
                     return true;
                 })
