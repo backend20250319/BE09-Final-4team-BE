@@ -21,8 +21,8 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
   @Query("update Announcement a set a.views = a.views + 1 where a.id = :id")
   int increaseViews(@Param("id") Long id);
 
-  @Query("SELECT a FROM Announcement a LEFT JOIN FETCH a.comments LEFT JOIN FETCH a.fileIds WHERE a.id = :id")
-  Optional<Announcement> findByIdWithComments(@Param("id") Long id);
+  @Query("SELECT a FROM Announcement a LEFT JOIN FETCH a.fileIds WHERE a.id = :id")
+  Optional<Announcement> findByIdWithFileIds(@Param("id") Long id);
 
   List<AnnouncementSummaryDto> findByTitleContaining(String keyword);
 }

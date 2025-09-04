@@ -85,8 +85,8 @@ public class AnnouncementService {
   @Transactional
   public AnnouncementResponseDto getAnnouncement(Long id) {
 
-    // 1. 공지사항 엔터티 조회
-    Announcement announcement = announcementRepository.findByIdWithComments(id)
+    // 1. 공지사항 엔터티 조회 (fileIds 포함)
+    Announcement announcement = announcementRepository.findByIdWithFileIds(id)
         .orElseThrow(() -> new AnnouncementNotFoundException(id));
 
     // 2. 조회수 증가
