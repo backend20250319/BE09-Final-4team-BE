@@ -41,7 +41,7 @@ public class ArchiveService {
   public List<ArchiveResponseDto> getAllArchives() {
     log.info("사내 문서 목록 조회");
 
-    return archiveRepository.findAll().stream()
+    return archiveRepository.findAllOrderByCreatedAtDesc().stream()
         .map(this::convertToResponse)
         .toList();
   }
