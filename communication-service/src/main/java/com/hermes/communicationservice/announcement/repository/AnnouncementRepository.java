@@ -24,5 +24,9 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
   @Query("SELECT a FROM Announcement a LEFT JOIN FETCH a.fileIds WHERE a.id = :id")
   Optional<Announcement> findByIdWithFileIds(@Param("id") Long id);
 
-  List<AnnouncementSummaryDto> findByTitleContaining(String keyword);
+  @Query("SELECT new com.hermes.communicationservice.announcement.dto.AnnouncementSummaryDto(" +
+      "a.id, a.title, a.displayAuthor, a.views, " +
+      "CAST((SELECT COUNT(c) FROM Comment c WHERE c.announcement.id = a.id) AS int), a.createdAt) " +
+      "FROM Announcement a WHERE a.title LIKE %:keyword% ORDER BY a.id DESC")
+  List<AnnouncementSummaryDto> findByTitleContaining(@Param("keyword") String keyword);
 }
