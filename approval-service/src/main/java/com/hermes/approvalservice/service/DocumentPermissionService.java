@@ -20,7 +20,7 @@ public class DocumentPermissionService {
         }
 
         // 관리자는 항상 조회 가능
-        if (user.getRole() == Role.ADMIN) {
+        if (user.isAdmin()) {
             return true;
         }
 
@@ -35,7 +35,7 @@ public class DocumentPermissionService {
     public boolean canEditDocument(ApprovalDocument document, UserPrincipal user) {
         Long userId = user.getId();
         // 관리자는 항상 수정 가능
-        if (user.getRole() == Role.ADMIN) {
+        if (user.isAdmin()) {
             return true;
         }
         
@@ -46,7 +46,7 @@ public class DocumentPermissionService {
     public boolean canApproveDocument(ApprovalDocument document, Integer stageOrder, UserPrincipal user) {
         Long userId = user.getId();
         // 관리자는 항상 승인 가능
-        if (user.getRole() == Role.ADMIN) {
+        if (user.isAdmin()) {
             return true;
         }
         
@@ -66,7 +66,7 @@ public class DocumentPermissionService {
         }
 
         // 관리자인 경우 (작성자가 아닌 경우)
-        if (user.getRole() == Role.ADMIN) {
+        if (user.isAdmin()) {
             return UserRole.VIEWER;
         }
 
