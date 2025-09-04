@@ -64,13 +64,15 @@ public class ApprovalDocumentService {
             throw new UnauthorizedException("문서 조회 권한이 없습니다.");
         }
 
-        return convertToResponse(document);
+        return convertToResponse(document, user);
     }
 
     @Transactional
-    public DocumentResponse createDocument(CreateDocumentRequest request, Long authorId) {
+    public DocumentResponse createDocument(CreateDocumentRequest request, UserPrincipal author) {
         DocumentTemplate template = templateRepository.findById(request.getTemplateId())
                 .orElseThrow(() -> new NotFoundException("템플릿을 찾을 수 없습니다."));
+
+        Long authorId = author.getId();
 
         // TODO: 템플릿의 각종 옵션들을 기반으로 request 검증
 
@@ -94,7 +96,7 @@ public class ApprovalDocumentService {
 
         activityService.recordActivity(savedDocument, authorId, ActivityType.CREATE, "문서를 작성했습니다.");
 
-        return convertToResponse(savedDocument);
+        return convertToResponse(savedDocument, author);
     }
 
     @Transactional
@@ -128,7 +130,7 @@ public class ApprovalDocumentService {
 
         activityService.recordActivity(document, userId, ActivityType.UPDATE, "문서를 수정했습니다.");
 
-        return convertToResponse(document);
+        return convertToResponse(document, user);
     }
 
     @Transactional
@@ -176,7 +178,7 @@ public class ApprovalDocumentService {
         return response;
     }
 
-    private DocumentResponse convertToResponse(ApprovalDocument document) {
+    private DocumentResponse convertToResponse(ApprovalDocument document, UserPrincipal user) {
         // Full conversion implementation
         DocumentResponse response = new DocumentResponse();
         response.setId(document.getId());
@@ -188,6 +190,12 @@ public class ApprovalDocumentService {
         response.setAuthor(authorResult.getData());
         
         response.setCurrentStage(document.getCurrentStage());
+        
+        // Set user role if user information is available
+        if (user != null) {
+            response.setUserRole(permissionService.getUserRole(document, user));
+        }
+        
         response.setCreatedAt(document.getCreatedAt());
         response.setUpdatedAt(document.getUpdatedAt());
         response.setSubmittedAt(document.getSubmittedAt());

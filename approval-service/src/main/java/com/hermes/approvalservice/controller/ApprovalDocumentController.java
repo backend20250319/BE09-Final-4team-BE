@@ -82,8 +82,7 @@ public class ApprovalDocumentController {
     public ResponseEntity<DocumentResponse> createDocument(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 작성 요청 정보", required = true) @Valid @RequestBody CreateDocumentRequest request) {
-        Long userId = user.getId();
-        DocumentResponse document = documentService.createDocument(request, userId);
+        DocumentResponse document = documentService.createDocument(request, user);
         return ResponseEntity.ok(document);
     }
 
