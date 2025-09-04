@@ -23,7 +23,6 @@ import com.hermes.userservice.dto.MainProfileResponseDto;
 import com.hermes.userservice.dto.DetailProfileResponseDto;
 import com.hermes.userservice.dto.ColleagueResponseDto;
 import com.hermes.userservice.dto.ColleagueSearchRequestDto;
-import java.util.HashMap;
 
 @Slf4j
 @Service
@@ -79,9 +78,15 @@ public class UserService {
         return userMapper.toResponseDto(createdUser, remoteOrganizations, workPolicy);
     }
 
+    @Transactional
     public UserResponseDto updateUser(Long userId, UserUpdateDto userUpdateDto) {
+        log.info("사용자 업데이트 시작: userId={}, updateData={}", userId, userUpdateDto);
+        
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+
+        log.info("업데이트 전 사용자 데이터: name={}, phone={}, address={}, joinDate={}", 
+                 user.getName(), user.getPhone(), user.getAddress(), user.getJoinDate());
 
         if (userUpdateDto.getEmail() != null && !Objects.equals(user.getEmail(), userUpdateDto.getEmail())) {
             if (userRepository.findByEmail(userUpdateDto.getEmail()).isPresent()) {
@@ -92,13 +97,38 @@ public class UserService {
         if (userUpdateDto.getPassword() != null) {
             user.updatePassword(passwordEncoder.encode(userUpdateDto.getPassword()));
         }
+        
+        if (userUpdateDto.getJoinDate() != null) {
+            user.updateJoinDate(userUpdateDto.getJoinDate());
+        }
+        
         user.updateInfo(userUpdateDto.getName(), userUpdateDto.getPhone(), userUpdateDto.getAddress(), userUpdateDto.getProfileImageUrl(), userUpdateDto.getSelfIntroduction());
         user.updateWorkInfo(userUpdateDto.getEmploymentType(), userUpdateDto.getRank(), userUpdateDto.getPosition(), userUpdateDto.getJob(), userUpdateDto.getRole(), userUpdateDto.getWorkPolicyId());
         user.updateAdminStatus(userUpdateDto.getIsAdmin());
         user.updatePasswordResetFlag(userUpdateDto.getNeedsPasswordReset());
 
+        log.info("업데이트 후 사용자 데이터: name={}, phone={}, address={}, joinDate={}", 
+                 user.getName(), user.getPhone(), user.getAddress(), user.getJoinDate());
+
         User updatedUser = userRepository.save(user);
-        return userMapper.toResponseDto(updatedUser);
+        
+        log.info("DB 저장 완료: userId={}", updatedUser.getId());
+        
+        List<Map<String, Object>> remoteOrganizations = organizationIntegrationService.getUserOrganizations(updatedUser.getId());
+        
+        WorkPolicyResponseDto workPolicy = null;
+        if (updatedUser.getWorkPolicyId() != null) {
+            try {
+                workPolicy = workPolicyIntegrationService.getWorkPolicyById(updatedUser.getWorkPolicyId());
+            } catch (Exception e) {
+                log.warn("근무 정책 조회 실패: {}", e.getMessage());
+            }
+        }
+        
+        UserResponseDto response = userMapper.toResponseDto(updatedUser, remoteOrganizations, workPolicy);
+        log.info("응답 데이터 생성 완료: userId={}", response.getId());
+        
+        return response;
     }
 
     public void deleteUser(Long userId) {
@@ -114,20 +144,11 @@ public class UserService {
         log.info("전체 사용자 목록 조회 요청 (근무정책 및 조직 정보 포함)");
         List<User> users = userRepository.findAll();
 
-        // 조직 정보 조회
-        Map<Long, List<Map<String, Object>>> allOrganizations = new HashMap<>();
-        try {
-            allOrganizations = organizationIntegrationService.getAllUsersOrganizations();
-        } catch (Exception e) {
-            log.error("조직 정보 조회 실패, 빈 맵으로 처리: {}", e.getMessage());
-        }
-
-        // final 변수로 복사하여 람다에서 사용
-        final Map<Long, List<Map<String, Object>>> finalOrganizations = allOrganizations;
+        Map<Long, List<Map<String, Object>>> allOrganizations = organizationIntegrationService.getAllUsersOrganizations();
 
         return users.stream()
                 .map(user -> {
-                    List<Map<String, Object>> userOrganizations = finalOrganizations.getOrDefault(user.getId(), List.of());
+                    List<Map<String, Object>> userOrganizations = allOrganizations.getOrDefault(user.getId(), List.of());
 
                     WorkPolicyResponseDto workPolicy = null;
                     if (user.getWorkPolicyId() != null) {

@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Entity
 @Table(name = "users")
@@ -15,6 +17,8 @@ import java.util.List;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class User {
+
+    private static final Logger log = LoggerFactory.getLogger(User.class);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -86,11 +90,19 @@ public class User {
     private List<UserOrganization> userOrganizations = new ArrayList<>();
 
     public void updateInfo(String name, String phone, String address, String profileImageUrl, String selfIntroduction) {
+        log.info("updateInfo 호출: name={}, phone={}, address={}", name, phone, address);
         this.name = name;
         this.phone = phone;
         this.address = address;
         this.profileImageUrl = profileImageUrl;
         this.selfIntroduction = selfIntroduction;
+        log.info("updateInfo 완료: this.name={}, this.phone={}, this.address={}", this.name, this.phone, this.address);
+    }
+
+    public void updateJoinDate(LocalDate joinDate) {
+        log.info("updateJoinDate 호출: joinDate={}", joinDate);
+        this.joinDate = joinDate;
+        log.info("updateJoinDate 완료: this.joinDate={}", this.joinDate);
     }
 
     public void updateWorkInfo(EmploymentType employmentType, Rank rank, Position position, Job job, String role, Long workPolicyId) {
