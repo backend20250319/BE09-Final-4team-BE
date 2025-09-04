@@ -1,13 +1,12 @@
 package com.hermes.approvalservice.service;
 
 import com.hermes.api.common.ApiResult;
+import com.hermes.approvalservice.dto.request.*;
 import com.hermes.attachment.entity.AttachmentInfo;
 import com.hermes.attachment.service.AttachmentClientService;
 import com.hermes.approvalservice.client.UserServiceClient;
 import com.hermes.approvalservice.client.dto.UserProfile;
 import com.hermes.approvalservice.converter.ResponseConverter;
-import com.hermes.approvalservice.dto.request.CreateDocumentRequest;
-import com.hermes.approvalservice.dto.request.UpdateDocumentRequest;
 import com.hermes.approvalservice.dto.response.*;
 import com.hermes.approvalservice.entity.*;
 import com.hermes.approvalservice.enums.ActivityType;
@@ -33,6 +32,7 @@ public class ApprovalDocumentService {
 
     private final ApprovalDocumentRepository documentRepository;
     private final DocumentTemplateRepository templateRepository;
+    private final TemplateFieldRepository templateFieldRepository;
     private final DocumentPermissionService permissionService;
     private final DocumentActivityService activityService;
     private final AttachmentClientService attachmentService;
@@ -91,8 +91,10 @@ public class ApprovalDocumentService {
 
         ApprovalDocument savedDocument = documentRepository.save(document);
 
-        // Save field values, approval stages, and reference targets
-        // (Implementation details)
+        // Save related entities using helper methods
+        saveFieldValues(savedDocument, request.getFieldValues());
+        saveApprovalStages(savedDocument, request.getApprovalStages());
+        saveReferenceTargets(savedDocument, request.getReferenceTargets());
 
         activityService.recordActivity(savedDocument, authorId, ActivityType.CREATE, "문서를 작성했습니다.");
 
@@ -125,8 +127,21 @@ public class ApprovalDocumentService {
             document.getAttachments().addAll(attachments);
         }
 
-        // Update field values, approval stages, and reference targets
-        // (Implementation details)
+        // Update related entities using helper methods
+        if (request.getFieldValues() != null) {
+            document.getFieldValues().clear();
+            saveFieldValues(document, request.getFieldValues());
+        }
+        
+        if (request.getApprovalStages() != null) {
+            document.getApprovalStages().clear();
+            saveApprovalStages(document, request.getApprovalStages());
+        }
+        
+        if (request.getReferenceTargets() != null) {
+            document.getReferenceTargets().clear();
+            saveReferenceTargets(document, request.getReferenceTargets());
+        }
 
         activityService.recordActivity(document, userId, ActivityType.UPDATE, "문서를 수정했습니다.");
 
@@ -233,5 +248,67 @@ public class ApprovalDocumentService {
         
         return response;
     }
-    
+
+    private void saveFieldValues(ApprovalDocument document, List<DocumentFieldValueRequest> fieldValues) {
+        if (fieldValues != null) {
+            for (DocumentFieldValueRequest fieldValueRequest : fieldValues) {
+                DocumentFieldValue fieldValue = DocumentFieldValue.builder()
+                        .fieldName(fieldValueRequest.getFieldName())
+                        .fieldValue(fieldValueRequest.getFieldValue())
+                        .document(document)
+                        .templateField(fieldValueRequest.getTemplateFieldId() != null ? 
+                            templateFieldRepository.findById(fieldValueRequest.getTemplateFieldId()).orElse(null) : null)
+                        .build();
+                document.getFieldValues().add(fieldValue);
+            }
+        }
+    }
+
+    private void saveApprovalStages(ApprovalDocument document, List<ApprovalStageRequest> approvalStages) {
+        if (approvalStages != null) {
+            for (ApprovalStageRequest stageRequest : approvalStages) {
+                DocumentApprovalStage stage = DocumentApprovalStage.builder()
+                        .stageOrder(stageRequest.getStageOrder())
+                        .stageName(stageRequest.getStageName())
+                        .document(document)
+                        .build();
+                
+                saveApprovalTargetsForStage(stage, stageRequest.getApprovalTargets());
+                document.getApprovalStages().add(stage);
+            }
+        }
+    }
+
+    private void saveApprovalTargetsForStage(DocumentApprovalStage stage, List<ApprovalTargetRequest> approvalTargets) {
+        if (approvalTargets != null) {
+            for (ApprovalTargetRequest targetRequest : approvalTargets) {
+                DocumentApprovalTarget target = DocumentApprovalTarget.builder()
+                        .targetType(targetRequest.getTargetType())
+                        .userId(targetRequest.getUserId())
+                        .organizationId(targetRequest.getOrganizationId())
+                        .managerLevel(targetRequest.getManagerLevel())
+                        .isReference(targetRequest.getIsReference())
+                        .document(stage.getDocument())
+                        .approvalStage(stage)
+                        .build();
+                stage.getApprovalTargets().add(target);
+            }
+        }
+    }
+
+    private void saveReferenceTargets(ApprovalDocument document, List<ApprovalTargetRequest> referenceTargets) {
+        if (referenceTargets != null) {
+            for (ApprovalTargetRequest referenceRequest : referenceTargets) {
+                DocumentApprovalTarget referenceTarget = DocumentApprovalTarget.builder()
+                        .targetType(referenceRequest.getTargetType())
+                        .userId(referenceRequest.getUserId())
+                        .organizationId(referenceRequest.getOrganizationId())
+                        .managerLevel(referenceRequest.getManagerLevel())
+                        .isReference(true) // 참조 대상은 항상 true
+                        .document(document)
+                        .build();
+                document.getReferenceTargets().add(referenceTarget);
+            }
+        }
+    }
 }
