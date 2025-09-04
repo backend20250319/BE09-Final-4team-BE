@@ -24,7 +24,6 @@ import java.security.NoSuchAlgorithmException;
  * JWT 토큰 생성 전용 서비스 (user-service에서만 사용)
  * 토큰 검증은 Spring Security OAuth2 Resource Server가 담당
  */
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -72,6 +71,7 @@ public class JwtTokenService {
                 .signWith(getSigningKey(), Jwts.SIG.HS256)
                 .compact();
     }
+
 
     /**
      * 액세스 토큰 만료 시간 반환 (초)
@@ -124,7 +124,7 @@ public class JwtTokenService {
             Claims claims = Jwts.parser()
                     .verifyWith(getSigningKey())
                     .build()
-                    .parseSignedClaims(refreshToken)
+                    .parseSignedClaims(refreshToken) // 여기서 만료시간 검증도 수행됨
                     .getPayload();
 
             // 토큰 타입 확인
@@ -144,6 +144,7 @@ public class JwtTokenService {
      * JWT 서명 키 생성
      */
     private SecretKey getSigningKey() {
+        // Base64 디코딩 후 사용
         byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecret());
         return Keys.hmacShaKeyFor(keyBytes);
     }

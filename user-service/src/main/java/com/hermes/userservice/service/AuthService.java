@@ -32,7 +32,6 @@ public class AuthService {
     /**
      * 로그인 처리
      */
-
     public LoginResult login(LoginRequestDto loginDto) {
         User user = userRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("해당 이메일로 등록된 사용자가 없습니다."));
@@ -64,11 +63,12 @@ public class AuthService {
                 .role(userRole.name())
                 .build();
     }
+
     /**
      * 로그아웃 처리
      */
-
     public void logout(Long userId) {
+        // userId로 RefreshToken을 찾아서 삭제
         refreshTokenRepository.findByUserId(userId)
                 .ifPresent(refreshTokenRepository::delete);
 
@@ -82,20 +82,23 @@ public class AuthService {
     /**
      * 토큰 갱신 처리 (Refresh Token Rotation 포함)
      */
-
     public LoginResult refreshToken(String refreshToken) {
+        // refreshToken을 검증하고 userId 추출
         Long userId = jwtTokenService.validateAndGetUserIdFromRefreshToken(refreshToken);
-
+        
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("해당 사용자가 존재하지 않습니다."));
 
         validateStoredRefreshToken(userId, refreshToken);
-
+        
         Role userRole = getUserRole(user);
+        // TODO: tenantId
         String newAccessToken = jwtTokenService.createAccessToken(userId, userRole, null);
 
+        // Refresh Token Rotation: 새로운 RefreshToken 생성
         String newRefreshToken = jwtTokenService.createRefreshToken(userId);
-
+        
+        // 기존 RefreshToken을 새로운 것으로 교체
         saveOrUpdateRefreshToken(userId, newRefreshToken);
 
         return LoginResult.builder()
@@ -114,9 +117,11 @@ public class AuthService {
     }
 
     private void saveOrUpdateRefreshToken(Long userId, String refreshToken) {
+        // RefreshToken을 해시화하여 저장 (보안 강화)
         String hashedRefreshToken = jwtTokenService.hashToken(refreshToken);
         Instant expiration = Instant.now().plusSeconds(jwtTokenService.getRefreshTokenTTL());
-
+        
+        // 기존 토큰이 있으면 업데이트, 없으면 새로 생성 (upsert)
         RefreshToken existingToken = refreshTokenRepository.findByUserId(userId).orElse(null);
         if (existingToken != null) {
             existingToken.setTokenHash(hashedRefreshToken);
@@ -137,10 +142,12 @@ public class AuthService {
         RefreshToken stored = refreshTokenRepository.findByUserId(userId)
                 .orElseThrow(() -> new InvalidTokenException("RefreshToken not found"));
 
+        // 토큰 해시값 비교
         if (!jwtTokenService.matchesToken(refreshToken, stored.getTokenHash())) {
             throw new InvalidTokenException("유효하지 않은 RefreshToken입니다.");
         }
 
+        // DB 만료시간 확인 (추가 보안)
         if (stored.isExpired()) {
             throw new InvalidTokenException("만료된 RefreshToken입니다.");
         }
