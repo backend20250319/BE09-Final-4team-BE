@@ -13,7 +13,7 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
 
   @Query("SELECT new com.hermes.communicationservice.announcement.dto.AnnouncementSummaryDto(" +
       "a.id, a.title, a.displayAuthor, a.views, " +
-      "(SELECT COUNT(c) FROM Comment c WHERE c.announcement.id = a.id), a.createdAt) " +
+      "CAST((SELECT COUNT(c) FROM Comment c WHERE c.announcement.id = a.id) AS int), a.createdAt) " +
       "FROM Announcement a ORDER BY a.id DESC")
   List<AnnouncementSummaryDto> findAllAnnouncementSummary();
 
