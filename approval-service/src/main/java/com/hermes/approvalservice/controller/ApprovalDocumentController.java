@@ -49,9 +49,8 @@ public class ApprovalDocumentController {
             @Parameter(description = "조회 시작 날짜 (yyyy-MM-dd)") @RequestParam(required = false) LocalDate startDate,
             @Parameter(description = "조회 종료 날짜 (yyyy-MM-dd)") @RequestParam(required = false) LocalDate endDate,
             @Parameter(description = "페이지네이션 정보 (기본 크기: 20)") @PageableDefault(size = 20) Pageable pageable) {
-        Long userId = user.getId();
         Page<DocumentSummaryResponse> documents = documentService.getDocumentsForUser(
-                userId, user, status, search, startDate, endDate, pageable);
+                user, status, search, startDate, endDate, pageable);
         return ResponseEntity.ok(documents);
     }
 
@@ -68,8 +67,7 @@ public class ApprovalDocumentController {
     public ResponseEntity<DocumentResponse> getDocumentById(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id) {
-        Long userId = user.getId();
-        DocumentResponse document = documentService.getDocumentById(id, userId, user);
+        DocumentResponse document = documentService.getDocumentById(id, user);
         return ResponseEntity.ok(document);
     }
 
@@ -103,8 +101,7 @@ public class ApprovalDocumentController {
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "문서 수정 요청 정보", required = true) @Valid @RequestBody UpdateDocumentRequest request) {
-        Long userId = user.getId();
-        DocumentResponse document = documentService.updateDocument(id, request, userId, user);
+        DocumentResponse document = documentService.updateDocument(id, request, user);
         return ResponseEntity.ok(document);
     }
 
@@ -141,8 +138,7 @@ public class ApprovalDocumentController {
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "승인 처리 요청 정보") @RequestBody ApprovalActionRequest request) {
-        Long userId = user.getId();
-        approvalProcessService.approveDocument(id, userId, user, request);
+        approvalProcessService.approveDocument(id, user, request);
         return ResponseEntity.ok().build();
     }
 
@@ -161,8 +157,7 @@ public class ApprovalDocumentController {
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long id,
             @Parameter(description = "반려 처리 요청 정보", required = true) @RequestBody ApprovalActionRequest request) {
-        Long userId = user.getId();
-        approvalProcessService.rejectDocument(id, userId, user, request);
+        approvalProcessService.rejectDocument(id, user, request);
         return ResponseEntity.ok().build();
     }
 }

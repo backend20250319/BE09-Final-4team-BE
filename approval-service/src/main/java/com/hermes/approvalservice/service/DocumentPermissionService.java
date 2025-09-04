@@ -12,7 +12,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class DocumentPermissionService {
 
-    public boolean canViewDocument(ApprovalDocument document, Long userId, UserPrincipal user) {
+    public boolean canViewDocument(ApprovalDocument document, UserPrincipal user) {
+        Long userId = user.getId();
         // 작성자는 항상 조회 가능
         if (document.getAuthorId().equals(userId)) {
             return true;
@@ -31,7 +32,8 @@ public class DocumentPermissionService {
                 .anyMatch(target -> isTargetUser(target, userId));
     }
 
-    public boolean canEditDocument(ApprovalDocument document, Long userId, UserPrincipal user) {
+    public boolean canEditDocument(ApprovalDocument document, UserPrincipal user) {
+        Long userId = user.getId();
         // 관리자는 항상 수정 가능
         if (user.getRole() == Role.ADMIN) {
             return true;
@@ -41,7 +43,8 @@ public class DocumentPermissionService {
         return document.getAuthorId().equals(userId);
     }
 
-    public boolean canApproveDocument(ApprovalDocument document, Long userId, Integer stageOrder, UserPrincipal user) {
+    public boolean canApproveDocument(ApprovalDocument document, Integer stageOrder, UserPrincipal user) {
+        Long userId = user.getId();
         // 관리자는 항상 승인 가능
         if (user.getRole() == Role.ADMIN) {
             return true;
@@ -55,7 +58,8 @@ public class DocumentPermissionService {
                 .anyMatch(target -> isTargetUser(target, userId) && !target.getIsApproved());
     }
 
-    public UserRole getUserRole(ApprovalDocument document, Long userId, UserPrincipal user) {
+    public UserRole getUserRole(ApprovalDocument document, UserPrincipal user) {
+        Long userId = user.getId();
         // 작성자인 경우
         if (document.getAuthorId().equals(userId)) {
             return UserRole.AUTHOR;

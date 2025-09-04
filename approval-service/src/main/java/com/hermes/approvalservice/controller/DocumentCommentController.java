@@ -48,12 +48,10 @@ public class DocumentCommentController {
     public ResponseEntity<List<DocumentCommentResponse>> getComments(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long documentId) {
-        Long userId = user.getId();
-        
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
         
-        if (!permissionService.canViewDocument(document, userId, user)) {
+        if (!permissionService.canViewDocument(document, user)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -79,14 +77,13 @@ public class DocumentCommentController {
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 ID", required = true) @PathVariable Long documentId,
             @Parameter(description = "댓글 작성 요청 정보", required = true) @Valid @RequestBody CreateCommentRequest request) {
-        Long userId = user.getId();
-        
         ApprovalDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
         
-        if (!permissionService.canViewDocument(document, userId, user)) {
+        if (!permissionService.canViewDocument(document, user)) {
             return ResponseEntity.status(403).build();
         }
+        Long userId = user.getId();
 
         DocumentComment comment = DocumentComment.builder()
                 .content(request.getContent())

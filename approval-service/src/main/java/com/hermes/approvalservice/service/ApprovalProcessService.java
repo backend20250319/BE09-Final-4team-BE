@@ -25,13 +25,14 @@ public class ApprovalProcessService {
     private final DocumentPermissionService permissionService;
     private final DocumentActivityService activityService;
 
-    public void approveDocument(Long documentId, Long userId, UserPrincipal user, ApprovalActionRequest request) {
+    public void approveDocument(Long documentId, UserPrincipal user, ApprovalActionRequest request) {
         ApprovalDocument document = documentRepository.findByIdWithDetails(documentId);
         if (document == null) {
             throw new NotFoundException("문서를 찾을 수 없습니다.");
         }
+        Long userId = user.getId();
 
-        if (!permissionService.canApproveDocument(document, userId, document.getCurrentStage(), user)) {
+        if (!permissionService.canApproveDocument(document, document.getCurrentStage(), user)) {
             throw new UnauthorizedException("승인 권한이 없습니다.");
         }
 
@@ -76,13 +77,14 @@ public class ApprovalProcessService {
         }
     }
 
-    public void rejectDocument(Long documentId, Long userId, UserPrincipal user, ApprovalActionRequest request) {
+    public void rejectDocument(Long documentId, UserPrincipal user, ApprovalActionRequest request) {
         ApprovalDocument document = documentRepository.findByIdWithDetails(documentId);
         if (document == null) {
             throw new NotFoundException("문서를 찾을 수 없습니다.");
         }
+        Long userId = user.getId();
 
-        if (!permissionService.canApproveDocument(document, userId, document.getCurrentStage(), user)) {
+        if (!permissionService.canApproveDocument(document, document.getCurrentStage(), user)) {
             throw new UnauthorizedException("반려 권한이 없습니다.");
         }
 

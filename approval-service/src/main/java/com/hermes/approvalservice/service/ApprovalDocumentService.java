@@ -40,26 +40,27 @@ public class ApprovalDocumentService {
     private final UserServiceClient userServiceClient;
 
 
-    public Page<DocumentSummaryResponse> getDocumentsForUser(Long userId, UserPrincipal user, 
+    public Page<DocumentSummaryResponse> getDocumentsForUser(UserPrincipal user, 
                                                             List<DocumentStatus> statuses, String search, 
                                                             LocalDate startDate, LocalDate endDate, 
                                                             Pageable pageable) {
         LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
         LocalDateTime endDateTime = endDate != null ? endDate.atTime(23, 59, 59) : null;
+        Long userId = user.getId();
         
         return documentRepository.findDocumentsForUserWithFilters(userId, statuses, search, 
                                                                  startDateTime, endDateTime, pageable)
-                .map(document -> convertToSummaryResponse(document, userId, user));
+                .map(document -> convertToSummaryResponse(document, user));
     }
 
 
-    public DocumentResponse getDocumentById(Long id, Long userId, UserPrincipal user) {
+    public DocumentResponse getDocumentById(Long id, UserPrincipal user) {
         ApprovalDocument document = documentRepository.findByIdWithDetails(id);
         if (document == null) {
             throw new NotFoundException("문서를 찾을 수 없습니다.");
         }
 
-        if (!permissionService.canViewDocument(document, userId, user)) {
+        if (!permissionService.canViewDocument(document, user)) {
             throw new UnauthorizedException("문서 조회 권한이 없습니다.");
         }
 
@@ -97,11 +98,12 @@ public class ApprovalDocumentService {
     }
 
     @Transactional
-    public DocumentResponse updateDocument(Long id, UpdateDocumentRequest request, Long userId, UserPrincipal user) {
+    public DocumentResponse updateDocument(Long id, UpdateDocumentRequest request, UserPrincipal user) {
         ApprovalDocument document = documentRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
+        Long userId = user.getId();
 
-        if (!permissionService.canEditDocument(document, userId, user)) {
+        if (!permissionService.canEditDocument(document, user)) {
             throw new UnauthorizedException("문서 수정 권한이 없습니다.");
         }
 
@@ -149,7 +151,7 @@ public class ApprovalDocumentService {
         activityService.recordActivity(document, userId, ActivityType.SUBMIT, "결재를 요청했습니다.");
     }
 
-    private DocumentSummaryResponse convertToSummaryResponse(ApprovalDocument document, Long userId, UserPrincipal user) {
+    private DocumentSummaryResponse convertToSummaryResponse(ApprovalDocument document, UserPrincipal user) {
         DocumentSummaryResponse response = new DocumentSummaryResponse();
         response.setId(document.getId());
         response.setTitle(document.getTitle());
@@ -165,7 +167,7 @@ public class ApprovalDocumentService {
         
         // Set user role if user information is available
         if (user != null) {
-            response.setUserRole(permissionService.getUserRole(document, userId, user));
+            response.setUserRole(permissionService.getUserRole(document, user));
         }
         
         response.setCreatedAt(document.getCreatedAt());
