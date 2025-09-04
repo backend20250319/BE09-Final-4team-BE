@@ -7,6 +7,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 @Slf4j
@@ -51,6 +52,17 @@ public class GlobalExceptionHandler {
         }
         
         log.warn("Validation exception: {}", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(message);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<String> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        String paramName = e.getName();
+        String message = String.format("파라미터 '%s'의 값이 올바르지 않습니다. 올바른 형식을 확인해주세요.", paramName);
+        
+        log.warn("Method argument type mismatch exception: parameter={}, value={}, requiredType={}", 
+                paramName, e.getValue(), e.getRequiredType());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(message);
     }
