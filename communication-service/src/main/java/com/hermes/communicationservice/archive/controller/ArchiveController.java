@@ -3,8 +3,8 @@ package com.hermes.communicationservice.archive.controller;
 import com.hermes.api.common.ApiResult;
 import com.hermes.auth.principal.UserPrincipal;
 import com.hermes.communicationservice.archive.dto.ArchiveCreateRequestDto;
+import com.hermes.communicationservice.archive.dto.ArchiveCreateResponseDto;
 import com.hermes.communicationservice.archive.dto.ArchiveResponseDto;
-import com.hermes.communicationservice.archive.dto.ArchiveSummaryDto;
 import com.hermes.communicationservice.archive.dto.ArchiveUpdateRequestDto;
 import com.hermes.communicationservice.archive.service.ArchiveService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,12 +49,12 @@ public class ArchiveController {
   })
   @PreAuthorize("hasRole('ADMIN')")
   @PostMapping
-  public ResponseEntity<ApiResult<ArchiveResponseDto>> createArchive(
+  public ResponseEntity<ApiResult<ArchiveCreateResponseDto>> createArchive(
       @Parameter(description = "사내 문서 생성 요청 정보", required = true) @Valid @RequestBody ArchiveCreateRequestDto request,
       @AuthenticationPrincipal UserPrincipal user) {
     log.info("POST /archives 호출 - title: {}", request.getTitle());
 
-    ArchiveResponseDto response = archiveService.createArchive(request, user.getId());
+    ArchiveCreateResponseDto response = archiveService.createArchive(request, user.getId());
 
     log.info("사내 문서 생성 완료 - id: {}", response.getId());
     return ResponseEntity.status(HttpStatus.CREATED)
@@ -69,11 +69,11 @@ public class ArchiveController {
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })
   @GetMapping("/{id}")
-  public ResponseEntity<ApiResult<ArchiveResponseDto>> getArchive(
+  public ResponseEntity<ApiResult<ArchiveCreateResponseDto>> getArchive(
       @Parameter(description = "사내 문서 ID", required = true, example = "1") @PathVariable Long id,
       @AuthenticationPrincipal UserPrincipal user) {
     log.info("GET /archives/{} 호출", id);
-    ArchiveResponseDto response = archiveService.getArchive(id);
+    ArchiveCreateResponseDto response = archiveService.getArchive(id);
     return ResponseEntity.ok(ApiResult.success("사내 문서 조회 완료", response));
   }
 
@@ -84,10 +84,10 @@ public class ArchiveController {
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })
   @GetMapping
-  public ResponseEntity<List<ArchiveSummaryDto>> getAllArchivesSummary(
+  public ResponseEntity<List<ArchiveResponseDto>> getAllArchives(
       @AuthenticationPrincipal UserPrincipal user) {
     log.info("GET /archives 호출 - 요약 목록 조회");
-    List<ArchiveSummaryDto> summary = archiveService.getAllArchivesSummary();
+    List<ArchiveResponseDto> summary = archiveService.getAllArchives();
     return ResponseEntity.ok(summary);
   }
 
@@ -102,13 +102,13 @@ public class ArchiveController {
   })
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}")
-  public ResponseEntity<ApiResult<ArchiveResponseDto>> updateArchive(
+  public ResponseEntity<ApiResult<ArchiveCreateResponseDto>> updateArchive(
       @Parameter(description = "사내 문서 ID", required = true, example = "1") @PathVariable Long id,
       @Parameter(description = "사내 문서 수정 요청 정보", required = true) @Valid @RequestBody ArchiveUpdateRequestDto request,
       @AuthenticationPrincipal UserPrincipal user) {
 
     log.info("PATCH /archives/{} 호출", id);
-    ArchiveResponseDto updated = archiveService.updateArchive(request, id, user.getId());
+    ArchiveCreateResponseDto updated = archiveService.updateArchive(request, id, user.getId());
     return ResponseEntity.ok(ApiResult.success("사내 문서 수정 완료", updated));
   }
 
@@ -137,11 +137,11 @@ public class ArchiveController {
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })
   @GetMapping("/search")
-  public ResponseEntity<ApiResult<List<ArchiveSummaryDto>>> searchArchives(
+  public ResponseEntity<ApiResult<List<ArchiveResponseDto>>> searchArchives(
       @Parameter(description = "검색 키워드", required = true, example = "규정") @RequestParam("keyword") String keyword,
       @AuthenticationPrincipal UserPrincipal user) {
     log.info("GET /archives/search 호출 - keyword: {}", keyword);
-    List<ArchiveSummaryDto> responses = archiveService.searchArchives(keyword);
+    List<ArchiveResponseDto> responses = archiveService.searchArchives(keyword);
     return ResponseEntity.ok(ApiResult.success(responses));
   }
 
