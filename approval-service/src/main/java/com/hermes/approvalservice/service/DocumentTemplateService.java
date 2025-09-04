@@ -4,6 +4,7 @@ import com.hermes.api.common.ApiResult;
 import com.hermes.attachment.entity.AttachmentInfo;
 import com.hermes.attachment.service.AttachmentClientService;
 import com.hermes.approvalservice.client.UserServiceClient;
+import com.hermes.approvalservice.converter.ResponseConverter;
 import com.hermes.approvalservice.client.dto.UserProfile;
 import com.hermes.approvalservice.dto.request.*;
 import com.hermes.approvalservice.dto.response.*;
@@ -30,6 +31,7 @@ public class DocumentTemplateService {
     private final TemplateApprovalTargetRepository targetRepository;
     private final AttachmentClientService attachmentService;
     private final UserServiceClient userServiceClient;
+    private final ResponseConverter responseConverter;
 
     public List<TemplateSummaryResponse> getAllTemplates(boolean isAdmin) {
         List<DocumentTemplate> templates = isAdmin 
@@ -75,7 +77,7 @@ public class DocumentTemplateService {
     public TemplateResponse getTemplateById(Long id) {
         DocumentTemplate template = templateRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("템플릿을 찾을 수 없습니다."));
-        return convertToResponse(template);
+        return responseConverter.convertToTemplateResponse(template);
     }
 
     @Transactional
@@ -245,76 +247,6 @@ public class DocumentTemplateService {
         targetRepository.saveAll(targets);
     }
 
-    private TemplateResponse convertToResponse(DocumentTemplate template) {
-        TemplateResponse response = new TemplateResponse();
-        response.setId(template.getId());
-        response.setTitle(template.getTitle());
-        response.setIcon(template.getIcon());
-        response.setDescription(template.getDescription());
-        response.setBodyTemplate(template.getBodyTemplate());
-        response.setUseBody(template.getUseBody());
-        response.setUseAttachment(template.getUseAttachment());
-        response.setAllowTargetChange(template.getAllowTargetChange());
-        response.setIsHidden(template.getIsHidden());
-        // 참조 파일 정보 변환
-        response.setReferenceFiles(attachmentService.convertToResponseList(template.getReferenceFiles()));
-        response.setCreatedAt(template.getCreatedAt());
-        response.setUpdatedAt(template.getUpdatedAt());
-
-        if (template.getCategory() != null) {
-            CategoryResponse categoryResponse = new CategoryResponse();
-            categoryResponse.setId(template.getCategory().getId());
-            categoryResponse.setName(template.getCategory().getName());
-            categoryResponse.setDescription(template.getCategory().getDescription());
-            categoryResponse.setSortOrder(template.getCategory().getSortOrder());
-            response.setCategory(categoryResponse);
-        }
-
-        // Convert fields to responses
-        response.setFields(template.getFields().stream()
-                .map(field -> {
-                    TemplateFieldResponse fieldResponse = new TemplateFieldResponse();
-                    fieldResponse.setId(field.getId());
-                    fieldResponse.setName(field.getName());
-                    fieldResponse.setFieldType(field.getFieldType());
-                    fieldResponse.setRequired(field.getRequired());
-                    fieldResponse.setFieldOrder(field.getFieldOrder());
-                    fieldResponse.setOptions(field.getOptions());
-                    return fieldResponse;
-                })
-                .toList());
-
-        // Convert approval stages to responses
-        response.setApprovalStages(template.getApprovalStages().stream()
-                .map(stage -> {
-                    ApprovalStageResponse stageResponse = new ApprovalStageResponse();
-                    stageResponse.setId(stage.getId());
-                    stageResponse.setStageOrder(stage.getStageOrder());
-                    stageResponse.setStageName(stage.getStageName());
-                    stageResponse.setIsCompleted(false); // 템플릿에서는 완료 상태 없음
-                    stageResponse.setCompletedAt(null);
-                    
-                    // Convert stage's approval targets
-                    stageResponse.setApprovalTargets(stage.getApprovalTargets().stream()
-                            .map(target -> {
-                                return convertToApprovalTargetResponse(target, false, null);
-                            })
-                            .toList());
-                    
-                    return stageResponse;
-                })
-                .toList());
-
-        // Convert reference targets to responses
-        response.setReferenceTargets(template.getReferenceTargets().stream()
-                .map(target -> {
-                    return convertToApprovalTargetResponse(target, false, null);
-                })
-                .toList());
-
-        return response;
-    }
-
     private TemplateSummaryResponse convertToSummaryResponse(DocumentTemplate template) {
         TemplateSummaryResponse response = new TemplateSummaryResponse();
         response.setId(template.getId());
@@ -337,31 +269,6 @@ public class DocumentTemplateService {
             response.setCategory(categoryResponse);
         }
 
-        return response;
-    }
-    
-    private ApprovalTargetResponse convertToApprovalTargetResponse(TemplateApprovalTarget target, boolean isApproved, Long approvedBy) {
-        ApprovalTargetResponse response = new ApprovalTargetResponse();
-        response.setId(target.getId());
-        response.setTargetType(target.getTargetType());
-        response.setOrganizationId(target.getOrganizationId());
-        response.setManagerLevel(target.getManagerLevel());
-        response.setIsReference(target.getIsReference());
-        response.setIsApproved(isApproved);
-        response.setApprovedAt(null); // 템플릿에서는 승인 시간 없음
-        
-        // Convert userId to UserProfileInfo
-        if (target.getUserId() != null) {
-            ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(target.getUserId());
-            response.setUser(userResult.getData());
-        }
-        
-        // Convert approvedBy to UserProfileInfo
-        if (approvedBy != null) {
-            ApiResult<UserProfile> approverResult = userServiceClient.getUserProfile(approvedBy);
-            response.setApprover(approverResult.getData());
-        }
-        
         return response;
     }
 }

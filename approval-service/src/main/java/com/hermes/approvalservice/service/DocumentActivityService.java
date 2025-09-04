@@ -3,6 +3,7 @@ package com.hermes.approvalservice.service;
 import com.hermes.api.common.ApiResult;
 import com.hermes.approvalservice.client.UserServiceClient;
 import com.hermes.approvalservice.client.dto.UserProfile;
+import com.hermes.approvalservice.converter.ResponseConverter;
 import com.hermes.approvalservice.dto.response.DocumentActivityResponse;
 import com.hermes.approvalservice.entity.ApprovalDocument;
 import com.hermes.approvalservice.entity.DocumentActivity;
@@ -21,11 +22,12 @@ public class DocumentActivityService {
 
     private final DocumentActivityRepository activityRepository;
     private final UserServiceClient userServiceClient;
+    private final ResponseConverter responseConverter;
 
     public List<DocumentActivityResponse> getActivities(Long documentId) {
         return activityRepository.findByDocumentIdOrderByCreatedAtAsc(documentId)
                 .stream()
-                .map(this::convertToResponse)
+                .map(responseConverter::convertToDocumentActivityResponse)
                 .toList();
     }
 
@@ -47,17 +49,4 @@ public class DocumentActivityService {
         activityRepository.save(activity);
     }
 
-    private DocumentActivityResponse convertToResponse(DocumentActivity activity) {
-        DocumentActivityResponse response = new DocumentActivityResponse();
-        response.setId(activity.getId());
-        response.setActivityType(activity.getActivityType());
-        
-        ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(activity.getUserId());
-        response.setUser(userResult.getData());
-        
-        response.setDescription(activity.getDescription());
-        response.setReason(activity.getReason());
-        response.setCreatedAt(activity.getCreatedAt());
-        return response;
-    }
 }

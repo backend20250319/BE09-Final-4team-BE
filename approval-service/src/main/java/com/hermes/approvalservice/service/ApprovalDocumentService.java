@@ -5,6 +5,7 @@ import com.hermes.attachment.entity.AttachmentInfo;
 import com.hermes.attachment.service.AttachmentClientService;
 import com.hermes.approvalservice.client.UserServiceClient;
 import com.hermes.approvalservice.client.dto.UserProfile;
+import com.hermes.approvalservice.converter.ResponseConverter;
 import com.hermes.approvalservice.dto.request.CreateDocumentRequest;
 import com.hermes.approvalservice.dto.request.UpdateDocumentRequest;
 import com.hermes.approvalservice.dto.response.*;
@@ -36,6 +37,7 @@ public class ApprovalDocumentService {
     private final DocumentActivityService activityService;
     private final AttachmentClientService attachmentService;
     private final UserServiceClient userServiceClient;
+    private final ResponseConverter responseConverter;
 
 
     public Page<DocumentSummaryResponse> getDocumentsForUser(UserPrincipal user, 
@@ -194,43 +196,31 @@ public class ApprovalDocumentService {
         }
         
         // Template 정보 변환
-        response.setTemplate(convertTemplateToResponse(document.getTemplate()));
+        response.setTemplate(responseConverter.convertToTemplateResponse(document.getTemplate()));
         
         // Field values 변환
         response.setFieldValues(document.getFieldValues().stream()
-                .map(this::convertDocumentFieldValueToResponse)
+                .map(responseConverter::convertToDocumentFieldValueResponse)
                 .toList());
         
         // Approval stages 변환  
         response.setApprovalStages(document.getApprovalStages().stream()
-                .map(this::convertApprovalStageToResponse)
+                .map(responseConverter::convertToApprovalStageResponse)
                 .toList());
         
         // Reference targets 변환
         response.setReferenceTargets(document.getReferenceTargets().stream()
-                .map(this::convertDocumentApprovalTargetToResponse)
+                .map(responseConverter::convertToApprovalTargetResponse)
                 .toList());
         
         // Activities 변환
         response.setActivities(document.getActivities().stream()
-                .map(activity -> {
-                    DocumentActivityResponse activityResponse = new DocumentActivityResponse();
-                    activityResponse.setId(activity.getId());
-                    activityResponse.setActivityType(activity.getActivityType());
-                    
-                    ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(activity.getUserId());
-                    activityResponse.setUser(userResult.getData());
-                    
-                    activityResponse.setDescription(activity.getDescription());
-                    activityResponse.setReason(activity.getReason());
-                    activityResponse.setCreatedAt(activity.getCreatedAt());
-                    return activityResponse;
-                })
+                .map(responseConverter::convertToDocumentActivityResponse)
                 .toList());
         
         // Comments 변환
         response.setComments(document.getComments().stream()
-                .map(this::convertDocumentCommentToResponse)
+                .map(responseConverter::convertToDocumentCommentResponse)
                 .toList());
         
         // 첨부파일 정보 변환
@@ -244,170 +234,4 @@ public class ApprovalDocumentService {
         return response;
     }
     
-    private ApprovalTargetResponse convertDocumentApprovalTargetToResponse(DocumentApprovalTarget target) {
-        ApprovalTargetResponse response = new ApprovalTargetResponse();
-        response.setId(target.getId());
-        response.setTargetType(target.getTargetType());
-        response.setOrganizationId(target.getOrganizationId());
-        response.setManagerLevel(target.getManagerLevel());
-        response.setIsReference(target.getIsReference());
-        response.setIsApproved(target.getIsApproved());
-        response.setApprovedAt(target.getApprovedAt());
-        
-        // Convert userId to UserProfileInfo
-        if (target.getUserId() != null) {
-            ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(target.getUserId());
-            response.setUser(userResult.getData());
-        }
-        
-        // Convert approvedBy to UserProfileInfo
-        if (target.getApprovedBy() != null) {
-            ApiResult<UserProfile> approverResult = userServiceClient.getUserProfile(target.getApprovedBy());
-            response.setApprover(approverResult.getData());
-        }
-        
-        return response;
-    }
-    
-    private DocumentFieldValueResponse convertDocumentFieldValueToResponse(DocumentFieldValue fieldValue) {
-        DocumentFieldValueResponse response = new DocumentFieldValueResponse();
-        response.setId(fieldValue.getId());
-        response.setFieldName(fieldValue.getFieldName());
-        response.setFieldValue(fieldValue.getFieldValue());
-        
-        if (fieldValue.getTemplateField() != null) {
-            TemplateFieldResponse fieldResponse = new TemplateFieldResponse();
-            fieldResponse.setId(fieldValue.getTemplateField().getId());
-            fieldResponse.setName(fieldValue.getTemplateField().getName());
-            fieldResponse.setFieldType(fieldValue.getTemplateField().getFieldType());
-            fieldResponse.setRequired(fieldValue.getTemplateField().getRequired());
-            fieldResponse.setFieldOrder(fieldValue.getTemplateField().getFieldOrder());
-            fieldResponse.setOptions(fieldValue.getTemplateField().getOptions());
-            response.setTemplateField(fieldResponse);
-        }
-        
-        return response;
-    }
-    
-    private ApprovalStageResponse convertApprovalStageToResponse(DocumentApprovalStage stage) {
-        ApprovalStageResponse response = new ApprovalStageResponse();
-        response.setId(stage.getId());
-        response.setStageOrder(stage.getStageOrder());
-        response.setStageName(stage.getStageName());
-        response.setIsCompleted(stage.getIsCompleted());
-        response.setCompletedAt(stage.getCompletedAt());
-        
-        // Convert approval targets
-        response.setApprovalTargets(stage.getApprovalTargets().stream()
-                .map(this::convertDocumentApprovalTargetToResponse)
-                .toList());
-        
-        return response;
-    }
-    
-    private DocumentCommentResponse convertDocumentCommentToResponse(DocumentComment comment) {
-        DocumentCommentResponse response = new DocumentCommentResponse();
-        response.setId(comment.getId());
-        response.setContent(comment.getContent());
-        
-        ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(comment.getAuthorId());
-        response.setAuthor(userResult.getData());
-        
-        response.setCreatedAt(comment.getCreatedAt());
-        response.setUpdatedAt(comment.getUpdatedAt());
-        return response;
-    }
-    
-    private TemplateResponse convertTemplateToResponse(DocumentTemplate template) {
-        TemplateResponse response = new TemplateResponse();
-        response.setId(template.getId());
-        response.setTitle(template.getTitle());
-        response.setIcon(template.getIcon());
-        response.setDescription(template.getDescription());
-        response.setBodyTemplate(template.getBodyTemplate());
-        response.setUseBody(template.getUseBody());
-        response.setUseAttachment(template.getUseAttachment());
-        response.setAllowTargetChange(template.getAllowTargetChange());
-        response.setIsHidden(template.getIsHidden());
-        response.setReferenceFiles(attachmentService.convertToResponseList(template.getReferenceFiles()));
-        response.setCreatedAt(template.getCreatedAt());
-        response.setUpdatedAt(template.getUpdatedAt());
-
-        if (template.getCategory() != null) {
-            CategoryResponse categoryResponse = new CategoryResponse();
-            categoryResponse.setId(template.getCategory().getId());
-            categoryResponse.setName(template.getCategory().getName());
-            categoryResponse.setDescription(template.getCategory().getDescription());
-            categoryResponse.setSortOrder(template.getCategory().getSortOrder());
-            response.setCategory(categoryResponse);
-        }
-
-        response.setFields(template.getFields().stream()
-                .map(field -> {
-                    TemplateFieldResponse fieldResponse = new TemplateFieldResponse();
-                    fieldResponse.setId(field.getId());
-                    fieldResponse.setName(field.getName());
-                    fieldResponse.setFieldType(field.getFieldType());
-                    fieldResponse.setRequired(field.getRequired());
-                    fieldResponse.setFieldOrder(field.getFieldOrder());
-                    fieldResponse.setOptions(field.getOptions());
-                    return fieldResponse;
-                })
-                .toList());
-
-        response.setApprovalStages(template.getApprovalStages().stream()
-                .map(stage -> {
-                    ApprovalStageResponse stageResponse = new ApprovalStageResponse();
-                    stageResponse.setId(stage.getId());
-                    stageResponse.setStageOrder(stage.getStageOrder());
-                    stageResponse.setStageName(stage.getStageName());
-                    stageResponse.setIsCompleted(false);
-                    stageResponse.setCompletedAt(null);
-                    
-                    stageResponse.setApprovalTargets(stage.getApprovalTargets().stream()
-                            .map(target -> {
-                                ApprovalTargetResponse targetResponse = new ApprovalTargetResponse();
-                                targetResponse.setId(target.getId());
-                                targetResponse.setTargetType(target.getTargetType());
-                                targetResponse.setOrganizationId(target.getOrganizationId());
-                                targetResponse.setManagerLevel(target.getManagerLevel());
-                                targetResponse.setIsReference(target.getIsReference());
-                                targetResponse.setIsApproved(false);
-                                targetResponse.setApprovedAt(null);
-                                
-                                if (target.getUserId() != null) {
-                                    ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(target.getUserId());
-                                    targetResponse.setUser(userResult.getData());
-                                }
-                                
-                                return targetResponse;
-                            })
-                            .toList());
-                    
-                    return stageResponse;
-                })
-                .toList());
-
-        response.setReferenceTargets(template.getReferenceTargets().stream()
-                .map(target -> {
-                    ApprovalTargetResponse targetResponse = new ApprovalTargetResponse();
-                    targetResponse.setId(target.getId());
-                    targetResponse.setTargetType(target.getTargetType());
-                    targetResponse.setOrganizationId(target.getOrganizationId());
-                    targetResponse.setManagerLevel(target.getManagerLevel());
-                    targetResponse.setIsReference(target.getIsReference());
-                    targetResponse.setIsApproved(false);
-                    targetResponse.setApprovedAt(null);
-                    
-                    if (target.getUserId() != null) {
-                        ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(target.getUserId());
-                        targetResponse.setUser(userResult.getData());
-                    }
-                    
-                    return targetResponse;
-                })
-                .toList());
-
-        return response;
-    }
 }

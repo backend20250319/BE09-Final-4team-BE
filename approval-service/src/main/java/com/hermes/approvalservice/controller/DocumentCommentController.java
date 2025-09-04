@@ -3,6 +3,7 @@ package com.hermes.approvalservice.controller;
 import com.hermes.api.common.ApiResult;
 import com.hermes.approvalservice.client.UserServiceClient;
 import com.hermes.approvalservice.client.dto.UserProfile;
+import com.hermes.approvalservice.converter.ResponseConverter;
 import com.hermes.approvalservice.dto.request.CreateCommentRequest;
 import com.hermes.approvalservice.dto.response.DocumentCommentResponse;
 import com.hermes.approvalservice.entity.ApprovalDocument;
@@ -35,6 +36,7 @@ public class DocumentCommentController {
     private final ApprovalDocumentRepository documentRepository;
     private final DocumentPermissionService permissionService;
     private final UserServiceClient userServiceClient;
+    private final ResponseConverter responseConverter;
 
     @Operation(summary = "문서 댓글 목록 조회", description = "지정한 문서의 댓글 목록을 시간순으로 조회합니다.")
     @ApiResponses(value = {
@@ -57,7 +59,7 @@ public class DocumentCommentController {
 
         List<DocumentCommentResponse> comments = commentRepository.findByDocumentIdOrderByCreatedAtAsc(documentId)
                 .stream()
-                .map(this::convertToResponse)
+                .map(responseConverter::convertToDocumentCommentResponse)
                 .toList();
 
         return ResponseEntity.ok(comments);
@@ -92,21 +94,9 @@ public class DocumentCommentController {
                 .build();
 
         DocumentComment savedComment = commentRepository.save(comment);
-        DocumentCommentResponse response = convertToResponse(savedComment);
+        DocumentCommentResponse response = responseConverter.convertToDocumentCommentResponse(savedComment);
 
         return ResponseEntity.ok(response);
     }
 
-    private DocumentCommentResponse convertToResponse(DocumentComment comment) {
-        DocumentCommentResponse response = new DocumentCommentResponse();
-        response.setId(comment.getId());
-        response.setContent(comment.getContent());
-        
-        ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(comment.getAuthorId());
-        response.setAuthor(userResult.getData());
-        
-        response.setCreatedAt(comment.getCreatedAt());
-        response.setUpdatedAt(comment.getUpdatedAt());
-        return response;
-    }
 }
