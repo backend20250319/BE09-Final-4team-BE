@@ -9,7 +9,8 @@ public enum ScheduleType {
     VACATION("휴가"),
     BUSINESS_TRIP("출장"),
     OUT_OF_OFFICE("외근"),
-    OVERTIME("초과근무");
+    OVERTIME("초과근무"),
+    RESTTIME("휴게시간");
     
     private final String description;
     
