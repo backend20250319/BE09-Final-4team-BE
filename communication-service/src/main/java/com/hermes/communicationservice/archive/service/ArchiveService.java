@@ -24,7 +24,7 @@ public class ArchiveService {
   @Transactional
   public ArchiveCreateResponseDto createArchive(ArchiveCreateRequestDto request, Long authorId) {
     log.info("사내 문서 생성 - title: {}, authorId: {}", request.getTitle(), authorId);
-    
+
     Archive archive = Archive.builder()
         .title(request.getTitle())
         .description(request.getDescription())
@@ -40,25 +40,25 @@ public class ArchiveService {
 
   public List<ArchiveResponseDto> getAllArchives() {
     log.info("사내 문서 목록 조회");
-    
+
     return archiveRepository.findAll().stream()
         .map(this::convertToResponse)
         .toList();
   }
 
-  public ArchiveCreateResponseDto getArchive(Long id) {
+  public ArchiveResponseDto getArchive(Long id) {
     log.info("사내 문서 상세 조회 - id: {}", id);
-    
+
     Archive archive = archiveRepository.findById(id)
         .orElseThrow(() -> new ArchiveNotFoundException(id));
 
-    return convertToCreateResponse(archive);
+    return convertToResponse(archive);
   }
 
   @Transactional
-  public ArchiveCreateResponseDto updateArchive(ArchiveUpdateRequestDto request, Long id, Long authorId) {
+  public ArchiveResponseDto updateArchive(ArchiveUpdateRequestDto request, Long id, Long authorId) {
     log.info("사내 문서 수정 - id: {}, authorId: {}", id, authorId);
-    
+
     Archive archive = archiveRepository.findById(id)
         .orElseThrow(() -> new ArchiveNotFoundException(id));
 
@@ -75,13 +75,13 @@ public class ArchiveService {
     Archive updatedArchive = archiveRepository.save(archive);
     log.info("사내 문서 수정 완료 - id: {}", updatedArchive.getId());
 
-    return convertToCreateResponse(updatedArchive);
+    return convertToResponse(updatedArchive);
   }
 
   @Transactional
   public void deleteArchive(Long id) {
     log.info("사내 문서 삭제 - id: {}", id);
-    
+
     Archive archive = archiveRepository.findById(id)
         .orElseThrow(() -> new ArchiveNotFoundException(id));
 
@@ -91,7 +91,7 @@ public class ArchiveService {
 
   public List<ArchiveResponseDto> searchArchives(String keyword) {
     log.info("사내 문서 검색 - keyword: {}", keyword);
-    
+
     return archiveRepository.findByTitleContaining(keyword).stream()
         .map(this::convertToResponse)
         .toList();

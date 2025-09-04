@@ -69,11 +69,11 @@ public class ArchiveController {
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })
   @GetMapping("/{id}")
-  public ResponseEntity<ApiResult<ArchiveCreateResponseDto>> getArchive(
+  public ResponseEntity<ApiResult<ArchiveResponseDto>> getArchive(
       @Parameter(description = "사내 문서 ID", required = true, example = "1") @PathVariable Long id,
       @AuthenticationPrincipal UserPrincipal user) {
     log.info("GET /archives/{} 호출", id);
-    ArchiveCreateResponseDto response = archiveService.getArchive(id);
+    ArchiveResponseDto response = archiveService.getArchive(id);
     return ResponseEntity.ok(ApiResult.success("사내 문서 조회 완료", response));
   }
 
@@ -102,13 +102,13 @@ public class ArchiveController {
   })
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}")
-  public ResponseEntity<ApiResult<ArchiveCreateResponseDto>> updateArchive(
+  public ResponseEntity<ApiResult<ArchiveResponseDto>> updateArchive(
       @Parameter(description = "사내 문서 ID", required = true, example = "1") @PathVariable Long id,
       @Parameter(description = "사내 문서 수정 요청 정보", required = true) @Valid @RequestBody ArchiveUpdateRequestDto request,
       @AuthenticationPrincipal UserPrincipal user) {
 
     log.info("PATCH /archives/{} 호출", id);
-    ArchiveCreateResponseDto updated = archiveService.updateArchive(request, id, user.getId());
+    ArchiveResponseDto updated = archiveService.updateArchive(request, id, user.getId());
     return ResponseEntity.ok(ApiResult.success("사내 문서 수정 완료", updated));
   }
 
