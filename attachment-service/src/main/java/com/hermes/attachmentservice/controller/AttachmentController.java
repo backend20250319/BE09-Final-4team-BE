@@ -2,7 +2,6 @@ package com.hermes.attachmentservice.controller;
 
 import com.hermes.attachmentservice.service.AttachmentService;
 import com.hermes.attachment.dto.AttachmentInfoResponse;
-import com.hermes.api.common.ApiResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -43,7 +42,7 @@ public class AttachmentController {
         @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PostMapping("/upload")
-    public ResponseEntity<ApiResult<List<AttachmentInfoResponse>>> uploadFiles(
+    public ResponseEntity<List<AttachmentInfoResponse>> uploadFiles(
             @Parameter(description = "업로드할 파일 목록", required = true) @RequestParam("files") List<MultipartFile> files,
             @AuthenticationPrincipal UserPrincipal user) {
         
@@ -51,10 +50,10 @@ public class AttachmentController {
         
         try {
             List<AttachmentInfoResponse> response = attachmentService.uploadFiles(files, user.getId());
-            return ResponseEntity.ok(ApiResult.success(response));
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("파일 업로드 실패: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResult.failure(e.getMessage()));
+            return ResponseEntity.badRequest().build();
         }
     }
 
@@ -103,17 +102,17 @@ public class AttachmentController {
     })
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{fileId}")
-    public ResponseEntity<ApiResult<Void>> deleteFile(
+    public ResponseEntity<Void> deleteFile(
             @Parameter(description = "삭제할 파일 ID", required = true, example = "uuid-file-id") @PathVariable String fileId) {
         log.info("파일 삭제 요청: {}", fileId);
         
         try {
             attachmentService.deleteFile(fileId);
-            return ResponseEntity.ok(ApiResult.success());
+            return ResponseEntity.ok().build();
             
         } catch (Exception e) {
             log.error("파일 삭제 실패: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResult.failure(e.getMessage()));
+            return ResponseEntity.badRequest().build();
         }
     }
     
@@ -125,17 +124,17 @@ public class AttachmentController {
         @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @GetMapping("/{fileId}/info")
-    public ResponseEntity<ApiResult<AttachmentInfoResponse>> getFileMetadata(
+    public ResponseEntity<AttachmentInfoResponse> getFileMetadata(
             @Parameter(description = "조회할 파일 ID", required = true, example = "uuid-file-id") @PathVariable String fileId) {
         log.info("파일 정보 조회: {}", fileId);
         
         try {
             AttachmentInfoResponse response = attachmentService.getFileMetadata(fileId);
-            return ResponseEntity.ok(ApiResult.success(response));
+            return ResponseEntity.ok(response);
             
         } catch (Exception e) {
             log.error("파일 정보 조회 실패: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResult.failure(e.getMessage()));
+            return ResponseEntity.badRequest().build();
         }
     }
 

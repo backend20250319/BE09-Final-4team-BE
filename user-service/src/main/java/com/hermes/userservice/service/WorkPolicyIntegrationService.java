@@ -65,7 +65,7 @@ public class WorkPolicyIntegrationService {
             return null;
         } catch (FeignException e) {
             log.warn("근무 정책 서비스가 사용 불가능합니다. workPolicyId={}, status={}", workPolicyId, e.status());
-            return null; 
+            return null;
         }
     }
 
