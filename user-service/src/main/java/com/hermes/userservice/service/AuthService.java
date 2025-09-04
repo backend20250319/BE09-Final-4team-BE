@@ -29,6 +29,10 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * 로그인 처리
+     */
+
     public LoginResult login(LoginRequestDto loginDto) {
         User user = userRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("해당 이메일로 등록된 사용자가 없습니다."));
@@ -41,9 +45,12 @@ public class AuthService {
         userRepository.save(user);
 
         Role userRole = getUserRole(user);
+        // TODO: tenantId
         String accessToken = jwtTokenService.createAccessToken(user.getId(), userRole, null);
         String refreshToken = jwtTokenService.createRefreshToken(user.getId());
 
+        // 기존 RefreshToken이 있으면 업데이트, 없으면 새로 생성 (이중 로그인 방지)
+        // 추후 다중 로그인을 지원하려면 device_id 같은 정보를 추가하여 여러 개의 Refresh Token을 관리할 수 있도록 개선 필요
         saveOrUpdateRefreshToken(user.getId(), refreshToken);
 
         log.info("[Auth Service] 로그인 성공 - userId: {}, email: {}", user.getId(), user.getEmail());
@@ -57,12 +64,24 @@ public class AuthService {
                 .role(userRole.name())
                 .build();
     }
+    /**
+     * 로그아웃 처리
+     */
 
     public void logout(Long userId) {
         refreshTokenRepository.findByUserId(userId)
                 .ifPresent(refreshTokenRepository::delete);
+
+        // Token Blacklist는 삭제함
+        // 매 요청마다 블랙리스트를 확인해야 하는데, 성능에 안좋기 때문
+        // 대신 Access Token의 TTL을 짧게 설정하는 것으로 어느정도 대응 가능
+
         log.info("[Auth Service] 로그아웃 완료 - userId: {}", userId);
     }
+
+    /**
+     * 토큰 갱신 처리 (Refresh Token Rotation 포함)
+     */
 
     public LoginResult refreshToken(String refreshToken) {
         Long userId = jwtTokenService.validateAndGetUserIdFromRefreshToken(refreshToken);

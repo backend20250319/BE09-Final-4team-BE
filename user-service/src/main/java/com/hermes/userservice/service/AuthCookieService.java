@@ -18,6 +18,10 @@ public class AuthCookieService {
     private final AuthCookieProperties authCookieProperties;
     private final JwtProperties jwtProperties;
 
+    /**
+     * RefreshToken용 ResponseCookie 생성
+     */
+
     public ResponseCookie createRefreshTokenCookie(String refreshToken) {
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(
                         authCookieProperties.getRefreshTokenName(), refreshToken)
@@ -34,6 +38,10 @@ public class AuthCookieService {
         return builder.build();
     }
 
+    /**
+     * RefreshToken 쿠키 삭제용 ResponseCookie 생성
+     */
+
     public ResponseCookie createRefreshTokenDeleteCookie() {
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(
                         authCookieProperties.getRefreshTokenName(), "")
@@ -49,6 +57,10 @@ public class AuthCookieService {
 
         return builder.build();
     }
+
+    /**
+     * 요청에서 RefreshToken 쿠키 값 추출
+     */
 
     public Optional<String> getRefreshTokenFromRequest(HttpServletRequest request) {
         if (request.getCookies() == null) {

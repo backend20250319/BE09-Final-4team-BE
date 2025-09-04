@@ -48,7 +48,11 @@ public class AuthController {
         log.info("로그인 요청: {}", loginDto.getEmail());
         LoginResult loginResult = authService.login(loginDto);
 
+        // RefreshToken을 HttpOnly 쿠키로 설정
+
         ResponseCookie refreshTokenCookie = authCookieService.createRefreshTokenCookie(loginResult.getRefreshToken());
+
+        // LoginResult를 LoginResponse로 변환 (AccessToken과 사용자 정보 포함)
 
         LoginResponse responseDto = LoginResponse.builder()
                 .accessToken(loginResult.getAccessToken())
@@ -72,6 +76,7 @@ public class AuthController {
         @ApiResponse(responseCode = "401", description = "인증 실패")
     })
     public ResponseEntity<ApiResult<Void>> logout(@AuthenticationPrincipal UserPrincipal user) {
+        // RefreshToken 쿠키 삭제
         ResponseCookie deleteRefreshTokenCookie = authCookieService.createRefreshTokenDeleteCookie();
 
         if (user == null) {
@@ -99,12 +104,18 @@ public class AuthController {
     public ResponseEntity<ApiResult<LoginResponse>> refresh(HttpServletRequest request) {
         log.info("토큰 갱신 요청");
 
+        // 쿠키에서 RefreshToken 추출
+
         String refreshToken = authCookieService.getRefreshTokenFromRequest(request)
                 .orElseThrow(() -> new IllegalArgumentException("RefreshToken 쿠키가 없습니다."));
 
         LoginResult loginResult = authService.refreshToken(refreshToken);
 
+        // 새로운 RefreshToken을 HttpOnly 쿠키로 설정
+
         ResponseCookie refreshTokenCookie = authCookieService.createRefreshTokenCookie(loginResult.getRefreshToken());
+
+        // LoginResult를 LoginResponse로 변환 (AccessToken과 사용자 정보 포함)
 
         LoginResponse responseDto = LoginResponse.builder()
                 .accessToken(loginResult.getAccessToken())

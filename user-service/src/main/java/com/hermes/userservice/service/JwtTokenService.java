@@ -20,6 +20,11 @@ import io.jsonwebtoken.io.Decoders;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * JWT 토큰 생성 전용 서비스 (user-service에서만 사용)
+ * 토큰 검증은 Spring Security OAuth2 Resource Server가 담당
+ */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,6 +32,9 @@ public class JwtTokenService {
 
     private final JwtProperties jwtProperties;
 
+    /**
+     * 액세스 토큰 생성
+     */
     public String createAccessToken(Long userId, Role role, String tenantId) {
         Instant now = Instant.now();
         Instant expiration = now.plus(getAccessTokenTTL(), ChronoUnit.SECONDS);
@@ -46,6 +54,9 @@ public class JwtTokenService {
                 .compact();
     }
 
+    /**
+     * 리프레시 토큰 생성
+     */
     public String createRefreshToken(Long userId) {
         Instant now = Instant.now();
         Instant expiration = now.plus(getRefreshTokenTTL(), ChronoUnit.SECONDS);
@@ -62,14 +73,23 @@ public class JwtTokenService {
                 .compact();
     }
 
+    /**
+     * 액세스 토큰 만료 시간 반환 (초)
+     */
     public long getAccessTokenTTL() {
         return jwtProperties.getAccessTokenTTL();
     }
 
+    /**
+     * 리프레시 토큰 만료 시간 반환 (초)
+     */
     public long getRefreshTokenTTL() {
         return jwtProperties.getRefreshTokenTTL();
     }
 
+    /**
+     * 토큰 해시 생성 (SHA-256)
+     */
     public String hashToken(String token) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -88,11 +108,17 @@ public class JwtTokenService {
         }
     }
 
+    /**
+     * 토큰이 일치하는지 확인 (해시 비교)
+     */
     public boolean matchesToken(String rawToken, String hashedToken) {
         String rawTokenHash = hashToken(rawToken);
         return rawTokenHash.equals(hashedToken);
     }
 
+    /**
+     * 리프레시 토큰을 검증하고 userId 추출
+     */
     public Long validateAndGetUserIdFromRefreshToken(String refreshToken) {
         try {
             Claims claims = Jwts.parser()
@@ -101,6 +127,7 @@ public class JwtTokenService {
                     .parseSignedClaims(refreshToken)
                     .getPayload();
 
+            // 토큰 타입 확인
             String tokenType = claims.get("type", String.class);
             if (!"refresh".equals(tokenType)) {
                 throw new InvalidTokenException("리프레시 토큰이 아닙니다.");
@@ -113,6 +140,9 @@ public class JwtTokenService {
         }
     }
 
+    /**
+     * JWT 서명 키 생성
+     */
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecret());
         return Keys.hmacShaKeyFor(keyBytes);
