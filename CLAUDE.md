@@ -288,4 +288,4 @@ public class OpenApiConfig {
 - **No automatic commits**: Never commit without explicit user instruction
 - **Encoding**: Always use `-Dfile.encoding=UTF-8` when building with gradlew
 - **Selective building**: Only build modified modules when testing, not the entire project
-- **Time Handling**: Use `Instant` only, never `LocalDateTime`. Timezone conversion is client responsibility
+- **Time Handling**: Prefer `Instant` over `LocalDateTime`
