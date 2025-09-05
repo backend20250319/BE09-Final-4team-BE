@@ -172,15 +172,6 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public MainProfileResponseDto getMainProfile(Long userId) {
-        log.info("공개 프로필 조회 요청: userId={}", userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-
-        return userMapper.toMainProfileDto(user);
-    }
-
-    @Transactional(readOnly = true)
     public DetailProfileResponseDto getDetailProfile(Long userId) {
         log.info("상세 프로필 조회 요청: userId={}", userId);
         User user = userRepository.findById(userId)
