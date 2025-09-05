@@ -48,16 +48,13 @@ Hermes is a Spring Boot microservices system implementing a multi-tenant archite
 ./gradlew clean build '-Dfile.encoding=UTF-8'
 ```
 
-**Startup Order**: discovery-server → config-server → gateway-server → other services
+## Rules
 
-## Key Configuration
-
-### External Dependencies
-- **PostgreSQL**: Primary database for all services
-- **RabbitMQ**: Message broker for tenant event distribution
-
-### Service Discovery
-All services register with Eureka for service discovery
+- 코드 중복을 항상 피해야 합니다. 동일한 로직이 반복되거나 그럴 것으로 예상될 때는 반드시 리팩토링 하세요.
+- 컴파일 오류가 발생할 것으로 예상되지 않는 한 빌드 테스트를 수행하지 마십시오.
+- 사용자 지시 없이 git commit 하지 마세요. 커밋 메시지는 한국어로 짧고 간결하게 작성하세요.
+- Time Handling: Prefer `Instant` over `LocalDateTime`
+- Feign Client: Prefer fallback over try-catch
 
 ## Authentication & Security
 
@@ -279,11 +276,3 @@ public class OpenApiConfig {
 - **Language**: All descriptions in Korean
 - **Error Codes**: Document 403 for admin-only endpoints
 - **Parameters**: Use `@Parameter` for clear documentation
-
-## Development Guidelines
-
-- **코드 중복 금지**: 코드 중복을 항상 피해야 합니다. 동일한 로직이 반복되거나 그럴 것으로 예상될 때는 반드시 리팩토링 하세요.
-- 코드 수정 후 빌드 테스트는 컴파일 오류가 발생할 것으로 예상될 때만 하세요.
-- 사용자 지시 없이 git commit 하지 마세요. 커밋 메시지는 한국어로 짧고 간결하게 작성하세요.
-- Time Handling: Prefer `Instant` over `LocalDateTime`
-- Feign Client: Prefer fallback over try-catch

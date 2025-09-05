@@ -7,7 +7,8 @@ public enum ActivityType {
     APPROVE("승인"),
     REJECT("반려"),
     MODIFY_APPROVAL("승인대상변경"),
-    COMMENT("댓글");
+    COMMENT("댓글"),
+    DELETE("삭제");
 
     private final String description;
 

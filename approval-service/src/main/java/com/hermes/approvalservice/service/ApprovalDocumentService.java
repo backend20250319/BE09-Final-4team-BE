@@ -159,7 +159,7 @@ public class ApprovalDocumentService {
         }
 
         if (document.getStatus() != DocumentStatus.DRAFT) {
-            throw new UnauthorizedException("임시저장 상태의 문서만 제출할 수 있습니다.");
+            throw new BusinessException("임시저장 상태의 문서만 제출할 수 있습니다.");
         }
 
         document.setStatus(DocumentStatus.IN_PROGRESS);
@@ -167,6 +167,19 @@ public class ApprovalDocumentService {
         document.setCurrentStage(1);
 
         activityService.recordActivity(document, userId, ActivityType.SUBMIT, "결재를 요청했습니다.");
+    }
+
+    @Transactional
+    public void deleteDocument(Long id, UserPrincipal user) {
+        ApprovalDocument document = documentRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
+
+        if (!permissionService.canDeleteDocument(document, user)) {
+            throw new UnauthorizedException("문서 삭제 권한이 없습니다.");
+        }
+
+        activityService.recordActivity(document, user.getId(), ActivityType.DELETE, "문서를 삭제했습니다.");
+        documentRepository.delete(document);
     }
 
     private DocumentSummaryResponse convertToSummaryResponse(ApprovalDocument document, UserPrincipal user) {
@@ -316,7 +329,7 @@ public class ApprovalDocumentService {
     /**
      * 템플릿 옵션에 따른 요청 데이터 검증
      */
-    private void validateTemplateOptions(DocumentTemplate template, String content, 
+    private void validateTemplateOptions(DocumentTemplate template, String content,
                                         List<String> attachments, List<ApprovalStageRequest> approvalStages) {
         // useBody 옵션 검증
         if (!template.getUseBody() && StringUtils.hasText(content)) {

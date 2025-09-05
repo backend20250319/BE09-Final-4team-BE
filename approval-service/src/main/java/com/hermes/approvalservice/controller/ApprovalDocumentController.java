@@ -159,4 +159,21 @@ public class ApprovalDocumentController {
         approvalProcessService.rejectDocument(id, user, request);
         return ResponseEntity.ok().build();
     }
+
+    @Operation(summary = "문서 삭제", description = "문서를 삭제합니다. 일반 사용자는 본인이 작성한 임시저장 상태의 문서만 삭제할 수 있으며, 관리자는 모든 문서를 삭제할 수 있습니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "문서 삭제 성공"),
+            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
+            @ApiResponse(responseCode = "403", description = "문서 삭제 권한이 없습니다"),
+            @ApiResponse(responseCode = "404", description = "문서를 찾을 수 없습니다"),
+            @ApiResponse(responseCode = "409", description = "삭제할 수 없는 문서 상태입니다"),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteDocument(
+            @AuthenticationPrincipal UserPrincipal user,
+            @Parameter(description = "문서 ID", required = true) @PathVariable Long id) {
+        documentService.deleteDocument(id, user);
+        return ResponseEntity.ok().build();
+    }
 }

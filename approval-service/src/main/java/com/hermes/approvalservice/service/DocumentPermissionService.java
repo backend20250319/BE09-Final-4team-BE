@@ -2,6 +2,7 @@ package com.hermes.approvalservice.service;
 
 import com.hermes.approvalservice.entity.ApprovalDocument;
 import com.hermes.approvalservice.entity.DocumentApprovalTarget;
+import com.hermes.approvalservice.enums.DocumentStatus;
 import com.hermes.approvalservice.enums.UserRole;
 import com.hermes.auth.principal.UserPrincipal;
 import com.hermes.auth.enums.Role;
@@ -56,6 +57,17 @@ public class DocumentPermissionService {
                 .flatMap(stage -> stage.getApprovalTargets().stream())
                 .filter(target -> !target.getIsReference())
                 .anyMatch(target -> isTargetUser(target, userId) && !target.getIsApproved());
+    }
+
+    public boolean canDeleteDocument(ApprovalDocument document, UserPrincipal user) {
+        Long userId = user.getId();
+        // 관리자는 항상 삭제 가능
+        if (user.isAdmin()) {
+            return true;
+        }
+        
+        // 일반 사용자: 본인이 작성한 임시저장 상태인 문서만 삭제 가능
+        return document.getAuthorId().equals(userId) && document.getStatus() == DocumentStatus.DRAFT;
     }
 
     public UserRole getUserRole(ApprovalDocument document, UserPrincipal user) {
