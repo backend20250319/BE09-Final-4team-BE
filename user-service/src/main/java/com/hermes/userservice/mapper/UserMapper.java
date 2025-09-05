@@ -1,9 +1,6 @@
 package com.hermes.userservice.mapper;
 
-import com.hermes.userservice.dto.UserCreateDto;
-import com.hermes.userservice.dto.UserResponseDto;
-import com.hermes.userservice.dto.UserOrganizationDto;
-import com.hermes.userservice.dto.DetailProfileResponseDto;
+import com.hermes.userservice.dto.*;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.entity.UserOrganization;
@@ -65,7 +62,17 @@ public class UserMapper {
 
         return buildUserResponseDto(user, organizations, workPolicy);
     }
-    
+
+    public MainProfileResponseDto toMainProfileDto(User user) {
+        return MainProfileResponseDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .profileImageUrl(user.getProfileImageUrl())
+                .build();
+    }
+
     public DetailProfileResponseDto toDetailProfileDto(User user) {
         return DetailProfileResponseDto.builder()
                 .id(user.getId())
