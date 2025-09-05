@@ -77,22 +77,21 @@ public class VacationService {
             return CareerCalculator.calculateBasicLeaveDays(careerYears);
         }
         
-        try {
-            List<AnnualLeaveResponseDto> annualLeaves = workPolicyIntegrationService.getAnnualLeavesByWorkPolicyId(workPolicyId);
-            
-            for (AnnualLeaveResponseDto annualLeave : annualLeaves) {
-                if (annualLeave.getMinYears() <= careerYears && careerYears <= annualLeave.getMaxYears()) {
-                    log.debug("휴가 정책 매칭: careerYears={}, leaveDays={}", careerYears, annualLeave.getLeaveDays());
-                    return annualLeave.getLeaveDays();
-                }
-            }
-            
-            log.warn("경력년차에 맞는 휴가 정책을 찾을 수 없습니다: workPolicyId={}, careerYears={}", workPolicyId, careerYears);
-            return CareerCalculator.calculateBasicLeaveDays(careerYears);
-            
-        } catch (Exception e) {
-            log.error("휴가 정책 조회 실패: workPolicyId={}, careerYears={}", workPolicyId, careerYears, e);
+        List<AnnualLeaveResponseDto> annualLeaves = workPolicyIntegrationService.getAnnualLeavesByWorkPolicyId(workPolicyId);
+        
+        if (annualLeaves == null || annualLeaves.isEmpty()) {
+            log.warn("연차 정책을 찾을 수 없습니다: workPolicyId={}, careerYears={}", workPolicyId, careerYears);
             return CareerCalculator.calculateBasicLeaveDays(careerYears);
         }
+        
+        for (AnnualLeaveResponseDto annualLeave : annualLeaves) {
+            if (annualLeave.getMinYears() <= careerYears && careerYears <= annualLeave.getMaxYears()) {
+                log.debug("휴가 정책 매칭: careerYears={}, leaveDays={}", careerYears, annualLeave.getLeaveDays());
+                return annualLeave.getLeaveDays();
+            }
+        }
+        
+        log.warn("경력년차에 맞는 휴가 정책을 찾을 수 없습니다: workPolicyId={}, careerYears={}", workPolicyId, careerYears);
+        return CareerCalculator.calculateBasicLeaveDays(careerYears);
     }
 }

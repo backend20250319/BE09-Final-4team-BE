@@ -8,7 +8,6 @@ import com.hermes.userservice.dto.workpolicy.AnnualLeaveResponseDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.UserNotFoundException;
 import com.hermes.userservice.repository.UserRepository;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,7 +18,6 @@ import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.stream.Collectors;
-import com.hermes.api.common.ApiResult;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -53,45 +51,12 @@ public class WorkPolicyIntegrationService {
 
     public WorkPolicyResponseDto getWorkPolicy(Long workPolicyId) {
         log.info("근무 정책 조회: workPolicyId={}", workPolicyId);
-        try {
-            ApiResult<WorkPolicyResponseDto> result = workPolicyServiceClient.getWorkPolicy(workPolicyId);
-            if ("SUCCESS".equals(result.getStatus())) {
-                return result.getData();
-            } else {
-                log.error("근무 정책 조회 실패: {}", result.getMessage());
-                return null;
-            }
-        } catch (FeignException.NotFound e) {
-            log.error("근무 정책을 찾을 수 없습니다. workPolicyId={}", workPolicyId, e);
-            return null;
-        } catch (FeignException e) {
-            log.warn("근무 정책 서비스가 사용 불가능합니다. workPolicyId={}, status={}", workPolicyId, e.status());
-            return null;
-        }
+        return workPolicyServiceClient.getWorkPolicy(workPolicyId);
     }
 
-    /**
-     * 근무정책 ID로 연차 정보 목록을 조회합니다.
-     * @param workPolicyId 근무정책 ID
-     * @return 연차 정보 목록
-     */
     public List<AnnualLeaveResponseDto> getAnnualLeavesByWorkPolicyId(Long workPolicyId) {
         log.info("연차 정보 조회: workPolicyId={}", workPolicyId);
-        try {
-            ApiResult<List<AnnualLeaveResponseDto>> result = workPolicyServiceClient.getAnnualLeavesByWorkPolicyId(workPolicyId);
-            if ("SUCCESS".equals(result.getStatus())) {
-                return result.getData();
-            } else {
-                log.error("연차 정보 조회 실패: {}", result.getMessage());
-                return List.of();
-            }
-        } catch (FeignException.NotFound e) {
-            log.error("연차 정보를 찾을 수 없습니다. workPolicyId={}", workPolicyId, e);
-            return List.of();
-        } catch (FeignException e) {
-            log.warn("근무 정책 서비스가 사용 불가능합니다. workPolicyId={}, status={}", workPolicyId, e.status());
-            return List.of();
-        }
+        return workPolicyServiceClient.getAnnualLeavesByWorkPolicyId(workPolicyId);
     }
 
     @Transactional(readOnly = true)
