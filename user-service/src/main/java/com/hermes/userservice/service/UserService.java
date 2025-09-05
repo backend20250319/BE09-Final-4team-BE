@@ -1,8 +1,6 @@
 package com.hermes.userservice.service;
 
-import com.hermes.userservice.dto.UserCreateDto;
-import com.hermes.userservice.dto.UserResponseDto;
-import com.hermes.userservice.dto.UserUpdateDto;
+import com.hermes.userservice.dto.*;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.DuplicateEmailException;
@@ -19,10 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import com.hermes.userservice.dto.DetailProfileResponseDto;
-import com.hermes.userservice.dto.ColleagueResponseDto;
-import com.hermes.userservice.dto.ColleagueSearchRequestDto;
 
 @Slf4j
 @Service
@@ -169,6 +163,14 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         user.updateWorkPolicyId(workPolicyId);
         return userRepository.save(user);
+    }
+    @Transactional(readOnly = true)
+    public MainProfileResponseDto getMainProfile(Long userId) {
+        log.info("공개 프로필 조회 요청: userId={}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+
+        return userMapper.toMainProfileDto(user);
     }
 
     @Transactional(readOnly = true)
