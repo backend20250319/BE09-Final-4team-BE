@@ -259,16 +259,11 @@ public class WorkScheduleController {
             @PathVariable Long colleagueId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @AuthenticationPrincipal UserPrincipal user) {
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
             log.info("Fetching colleague schedule for colleagueId: {} from {} to {}", colleagueId, startDate, endDate);
             
-            // 본인 또는 관리자만 조회 가능
-            if (!user.getId().equals(colleagueId) && !user.getRole().name().equals("ADMIN")) {
-                return ResponseEntity.ok(ApiResult.failure("권한이 없습니다."));
-            }
-            
-            ColleagueScheduleResponseDto result = workScheduleService.getColleagueSchedule(colleagueId, startDate, endDate);
+            ColleagueScheduleResponseDto result = workScheduleService.getColleagueSchedule(colleagueId, startDate, endDate, authorization);
             
             if (result == null) {
                 return ResponseEntity.ok(ApiResult.failure("동료의 근무표를 찾을 수 없습니다."));

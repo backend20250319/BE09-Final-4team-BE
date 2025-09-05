@@ -911,10 +911,10 @@ public class WorkScheduleService {
     /**
      * 동료 근무표 조회
      */
-    public ColleagueScheduleResponseDto getColleagueSchedule(Long colleagueId, LocalDate startDate, LocalDate endDate) {
+    public ColleagueScheduleResponseDto getColleagueSchedule(Long colleagueId, LocalDate startDate, LocalDate endDate, String authorization) {
         try {
-            // 1. 동료 정보 조회 (User Service에서)
-            Map<String, Object> colleagueInfo = userServiceClient.getUserById(colleagueId, null);
+            // 1. 동료 정보 조회 (User Service에서) - Authorization 헤더 전달로 권한 문제 해결
+            Map<String, Object> colleagueInfo = userServiceClient.getUserById(colleagueId, authorization);
             if (colleagueInfo == null) {
                 log.error("Colleague not found: {}", colleagueId);
                 return null;
@@ -922,6 +922,8 @@ public class WorkScheduleService {
             
             // 2. 동료의 스케줄 조회
             List<Schedule> schedules = scheduleRepository.findByUserIdAndDateRange(colleagueId, "ACTIVE", startDate, endDate);
+            log.info("Found {} schedules for colleague {} between {} and {}", 
+                    schedules != null ? schedules.size() : 0, colleagueId, startDate, endDate);
             
             // 3. 일별 스케줄로 그룹화
             Map<LocalDate, List<Schedule>> schedulesByDate = schedules.stream()
@@ -948,19 +950,27 @@ public class WorkScheduleService {
                 currentDate = currentDate.plusDays(1);
             }
             
-            // Map에서 필요한 정보 추출
-            String colleagueName = (String) colleagueInfo.get("name");
+            // Map에서 필요한 정보 추출 (안전한 null 체크 포함)
+            String colleagueName = colleagueInfo.get("name") != null ? 
+                    (String) colleagueInfo.get("name") : "알 수 없음";
             String colleaguePosition = "";
-            String colleagueDepartment = "";
-            String colleagueAvatar = (String) colleagueInfo.get("profileImageUrl");
+            String colleagueDepartment = colleagueInfo.get("departmentName") != null ? 
+                    (String) colleagueInfo.get("departmentName") : "";
+            String colleagueAvatar = colleagueInfo.get("profileImageUrl") != null ? 
+                    (String) colleagueInfo.get("profileImageUrl") : null;
             
             // position 정보 추출
             if (colleagueInfo.get("position") != null) {
                 Map<String, Object> position = (Map<String, Object>) colleagueInfo.get("position");
-                colleaguePosition = (String) position.get("name");
+                if (position != null && position.get("name") != null) {
+                    colleaguePosition = (String) position.get("name");
+                }
             }
             
-            return ColleagueScheduleResponseDto.builder()
+            log.info("Building response for colleague: name={}, position={}, department={}", 
+                    colleagueName, colleaguePosition, colleagueDepartment);
+            
+            ColleagueScheduleResponseDto response = ColleagueScheduleResponseDto.builder()
                     .colleagueId(colleagueId)
                     .colleagueName(colleagueName)
                     .colleaguePosition(colleaguePosition)
@@ -970,6 +980,10 @@ public class WorkScheduleService {
                     .endDate(endDate)
                     .dailySchedules(dailySchedules)
                     .build();
+                    
+            log.info("Successfully built colleague schedule response with {} daily schedules", 
+                    dailySchedules.size());
+            return response;
                     
         } catch (Exception e) {
             log.error("Error fetching colleague schedule for colleagueId: {} from {} to {}", colleagueId, startDate, endDate, e);

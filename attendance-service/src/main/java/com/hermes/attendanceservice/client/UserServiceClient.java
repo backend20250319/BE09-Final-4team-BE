@@ -18,5 +18,4 @@ public interface UserServiceClient {
     
     @GetMapping("/api/users/count")
     Map<String, Object> getTotalEmployees();
-
 } 
