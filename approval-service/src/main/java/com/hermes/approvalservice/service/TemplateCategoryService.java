@@ -43,7 +43,6 @@ public class TemplateCategoryService {
     public CategoryResponse createCategory(CreateCategoryRequest request) {
         TemplateCategory category = TemplateCategory.builder()
                 .name(request.getName())
-                .description(request.getDescription())
                 .sortOrder(request.getSortOrder())
                 .build();
 
@@ -57,7 +56,6 @@ public class TemplateCategoryService {
                 .orElseThrow(() -> new NotFoundException("카테고리를 찾을 수 없습니다."));
 
         category.setName(request.getName());
-        category.setDescription(request.getDescription());
         category.setSortOrder(request.getSortOrder());
 
         return convertToResponse(category);
@@ -75,10 +73,7 @@ public class TemplateCategoryService {
         CategoryResponse response = new CategoryResponse();
         response.setId(category.getId());
         response.setName(category.getName());
-        response.setDescription(category.getDescription());
         response.setSortOrder(category.getSortOrder());
-        response.setCreatedAt(category.getCreatedAt());
-        response.setUpdatedAt(category.getUpdatedAt());
         return response;
     }
 }

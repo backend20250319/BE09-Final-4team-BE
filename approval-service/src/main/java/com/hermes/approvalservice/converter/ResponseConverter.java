@@ -159,7 +159,6 @@ public class ResponseConverter {
             CategoryResponse categoryResponse = new CategoryResponse();
             categoryResponse.setId(template.getCategory().getId());
             categoryResponse.setName(template.getCategory().getName());
-            categoryResponse.setDescription(template.getCategory().getDescription());
             categoryResponse.setSortOrder(template.getCategory().getSortOrder());
             response.setCategory(categoryResponse);
         }
