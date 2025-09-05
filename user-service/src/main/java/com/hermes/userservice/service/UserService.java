@@ -183,6 +183,18 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public List<Long> searchUserIdsByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return List.of();
+        }
+        
+        List<User> users = userRepository.findByNameContaining(name.trim());
+        return users.stream()
+                .map(User::getId)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<ColleagueResponseDto> getColleagues(ColleagueSearchRequestDto searchRequest) {
         log.info("동료 목록 조회 요청: searchKeyword={}, department={}, position={}",
                 searchRequest.getSearchKeyword(), searchRequest.getDepartment(), searchRequest.getPosition());

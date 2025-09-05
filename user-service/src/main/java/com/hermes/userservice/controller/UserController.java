@@ -210,6 +210,19 @@ public class UserController {
         return ResponseEntity.ok(ApiResult.success("상세 프로필 조회 성공", profile));
     }
 
+    @GetMapping("/search-ids")
+    @Operation(summary = "이름으로 사용자 ID 목록 검색", description = "사용자 이름으로 검색하여 해당하는 사용자 ID 목록을 반환합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "사용자 ID 목록 조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
+    public ResponseEntity<List<Long>> searchUserIds(
+            @Parameter(description = "검색할 사용자 이름", required = true, example = "홍길동")
+            @RequestParam String name) {
+        List<Long> userIds = userService.searchUserIdsByName(name);
+        return ResponseEntity.ok(userIds);
+    }
+
     @GetMapping("/colleagues")
     @Operation(summary = "동료 목록 조회", description = "검색 조건에 따른 동료 목록을 조회합니다.")
     @ApiResponses(value = {
