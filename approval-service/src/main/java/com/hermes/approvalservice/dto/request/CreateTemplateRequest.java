@@ -16,6 +16,8 @@ public class CreateTemplateRequest {
     
     private String icon;
     
+    private String color;
+    
     private String description;
     
     private String bodyTemplate;

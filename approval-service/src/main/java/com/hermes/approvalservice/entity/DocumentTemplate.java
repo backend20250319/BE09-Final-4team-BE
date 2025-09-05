@@ -28,6 +28,9 @@ public class DocumentTemplate {
     @Column(length = 100)
     private String icon;
 
+    @Column(length = 7)
+    private String color;
+
     @Column(length = 1000)
     private String description;
 

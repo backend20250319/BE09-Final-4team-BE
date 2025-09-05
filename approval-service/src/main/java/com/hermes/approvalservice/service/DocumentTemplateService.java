@@ -94,6 +94,7 @@ public class DocumentTemplateService {
         DocumentTemplate template = DocumentTemplate.builder()
                 .title(request.getTitle())
                 .icon(request.getIcon())
+                .color(request.getColor())
                 .description(request.getDescription())
                 .bodyTemplate(request.getBodyTemplate())
                 .useBody(request.getUseBody())
@@ -143,6 +144,7 @@ public class DocumentTemplateService {
 
         template.setTitle(request.getTitle());
         template.setIcon(request.getIcon());
+        template.setColor(request.getColor());
         template.setDescription(request.getDescription());
         template.setBodyTemplate(request.getBodyTemplate());
         template.setUseBody(request.getUseBody());
@@ -252,6 +254,7 @@ public class DocumentTemplateService {
         response.setId(template.getId());
         response.setTitle(template.getTitle());
         response.setIcon(template.getIcon());
+        response.setColor(template.getColor());
         response.setDescription(template.getDescription());
         response.setUseBody(template.getUseBody());
         response.setUseAttachment(template.getUseAttachment());

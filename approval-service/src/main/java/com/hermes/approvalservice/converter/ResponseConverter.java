@@ -144,6 +144,7 @@ public class ResponseConverter {
         response.setId(template.getId());
         response.setTitle(template.getTitle());
         response.setIcon(template.getIcon());
+        response.setColor(template.getColor());
         response.setDescription(template.getDescription());
         response.setBodyTemplate(template.getBodyTemplate());
         response.setUseBody(template.getUseBody());

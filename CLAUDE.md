@@ -280,5 +280,5 @@ public class OpenApiConfig {
 ## Deprecated Components
 
 ### ApiResult<T>
-- **사용 금지**: `libs/api-common/src/main/java/com/hermes/api/common/ApiResult.java`
-- **대신 사용**: ResponseEntity로 직접 응답, 예외는 글로벌 핸들러에서 처리
+- `libs/api-common/src/main/java/com/hermes/api/common/ApiResult.java`
+- 새 API에 사용하지 마세요. 대신 ResponseEntity로 직접 응답하고, 예외는 글로벌 핸들러에서 처리하세요.
