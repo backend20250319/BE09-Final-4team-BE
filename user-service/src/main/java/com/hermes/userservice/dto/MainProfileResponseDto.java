@@ -1,5 +1,6 @@
 package com.hermes.userservice.dto;
 
+import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,4 +13,5 @@ public class MainProfileResponseDto {
     private String email;
     private String phone;
     private String profileImageUrl;
+    private WorkPolicyResponseDto workPolicy;
 }
