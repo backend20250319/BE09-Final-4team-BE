@@ -56,7 +56,7 @@ public class WorkScheduleController {
             }
             
             // Authorization 헤더는 null로 전달 (User Service에서 직접 처리)
-            UserWorkPolicyDto result = workScheduleService.getUserWorkPolicy(userId, null);
+            UserWorkPolicyDto result = workScheduleService.getUserWorkPolicy(userId);
             
             if (result == null) {
                 return ResponseEntity.ok(ApiResult.failure("사용자의 근무 정책을 찾을 수 없습니다."));
@@ -250,20 +250,27 @@ public class WorkScheduleController {
             return ResponseEntity.ok(ApiResult.failure("근무 시간 조정 요청 생성 중 오류가 발생했습니다."));
         }
     }
-    
+
     /**
      * 동료 근무표 조회
      */
+    @Operation(summary = "동료 근무표 조회", description = "특정 동료의 근무 스케줄을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "동료 근무표 조회 성공",
+            content = @Content(schema = @Schema(implementation = ColleagueScheduleResponseDto.class))),
+        @ApiResponse(responseCode = "404", description = "동료 근무표를 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
     @GetMapping("/colleagues/{colleagueId}/schedules")
     public ResponseEntity<ApiResult<ColleagueScheduleResponseDto>> getColleagueSchedule(
-            @PathVariable Long colleagueId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestHeader(value = "Authorization", required = false) String authorization) {
+            @Parameter(description = "동료 사용자 ID") @PathVariable Long colleagueId,
+            @Parameter(description = "시작 날짜 (YYYY-MM-DD)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "종료 날짜 (YYYY-MM-DD)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @Parameter(description = "인증된 사용자 정보") @AuthenticationPrincipal UserPrincipal user) {
         try {
-            log.info("Fetching colleague schedule for colleagueId: {} from {} to {}", colleagueId, startDate, endDate);
+            log.info("Fetching colleague schedule for colleagueId: {} from {} to {} by user: {}", colleagueId, startDate, endDate, user.getId());
             
-            ColleagueScheduleResponseDto result = workScheduleService.getColleagueSchedule(colleagueId, startDate, endDate, authorization);
+            ColleagueScheduleResponseDto result = workScheduleService.getColleagueSchedule(colleagueId, startDate, endDate);
             
             if (result == null) {
                 return ResponseEntity.ok(ApiResult.failure("동료의 근무표를 찾을 수 없습니다."));

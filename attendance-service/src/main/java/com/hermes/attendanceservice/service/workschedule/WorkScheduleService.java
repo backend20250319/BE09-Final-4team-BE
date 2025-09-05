@@ -66,7 +66,7 @@ public class WorkScheduleService {
         
         // 스케줄이 없으면 기본 근무 정책 사용
         try {
-            UserWorkPolicyDto userPolicy = getUserWorkPolicy(userId, null);
+            UserWorkPolicyDto userPolicy = getUserWorkPolicy(userId);
             if (userPolicy.getWorkPolicy() != null) {
                 WorkPolicyDto workPolicy = userPolicy.getWorkPolicy();
                 LocalTime startTime = workPolicy.getStartTime();
@@ -102,7 +102,7 @@ public class WorkScheduleService {
     /**
      * 사용자 ID를 통해 해당 사용자의 근무 정책 정보를 조회
      */
-    public UserWorkPolicyDto getUserWorkPolicy(Long userId, String authorization) {
+    public UserWorkPolicyDto getUserWorkPolicy(Long userId) {
         try {
             // 1. User Service에서 사용자 정보 조회
             Map<String, Object> userResponse = userServiceClient.getUserById(userId);
@@ -357,7 +357,7 @@ public class WorkScheduleService {
     public List<ScheduleResponseDto> createFixedSchedulesFromWorkPolicy(Long userId, LocalDate startDate, LocalDate endDate) {
         try {
             // 1. 사용자의 work policy 조회
-            UserWorkPolicyDto userWorkPolicy = getUserWorkPolicy(userId, null);
+            UserWorkPolicyDto userWorkPolicy = getUserWorkPolicy(userId);
             if (userWorkPolicy == null || userWorkPolicy.getWorkPolicy() == null) {
                 throw new RuntimeException("User has no work policy assigned");
             }
@@ -405,7 +405,7 @@ public class WorkScheduleService {
     public List<ScheduleResponseDto> applyWorkPolicyToSchedule(Long userId, String authorization, LocalDate startDate, LocalDate endDate) {
         try {
             // 1. 사용자의 WorkPolicy 정보 조회
-            UserWorkPolicyDto userWorkPolicy = getUserWorkPolicy(userId, authorization);
+            UserWorkPolicyDto userWorkPolicy = getUserWorkPolicy(userId);
             
             if (userWorkPolicy == null || userWorkPolicy.getWorkPolicy() == null) {
                 throw new RuntimeException("User has no work policy assigned");
@@ -767,7 +767,7 @@ public class WorkScheduleService {
             List<Schedule> schedules = scheduleRepository.findByUserIdAndStatusOrderByStartDateAscStartTimeAsc(userId, "ACTIVE");
             
             // WorkPolicy 정보도 함께 조회하여 스케줄에 추가 정보 제공
-            UserWorkPolicyDto userWorkPolicy = getUserWorkPolicy(userId, authorization);
+            UserWorkPolicyDto userWorkPolicy = getUserWorkPolicy(userId);
             
             return schedules.stream()
                     .map(schedule -> {
@@ -911,10 +911,10 @@ public class WorkScheduleService {
     /**
      * 동료 근무표 조회
      */
-    public ColleagueScheduleResponseDto getColleagueSchedule(Long colleagueId, LocalDate startDate, LocalDate endDate, String authorization) {
+    public ColleagueScheduleResponseDto getColleagueSchedule(Long colleagueId, LocalDate startDate, LocalDate endDate) {
         try {
-            // 1. 동료 정보 조회 (User Service에서) - Authorization 헤더 전달로 권한 문제 해결
-            Map<String, Object> colleagueInfo = userServiceClient.getUserById(colleagueId, authorization);
+            // 1. 동료 정보 조회 (User Service에서)
+            Map<String, Object> colleagueInfo = userServiceClient.getUserById(colleagueId, null);
             if (colleagueInfo == null) {
                 log.error("Colleague not found: {}", colleagueId);
                 return null;
