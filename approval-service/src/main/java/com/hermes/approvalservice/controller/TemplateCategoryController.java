@@ -2,7 +2,9 @@ package com.hermes.approvalservice.controller;
 
 import com.hermes.approvalservice.dto.request.CreateCategoryRequest;
 import com.hermes.approvalservice.dto.request.UpdateCategoryRequest;
+import com.hermes.approvalservice.dto.request.BulkCategoryRequest;
 import com.hermes.approvalservice.dto.response.CategoryResponse;
+import com.hermes.approvalservice.dto.response.BulkCategoryResponse;
 import com.hermes.approvalservice.service.TemplateCategoryService;
 import com.hermes.auth.principal.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -72,7 +74,6 @@ public class TemplateCategoryController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CategoryResponse> createCategory(
-            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 생성 요청 정보", required = true) @Valid @RequestBody CreateCategoryRequest request) {
         CategoryResponse category = categoryService.createCategory(request);
         return ResponseEntity.ok(category);
@@ -90,7 +91,6 @@ public class TemplateCategoryController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CategoryResponse> updateCategory(
-            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 ID", required = true) @PathVariable Long id, 
             @Parameter(description = "카테고리 수정 요청 정보", required = true) @Valid @RequestBody UpdateCategoryRequest request) {
         CategoryResponse category = categoryService.updateCategory(id, request);
@@ -109,9 +109,24 @@ public class TemplateCategoryController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCategory(
-            @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "카테고리 ID", required = true) @PathVariable Long id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "카테고리 벌크 작업", description = "여러 카테고리를 한 번에 생성, 수정, 삭제합니다. (관리자만 가능)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "벌크 작업 완료"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
+            @ApiResponse(responseCode = "403", description = "관리자만 벌크 작업을 수행할 수 있습니다"),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    @PostMapping("/bulk")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BulkCategoryResponse> bulkProcessCategories(
+            @Parameter(description = "벌크 카테고리 작업 요청 정보", required = true) @Valid @RequestBody BulkCategoryRequest request) {
+        BulkCategoryResponse response = categoryService.bulkProcessCategories(request);
+        return ResponseEntity.ok(response);
     }
 }
