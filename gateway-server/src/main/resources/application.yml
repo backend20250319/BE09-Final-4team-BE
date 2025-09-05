@@ -24,6 +24,10 @@ spring:
               uri: lb://communication-service
               predicates:
                 - Path=/api/announcements/**,/api/comments/**,/api/notifications/**,/api/archives/**
+            - id: communication-service-websocket
+              uri: lb://communication-service
+              predicates:
+                - Path=/ws/**,/ws-pure/**
             - id: attendance-service
               uri: lb://attendance-service
               predicates:
