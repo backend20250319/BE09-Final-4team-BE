@@ -1,11 +1,13 @@
 package com.hermes.approvalservice.dto.request;
 
 import com.hermes.approvalservice.enums.CategoryOperationType;
+import com.hermes.approvalservice.validation.ValidCategoryOperation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
+@ValidCategoryOperation
 public class BulkCategoryOperation {
     
     @NotNull(message = "작업 타입은 필수입니다")
