@@ -79,13 +79,12 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    @PreAuthorize("#userId == authentication.principal.userId or hasRole('ADMIN')")
-    @Operation(summary = "사용자 상세 정보 조회", description = "특정 사용자의 상세 정보를 조회합니다. 본인 또는 관리자만 접근 가능합니다.")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "사용자 정보 조회", description = "특정 사용자의 정보를 조회합니다. 인증된 사용자만 접근 가능합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용자 조회 성공",
                     content = @Content(schema = @Schema(implementation = UserResponseDto.class))),
             @ApiResponse(responseCode = "401", description = "인증 실패"),
-            @ApiResponse(responseCode = "403", description = "권한 부족"),
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     public ResponseEntity<ApiResult<UserResponseDto>> getUser(
