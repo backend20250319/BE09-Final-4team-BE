@@ -32,9 +32,17 @@ public class EmployeeAssignmentService {
         Organization organization = organizationRepository.findById(request.getOrganizationId())
                 .orElseThrow(() -> new OrganizationNotFoundException(request.getOrganizationId()));
         
+        // 중복 배정 체크 - 이미 배정되어 있으면 기존 배정 정보를 반환
         if (employeeAssignmentRepository.existsByEmployeeIdAndOrganizationOrganizationId(
                 request.getEmployeeId(), request.getOrganizationId())) {
-            throw new RuntimeException("Employee is already assigned to this organization.");
+            log.info("Employee {} is already assigned to organization {}. Returning existing assignment.", 
+                    request.getEmployeeId(), request.getOrganizationId());
+            
+            EmployeeAssignment existingAssignment = employeeAssignmentRepository
+                    .findByEmployeeIdAndOrganizationOrganizationId(request.getEmployeeId(), request.getOrganizationId())
+                    .orElseThrow(() -> new RuntimeException("Assignment not found"));
+            
+            return convertToDto(existingAssignment);
         }
         
         if (request.getIsPrimary()) {

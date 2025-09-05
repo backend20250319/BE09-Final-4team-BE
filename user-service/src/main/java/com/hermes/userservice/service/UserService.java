@@ -1,8 +1,6 @@
 package com.hermes.userservice.service;
 
-import com.hermes.userservice.dto.UserCreateDto;
-import com.hermes.userservice.dto.UserResponseDto;
-import com.hermes.userservice.dto.UserUpdateDto;
+import com.hermes.userservice.dto.*;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.DuplicateEmailException;
@@ -19,9 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import com.hermes.userservice.dto.DetailProfileResponseDto;
-import com.hermes.userservice.dto.ColleagueResponseDto;
-import com.hermes.userservice.dto.ColleagueSearchRequestDto;
 
 @Slf4j
 @Service
@@ -62,9 +57,9 @@ public class UserService {
 
         User user = userMapper.toEntity(userCreateDto);
         User createdUser = userRepository.save(user);
-        
+
         List<Map<String, Object>> remoteOrganizations = organizationIntegrationService.getUserOrganizations(createdUser.getId());
-        
+
         WorkPolicyResponseDto workPolicy = null;
         if (createdUser.getWorkPolicyId() != null) {
             try {
@@ -73,19 +68,19 @@ public class UserService {
                 log.warn("근무 정책 조회 실패, null로 처리: userId={}, workPolicyId={}", createdUser.getId(), createdUser.getWorkPolicyId(), e);
             }
         }
-        
+
         return userMapper.toResponseDto(createdUser, remoteOrganizations, workPolicy);
     }
 
     @Transactional
     public UserResponseDto updateUser(Long userId, UserUpdateDto userUpdateDto) {
         log.info("사용자 업데이트 시작: userId={}, updateData={}", userId, userUpdateDto);
-        
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
-        log.info("업데이트 전 사용자 데이터: name={}, phone={}, address={}, joinDate={}", 
-                 user.getName(), user.getPhone(), user.getAddress(), user.getJoinDate());
+        log.info("업데이트 전 사용자 데이터: name={}, phone={}, address={}, joinDate={}",
+                user.getName(), user.getPhone(), user.getAddress(), user.getJoinDate());
 
         if (userUpdateDto.getEmail() != null && !Objects.equals(user.getEmail(), userUpdateDto.getEmail())) {
             if (userRepository.findByEmail(userUpdateDto.getEmail()).isPresent()) {
@@ -96,25 +91,25 @@ public class UserService {
         if (userUpdateDto.getPassword() != null) {
             user.updatePassword(passwordEncoder.encode(userUpdateDto.getPassword()));
         }
-        
+
         if (userUpdateDto.getJoinDate() != null) {
             user.updateJoinDate(userUpdateDto.getJoinDate());
         }
-        
+
         user.updateInfo(userUpdateDto.getName(), userUpdateDto.getPhone(), userUpdateDto.getAddress(), userUpdateDto.getProfileImageUrl(), userUpdateDto.getSelfIntroduction());
         user.updateWorkInfo(userUpdateDto.getEmploymentType(), userUpdateDto.getRank(), userUpdateDto.getPosition(), userUpdateDto.getJob(), userUpdateDto.getRole(), userUpdateDto.getWorkPolicyId());
         user.updateAdminStatus(userUpdateDto.getIsAdmin());
         user.updatePasswordResetFlag(userUpdateDto.getNeedsPasswordReset());
 
-        log.info("업데이트 후 사용자 데이터: name={}, phone={}, address={}, joinDate={}", 
-                 user.getName(), user.getPhone(), user.getAddress(), user.getJoinDate());
+        log.info("업데이트 후 사용자 데이터: name={}, phone={}, address={}, joinDate={}",
+                user.getName(), user.getPhone(), user.getAddress(), user.getJoinDate());
 
         User updatedUser = userRepository.save(user);
-        
+
         log.info("DB 저장 완료: userId={}", updatedUser.getId());
-        
+
         List<Map<String, Object>> remoteOrganizations = organizationIntegrationService.getUserOrganizations(updatedUser.getId());
-        
+
         WorkPolicyResponseDto workPolicy = null;
         if (updatedUser.getWorkPolicyId() != null) {
             try {
@@ -123,10 +118,10 @@ public class UserService {
                 log.warn("근무 정책 조회 실패: {}", e.getMessage());
             }
         }
-        
+
         UserResponseDto response = userMapper.toResponseDto(updatedUser, remoteOrganizations, workPolicy);
         log.info("응답 데이터 생성 완료: userId={}", response.getId());
-        
+
         return response;
     }
 
@@ -168,6 +163,14 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
         user.updateWorkPolicyId(workPolicyId);
         return userRepository.save(user);
+    }
+    @Transactional(readOnly = true)
+    public MainProfileResponseDto getMainProfile(Long userId) {
+        log.info("공개 프로필 조회 요청: userId={}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+
+        return userMapper.toMainProfileDto(user);
     }
 
     @Transactional(readOnly = true)
