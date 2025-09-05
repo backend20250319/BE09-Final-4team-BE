@@ -17,7 +17,7 @@ public interface DocumentApprovalTargetRepository extends JpaRepository<Document
 
     List<DocumentApprovalTarget> findByDocumentIdAndIsReferenceTrue(Long documentId);
 
-    @Query("SELECT t FROM DocumentApprovalTarget t WHERE t.userId = :userId AND t.isApproved = false " +
+    @Query("SELECT t FROM DocumentApprovalTarget t WHERE t.userId = :userId AND t.approvalStatus = 'PENDING' " +
            "AND t.approvalStage.stageOrder = t.document.currentStage AND t.document.status = 'IN_PROGRESS'")
     List<DocumentApprovalTarget> findPendingApprovalsForUser(@Param("userId") Long userId);
 

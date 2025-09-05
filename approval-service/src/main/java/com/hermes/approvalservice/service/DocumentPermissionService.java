@@ -2,6 +2,7 @@ package com.hermes.approvalservice.service;
 
 import com.hermes.approvalservice.entity.ApprovalDocument;
 import com.hermes.approvalservice.entity.DocumentApprovalTarget;
+import com.hermes.approvalservice.enums.ApprovalStatus;
 import com.hermes.approvalservice.enums.DocumentStatus;
 import com.hermes.approvalservice.enums.UserRole;
 import com.hermes.auth.principal.UserPrincipal;
@@ -56,7 +57,7 @@ public class DocumentPermissionService {
                 .filter(stage -> stage.getStageOrder().equals(stageOrder))
                 .flatMap(stage -> stage.getApprovalTargets().stream())
                 .filter(target -> !target.getIsReference())
-                .anyMatch(target -> isTargetUser(target, userId) && !target.getIsApproved());
+                .anyMatch(target -> isTargetUser(target, userId) && target.getApprovalStatus() == ApprovalStatus.PENDING);
     }
 
     public boolean canDeleteDocument(ApprovalDocument document, UserPrincipal user) {

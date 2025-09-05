@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.entity;
 
+import com.hermes.approvalservice.enums.ApprovalStatus;
 import com.hermes.approvalservice.enums.TargetType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,15 +37,16 @@ public class DocumentApprovalTarget {
     @Builder.Default
     private Boolean isReference = false;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private Boolean isApproved = false;
+    private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
 
     @Column
-    private Long approvedBy;
+    private Long processedBy;
 
     @Column
-    private LocalDateTime approvedAt;
+    private LocalDateTime processedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id", nullable = false)

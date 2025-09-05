@@ -6,6 +6,7 @@ import com.hermes.approvalservice.client.UserServiceClient;
 import com.hermes.approvalservice.client.dto.UserProfile;
 import com.hermes.approvalservice.dto.response.*;
 import com.hermes.approvalservice.entity.*;
+import com.hermes.approvalservice.enums.ApprovalStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -74,17 +75,17 @@ public class ResponseConverter {
         response.setOrganizationId(target.getOrganizationId());
         response.setManagerLevel(target.getManagerLevel());
         response.setIsReference(target.getIsReference());
-        response.setIsApproved(target.getIsApproved());
-        response.setApprovedAt(target.getApprovedAt());
+        response.setApprovalStatus(target.getApprovalStatus());
+        response.setProcessedAt(target.getProcessedAt());
         
         if (target.getUserId() != null) {
             ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(target.getUserId());
             response.setUser(userResult.getData());
         }
         
-        if (target.getApprovedBy() != null) {
-            ApiResult<UserProfile> approverResult = userServiceClient.getUserProfile(target.getApprovedBy());
-            response.setApprover(approverResult.getData());
+        if (target.getProcessedBy() != null) {
+            ApiResult<UserProfile> processorResult = userServiceClient.getUserProfile(target.getProcessedBy());
+            response.setProcessor(processorResult.getData());
         }
         
         return response;
@@ -97,8 +98,8 @@ public class ResponseConverter {
         response.setOrganizationId(target.getOrganizationId());
         response.setManagerLevel(target.getManagerLevel());
         response.setIsReference(target.getIsReference());
-        response.setIsApproved(false); // 템플릿은 승인 상태 없음
-        response.setApprovedAt(null);
+        response.setApprovalStatus(ApprovalStatus.PENDING); // 템플릿은 기본 대기중 상태
+        response.setProcessedAt(null);
         
         if (target.getUserId() != null) {
             ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(target.getUserId());
