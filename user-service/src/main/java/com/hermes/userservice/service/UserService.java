@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import com.hermes.userservice.dto.MainProfileResponseDto;
 import com.hermes.userservice.dto.DetailProfileResponseDto;
 import com.hermes.userservice.dto.ColleagueResponseDto;
 import com.hermes.userservice.dto.ColleagueSearchRequestDto;
