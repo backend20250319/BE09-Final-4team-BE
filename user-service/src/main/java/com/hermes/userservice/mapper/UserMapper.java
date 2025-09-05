@@ -95,8 +95,6 @@ public class UserMapper {
                 .name(user.getName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
-                .address(user.getAddress())
-                .joinDate(user.getJoinDate())
                 .isAdmin(user.getIsAdmin())
                 .needsPasswordReset(user.getNeedsPasswordReset())
                 .employmentType(user.getEmploymentType())

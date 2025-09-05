@@ -224,11 +224,7 @@ public class UserService {
                         .name(user.getName())
                         .email(user.getEmail())
                         .phoneNumber(user.getPhone())
-                        .position(user.getPosition() != null ? user.getPosition().getName() : null)
-                        .department("")
                         .avatar(user.getProfileImageUrl())
-                        .employeeNumber("")
-                        .status("ACTIVE")
                         .build())
                 .collect(Collectors.toList());
     }
