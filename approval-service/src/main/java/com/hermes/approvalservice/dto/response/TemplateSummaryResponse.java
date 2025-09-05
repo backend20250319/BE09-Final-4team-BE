@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.dto.response;
 
+import com.hermes.approvalservice.enums.AttachmentUsageType;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -12,7 +13,7 @@ public class TemplateSummaryResponse {
     private String icon;
     private String description;
     private Boolean useBody;
-    private Boolean useAttachment;
+    private AttachmentUsageType useAttachment;
     private Boolean allowTargetChange;
     private Boolean isHidden;
     private CategoryResponse category;

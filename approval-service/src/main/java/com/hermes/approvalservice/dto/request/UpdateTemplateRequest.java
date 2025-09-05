@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.dto.request;
 
+import com.hermes.approvalservice.enums.AttachmentUsageType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,8 +23,8 @@ public class UpdateTemplateRequest {
     @NotNull(message = "본문 사용 여부는 필수입니다")
     private Boolean useBody;
     
-    @NotNull(message = "첨부파일 사용 여부는 필수입니다")
-    private Boolean useAttachment;
+    @NotNull(message = "첨부파일 사용 유형은 필수입니다")
+    private AttachmentUsageType useAttachment;
     
     @NotNull(message = "대상 변경 허용 여부는 필수입니다")
     private Boolean allowTargetChange;

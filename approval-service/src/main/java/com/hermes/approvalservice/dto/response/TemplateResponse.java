@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.dto.response;
 
+import com.hermes.approvalservice.enums.AttachmentUsageType;
 import com.hermes.attachment.dto.AttachmentInfoResponse;
 import lombok.Data;
 
@@ -15,7 +16,7 @@ public class TemplateResponse {
     private String description;
     private String bodyTemplate;
     private Boolean useBody;
-    private Boolean useAttachment;
+    private AttachmentUsageType useAttachment;
     private Boolean allowTargetChange;
     private Boolean isHidden;
     private List<AttachmentInfoResponse> referenceFiles;

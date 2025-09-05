@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.entity;
 
+import com.hermes.approvalservice.enums.AttachmentUsageType;
 import com.hermes.attachment.entity.AttachmentInfo;
 import jakarta.persistence.*;
 import lombok.*;
@@ -38,8 +39,9 @@ public class DocumentTemplate {
     private Boolean useBody = true;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private Boolean useAttachment = false;
+    private AttachmentUsageType useAttachment = AttachmentUsageType.OPTIONAL;
 
     @Column(nullable = false)
     @Builder.Default

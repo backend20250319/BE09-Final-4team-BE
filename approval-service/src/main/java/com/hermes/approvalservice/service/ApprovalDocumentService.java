@@ -10,6 +10,7 @@ import com.hermes.approvalservice.converter.ResponseConverter;
 import com.hermes.approvalservice.dto.response.*;
 import com.hermes.approvalservice.entity.*;
 import com.hermes.approvalservice.enums.ActivityType;
+import com.hermes.approvalservice.enums.AttachmentUsageType;
 import com.hermes.approvalservice.enums.DocumentStatus;
 import com.hermes.approvalservice.exception.BusinessException;
 import com.hermes.approvalservice.exception.NotFoundException;
@@ -337,8 +338,11 @@ public class ApprovalDocumentService {
         }
 
         // useAttachment 옵션 검증
-        if (!template.getUseAttachment() && attachments != null && !attachments.isEmpty()) {
+        AttachmentUsageType attachmentType = template.getUseAttachment();
+        if (attachmentType == AttachmentUsageType.DISABLED && attachments != null && !attachments.isEmpty()) {
             throw new BusinessException("이 템플릿은 첨부파일을 허용하지 않습니다.");
+        } else if (attachmentType == AttachmentUsageType.REQUIRED && (attachments == null || attachments.isEmpty())) {
+            throw new BusinessException("이 템플릿은 첨부파일이 필수입니다.");
         }
 
         // allowTargetChange 옵션 검증
