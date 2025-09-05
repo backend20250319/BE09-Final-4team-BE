@@ -65,7 +65,7 @@ public class UserMapper {
 
         return buildUserResponseDto(user, organizations, workPolicy);
     }
-    
+
     public DetailProfileResponseDto toDetailProfileDto(User user) {
         return DetailProfileResponseDto.builder()
                 .id(user.getId())
