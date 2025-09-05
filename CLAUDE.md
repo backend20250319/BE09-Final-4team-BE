@@ -274,7 +274,6 @@ public class OpenApiConfig {
 
 ### Standards
 - **Language**: All descriptions in Korean
-- **Error Codes**: Document 403 for admin-only endpoints
 - **Parameters**: Use `@Parameter` for clear documentation
 
 ## Deprecated Components

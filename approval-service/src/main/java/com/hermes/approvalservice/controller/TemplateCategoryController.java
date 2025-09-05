@@ -30,11 +30,6 @@ public class TemplateCategoryController {
     private final TemplateCategoryService categoryService;
 
     @Operation(summary = "카테고리 목록 조회", description = "사용자 권한에 따라 전체 카테고리 또는 공개 카테고리 목록을 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "카테고리 목록 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> getCategories(
             @AuthenticationPrincipal UserPrincipal user) {
@@ -50,12 +45,6 @@ public class TemplateCategoryController {
     }
 
     @Operation(summary = "카테고리 상세 조회", description = "지정한 ID의 카테고리 상세 정보를 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "카테고리 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "404", description = "카테고리를 찾을 수 없습니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @GetMapping("/{id}")
     public ResponseEntity<CategoryResponse> getCategoryById(
             @Parameter(description = "카테고리 ID", required = true) @PathVariable Long id) {
@@ -64,13 +53,6 @@ public class TemplateCategoryController {
     }
 
     @Operation(summary = "카테고리 생성", description = "새로운 템플릿 카테고리를 생성합니다. (관리자만 가능)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "카테고리 생성 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "관리자만 카테고리를 생성할 수 있습니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CategoryResponse> createCategory(
@@ -80,14 +62,6 @@ public class TemplateCategoryController {
     }
 
     @Operation(summary = "카테고리 수정", description = "기존 템플릿 카테고리를 수정합니다. (관리자만 가능)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "카테고리 수정 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "관리자만 카테고리를 수정할 수 있습니다"),
-            @ApiResponse(responseCode = "404", description = "카테고리를 찾을 수 없습니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CategoryResponse> updateCategory(
@@ -98,14 +72,8 @@ public class TemplateCategoryController {
     }
 
     @Operation(summary = "카테고리 삭제", description = "기존 템플릿 카테고리를 삭제합니다. (관리자만 가능)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "카테고리 삭제 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "관리자만 카테고리를 삭제할 수 있습니다"),
-            @ApiResponse(responseCode = "404", description = "카테고리를 찾을 수 없습니다"),
-            @ApiResponse(responseCode = "409", description = "사용중인 카테고리는 삭제할 수 없습니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
+    @ApiResponse(responseCode = "200", description = "카테고리 삭제 성공")
+    @ApiResponse(responseCode = "409", description = "사용중인 카테고리는 삭제할 수 없습니다")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCategory(
@@ -115,13 +83,6 @@ public class TemplateCategoryController {
     }
 
     @Operation(summary = "카테고리 벌크 작업", description = "여러 카테고리를 한 번에 생성, 수정, 삭제합니다. (관리자만 가능)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "벌크 작업 완료"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "관리자만 벌크 작업을 수행할 수 있습니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @PostMapping("/bulk")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BulkCategoryResponse> bulkProcessCategories(
