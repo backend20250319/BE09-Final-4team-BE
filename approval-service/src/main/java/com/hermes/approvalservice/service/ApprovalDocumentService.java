@@ -18,6 +18,7 @@ import com.hermes.approvalservice.exception.UnauthorizedException;
 import com.hermes.approvalservice.repository.*;
 import com.hermes.auth.principal.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -51,8 +53,18 @@ public class ApprovalDocumentService {
         LocalDateTime endDateTime = endDate != null ? endDate.atTime(23, 59, 59) : null;
         Long userId = user.getId();
         
+        // 검색어가 있을 경우 작성자 이름으로도 검색
+        List<Long> authorIds = null;
+        if (search != null && !search.trim().isEmpty()) {
+            try {
+                authorIds = userServiceClient.searchUserIds(search.trim());
+            } catch (Exception e) {
+                log.warn("사용자 검색 중 오류 발생, 템플릿 제목으로만 검색: {}", e.getMessage());
+            }
+        }
+        
         return documentRepository.findDocumentsForUserWithFilters(userId, statuses, search, 
-                                                                 startDateTime, endDateTime, pageable)
+                                                                 authorIds, startDateTime, endDateTime, pageable)
                 .map(document -> convertToSummaryResponse(document, user));
     }
 

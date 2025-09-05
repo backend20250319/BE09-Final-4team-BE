@@ -5,6 +5,9 @@ import com.hermes.approvalservice.client.dto.UserProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
+import java.util.List;
+
 @Component
 @Slf4j
 public class UserServiceClientFallback implements UserServiceClient {
@@ -22,5 +25,11 @@ public class UserServiceClientFallback implements UserServiceClient {
                 .build();
         
         return ApiResult.success(fallbackUserProfile);
+    }
+
+    @Override
+    public List<Long> searchUserIds(String name) {
+        log.error("UserServiceClient fallback triggered for searchUserIds, name: {}", name);
+        return Collections.emptyList();
     }
 }

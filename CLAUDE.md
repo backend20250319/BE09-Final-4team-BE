@@ -276,3 +276,9 @@ public class OpenApiConfig {
 - **Language**: All descriptions in Korean
 - **Error Codes**: Document 403 for admin-only endpoints
 - **Parameters**: Use `@Parameter` for clear documentation
+
+## Deprecated Components
+
+### ApiResult<T>
+- **사용 금지**: `libs/api-common/src/main/java/com/hermes/api/common/ApiResult.java`
+- **대신 사용**: ResponseEntity로 직접 응답, 예외는 글로벌 핸들러에서 처리

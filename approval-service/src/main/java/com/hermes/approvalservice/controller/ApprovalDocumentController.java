@@ -45,7 +45,7 @@ public class ApprovalDocumentController {
     public ResponseEntity<Page<DocumentSummaryResponse>> getDocuments(
             @AuthenticationPrincipal UserPrincipal user,
             @Parameter(description = "문서 상태 필터 (여러 개 선택 가능)") @RequestParam(required = false) List<DocumentStatus> status,
-            @Parameter(description = "제목 검색 키워드") @RequestParam(required = false) String search,
+            @Parameter(description = "검색 키워드 (템플릿 제목 또는 작성자 이름)") @RequestParam(required = false) String search,
             @Parameter(description = "조회 시작 날짜 (yyyy-MM-dd)") @RequestParam(required = false) LocalDate startDate,
             @Parameter(description = "조회 종료 날짜 (yyyy-MM-dd)") @RequestParam(required = false) LocalDate endDate,
             @Parameter(description = "페이지네이션 정보 (기본 크기: 20)") @PageableDefault(size = 20) Pageable pageable) {
