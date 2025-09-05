@@ -3,7 +3,6 @@ package com.hermes.userservice.controller;
 import com.hermes.api.common.ApiResult;
 import com.hermes.auth.principal.UserPrincipal;
 import com.hermes.userservice.dto.DetailProfileResponseDto;
-import com.hermes.userservice.dto.MainProfileResponseDto;
 import com.hermes.userservice.dto.UserCreateDto;
 import com.hermes.userservice.dto.UserResponseDto;
 import com.hermes.userservice.dto.UserUpdateDto;
@@ -79,12 +78,13 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "사용자 정보 조회", description = "특정 사용자의 정보를 조회합니다. 인증된 사용자만 접근 가능합니다.")
+    @PreAuthorize("#userId == authentication.principal.userId or hasRole('ADMIN')")
+    @Operation(summary = "사용자 상세 정보 조회", description = "특정 사용자의 상세 정보를 조회합니다. 본인 또는 관리자만 접근 가능합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용자 조회 성공",
                     content = @Content(schema = @Schema(implementation = UserResponseDto.class))),
             @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "403", description = "권한 부족"),
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     public ResponseEntity<ApiResult<UserResponseDto>> getUser(
@@ -165,23 +165,23 @@ public class UserController {
         return ResponseEntity.ok(ApiResult.success("전체 사용자 조직 정보 동기화 완료", null));
     }
 
-    @GetMapping("/{userId}/profile")
-    @Operation(summary = "공개 프로필 조회", description = "사용자의 공개 프로필 정보를 조회합니다. 인증 없이 접근 가능합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "프로필 조회 성공",
-                    content = @Content(schema = @Schema(implementation = MainProfileResponseDto.class))),
-            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
-    })
-    public ResponseEntity<ApiResult<MainProfileResponseDto>> getMainProfile(
-            @Parameter(description = "조회할 사용자 ID", required = true, example = "1")
-            @PathVariable Long userId) {
-        log.info("공개 프로필 조회 요청: userId={}", userId);
-        MainProfileResponseDto profile = userService.getMainProfile(userId);
-        return ResponseEntity.ok(ApiResult.success("공개 프로필 조회 성공", profile));
-    }
+//    @GetMapping("/{userId}/profile")
+//    @Operation(summary = "공개 프로필 조회", description = "사용자의 공개 프로필 정보를 조회합니다. 인증 없이 접근 가능합니다.")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "프로필 조회 성공",
+//                    content = @Content(schema = @Schema(implementation = MainProfileResponseDto.class))),
+//            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+//    })
+//    public ResponseEntity<ApiResult<MainProfileResponseDto>> getMainProfile(
+//            @Parameter(description = "조회할 사용자 ID", required = true, example = "1")
+//            @PathVariable Long userId) {
+//        log.info("공개 프로필 조회 요청: userId={}", userId);
+//        MainProfileResponseDto profile = userService.getMainProfile(userId);
+//        return ResponseEntity.ok(ApiResult.success("공개 프로필 조회 성공", profile));
+//    }
 
     @GetMapping("/{userId}/profile/detail")
-    @PreAuthorize("#userId == authentication.principal.userId or hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "상세 프로필 조회", description = "사용자의 상세 프로필 정보를 조회합니다. 본인 또는 관리자만 접근 가능합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "상세 프로필 조회 성공",
@@ -194,7 +194,17 @@ public class UserController {
             @Parameter(description = "조회할 사용자 ID", required = true, example = "1")
             @PathVariable Long userId,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        log.info("상세 프로필 조회 요청: userId={}", userId);
+        log.info("상세 프로필 조회 요청: userId={}, requesterId={}", userId, userPrincipal.getId());
+        
+        boolean isOwnProfile = userPrincipal.getId().equals(userId);
+        boolean isAdmin = userPrincipal.isAdmin(); // UserPrincipal의 isAdmin() 메서드 사용
+        
+        if (!isOwnProfile && !isAdmin) {
+            log.warn("상세 프로필 조회 권한 없음: userId={}, requesterId={}", userId, userPrincipal.getId());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResult.failure("상세 프로필 조회 권한이 없습니다."));
+        }
+        
         DetailProfileResponseDto profile = userService.getDetailProfile(userId);
         return ResponseEntity.ok(ApiResult.success("상세 프로필 조회 성공", profile));
     }
