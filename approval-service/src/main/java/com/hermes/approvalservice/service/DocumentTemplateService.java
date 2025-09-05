@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -58,10 +59,27 @@ public class DocumentTemplateService {
             ? templateRepository.findAll()
             : templateRepository.findVisibleTemplatesWithCategory();
 
-        Map<TemplateCategory, List<DocumentTemplate>> groupedTemplates = templates.stream()
+        // null category와 non-null category 분리
+        Map<Boolean, List<DocumentTemplate>> partitioned = templates.stream()
+                .collect(Collectors.partitioningBy(template -> template.getCategory() != null));
+
+        List<TemplatesByCategoryResponse> result = new ArrayList<>();
+
+        // null category 템플릿들 처리 (분류되지 않음)
+        List<DocumentTemplate> uncategorizedTemplates = partitioned.get(false);
+        if (!uncategorizedTemplates.isEmpty()) {
+            TemplatesByCategoryResponse uncategorizedResponse = new TemplatesByCategoryResponse();
+            uncategorizedResponse.setTemplates(uncategorizedTemplates.stream()
+                    .map(this::convertToSummaryResponse)
+                    .toList());
+            result.add(uncategorizedResponse);
+        }
+
+        // non-null category 템플릿들 그룹핑
+        Map<TemplateCategory, List<DocumentTemplate>> groupedTemplates = partitioned.get(true).stream()
                 .collect(Collectors.groupingBy(DocumentTemplate::getCategory));
 
-        return groupedTemplates.entrySet().stream()
+        List<TemplatesByCategoryResponse> categorizedResponses = groupedTemplates.entrySet().stream()
                 .map(entry -> {
                     TemplatesByCategoryResponse response = new TemplatesByCategoryResponse();
                     response.setCategoryId(entry.getKey().getId());
@@ -72,6 +90,9 @@ public class DocumentTemplateService {
                     return response;
                 })
                 .toList();
+
+        result.addAll(categorizedResponses);
+        return result;
     }
 
     public TemplateResponse getTemplateById(Long id) {
