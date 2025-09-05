@@ -70,10 +70,8 @@ public class ApprovalDocumentService {
 
 
     public DocumentResponse getDocumentById(Long id, UserPrincipal user) {
-        ApprovalDocument document = documentRepository.findByIdWithDetails(id);
-        if (document == null) {
-            throw new NotFoundException("문서를 찾을 수 없습니다.");
-        }
+        ApprovalDocument document = documentRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
 
         if (!permissionService.canViewDocument(document, user)) {
             throw new UnauthorizedException("문서 조회 권한이 없습니다.");

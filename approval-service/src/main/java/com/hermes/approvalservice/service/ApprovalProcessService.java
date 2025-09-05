@@ -27,10 +27,9 @@ public class ApprovalProcessService {
     private final DocumentActivityService activityService;
 
     public void approveDocument(Long documentId, UserPrincipal user, ApprovalActionRequest request) {
-        ApprovalDocument document = documentRepository.findByIdWithDetails(documentId);
-        if (document == null) {
-            throw new NotFoundException("문서를 찾을 수 없습니다.");
-        }
+        ApprovalDocument document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
+
         Long userId = user.getId();
 
         if (!permissionService.canApproveDocument(document, document.getCurrentStage(), user)) {
@@ -79,10 +78,9 @@ public class ApprovalProcessService {
     }
 
     public void rejectDocument(Long documentId, UserPrincipal user, ApprovalActionRequest request) {
-        ApprovalDocument document = documentRepository.findByIdWithDetails(documentId);
-        if (document == null) {
-            throw new NotFoundException("문서를 찾을 수 없습니다.");
-        }
+        ApprovalDocument document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
+
         Long userId = user.getId();
 
         if (!permissionService.canApproveDocument(document, document.getCurrentStage(), user)) {
