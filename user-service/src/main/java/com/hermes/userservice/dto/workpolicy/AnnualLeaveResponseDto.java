@@ -2,7 +2,7 @@ package com.hermes.userservice.dto.workpolicy;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -18,7 +18,7 @@ public class AnnualLeaveResponseDto {
     private Integer maxYears;
     private Integer leaveDays;
     private Integer holidayDays;
-    private String rangeDescription; // 범위 설명 (예: "0~1년차", "2~3년차")
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private String rangeDescription;
+    private Instant createdAt;
+    private Instant updatedAt;
 }

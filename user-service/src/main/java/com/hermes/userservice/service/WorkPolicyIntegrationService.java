@@ -4,6 +4,7 @@ import com.hermes.userservice.client.WorkPolicyServiceClient;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyRequestDto;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyUpdateDto;
+import com.hermes.userservice.dto.workpolicy.AnnualLeaveResponseDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.UserNotFoundException;
 import com.hermes.userservice.repository.UserRepository;
@@ -66,6 +67,30 @@ public class WorkPolicyIntegrationService {
         } catch (FeignException e) {
             log.warn("근무 정책 서비스가 사용 불가능합니다. workPolicyId={}, status={}", workPolicyId, e.status());
             return null;
+        }
+    }
+
+    /**
+     * 근무정책 ID로 연차 정보 목록을 조회합니다.
+     * @param workPolicyId 근무정책 ID
+     * @return 연차 정보 목록
+     */
+    public List<AnnualLeaveResponseDto> getAnnualLeavesByWorkPolicyId(Long workPolicyId) {
+        log.info("연차 정보 조회: workPolicyId={}", workPolicyId);
+        try {
+            ApiResult<List<AnnualLeaveResponseDto>> result = workPolicyServiceClient.getAnnualLeavesByWorkPolicyId(workPolicyId);
+            if ("SUCCESS".equals(result.getStatus())) {
+                return result.getData();
+            } else {
+                log.error("연차 정보 조회 실패: {}", result.getMessage());
+                return List.of();
+            }
+        } catch (FeignException.NotFound e) {
+            log.error("연차 정보를 찾을 수 없습니다. workPolicyId={}", workPolicyId, e);
+            return List.of();
+        } catch (FeignException e) {
+            log.warn("근무 정책 서비스가 사용 불가능합니다. workPolicyId={}, status={}", workPolicyId, e.status());
+            return List.of();
         }
     }
 
