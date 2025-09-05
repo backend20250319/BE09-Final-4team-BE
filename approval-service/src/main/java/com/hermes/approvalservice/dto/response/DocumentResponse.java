@@ -13,7 +13,6 @@ import java.util.List;
 public class DocumentResponse {
     
     private Long id;
-    private String title;
     private String content;
     private DocumentStatus status;
     private UserProfile author;

@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 public class DocumentSummaryResponse {
     
     private Long id;
-    private String title;
     private String content;
     private DocumentStatus status;
     private UserProfile author;

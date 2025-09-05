@@ -30,7 +30,7 @@ public interface ApprovalDocumentRepository extends JpaRepository<ApprovalDocume
     @Query("SELECT d FROM ApprovalDocument d WHERE " +
            "(d.authorId = :userId OR EXISTS (SELECT 1 FROM DocumentApprovalTarget t WHERE t.document = d AND t.userId = :userId)) " +
            "AND (:statuses IS NULL OR d.status IN :statuses) " +
-           "AND (:search IS NULL OR LOWER(d.title) LIKE LOWER(CONCAT('%', CAST(:search AS STRING), '%'))) " +
+           "AND (:search IS NULL OR LOWER(d.template.title) LIKE LOWER(CONCAT('%', CAST(:search AS STRING), '%'))) " +
            "AND (CAST(:startDateTime AS java.time.LocalDateTime) IS NULL OR d.createdAt >= :startDateTime) " +
            "AND (CAST(:endDateTime AS java.time.LocalDateTime) IS NULL OR d.createdAt <= :endDateTime) " +
            "ORDER BY d.createdAt DESC")

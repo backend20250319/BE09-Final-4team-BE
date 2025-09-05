@@ -82,7 +82,6 @@ public class ApprovalDocumentService {
         List<AttachmentInfo> attachments = attachmentService.validateAndConvertAttachments(request.getAttachments());
 
         ApprovalDocument document = ApprovalDocument.builder()
-                .title(request.getTitle())
                 .content(request.getContent())
                 .status(DocumentStatus.DRAFT)
                 .authorId(user.getId())
@@ -119,7 +118,6 @@ public class ApprovalDocumentService {
         // 템플릿 옵션 검증
         validateTemplateOptions(document.getTemplate(), request.getContent(), request.getAttachments(), request.getApprovalStages());
 
-        document.setTitle(request.getTitle());
         document.setContent(request.getContent());
         
         // 첨부파일 업데이트
@@ -186,7 +184,6 @@ public class ApprovalDocumentService {
     private DocumentSummaryResponse convertToSummaryResponse(ApprovalDocument document, UserPrincipal user) {
         DocumentSummaryResponse response = new DocumentSummaryResponse();
         response.setId(document.getId());
-        response.setTitle(document.getTitle());
         response.setContent(document.getContent());
         response.setStatus(document.getStatus());
         
@@ -211,7 +208,6 @@ public class ApprovalDocumentService {
     private DocumentResponse convertToResponse(ApprovalDocument document, UserPrincipal user) {
         DocumentResponse response = new DocumentResponse();
         response.setId(document.getId());
-        response.setTitle(document.getTitle());
         response.setContent(document.getContent());
         response.setStatus(document.getStatus());
         
