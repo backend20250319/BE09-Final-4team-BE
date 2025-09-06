@@ -6,9 +6,9 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "attachment-service", fallback = AttachmentServiceClientFallback.class)
+@FeignClient(name = "attachment-service")
 public interface AttachmentServiceClient {
     
     @GetMapping("/api/attachments/{fileId}/info")
-    ApiResult<AttachmentInfoResponse> getFileMetadata(@PathVariable("fileId") String fileId);
+    AttachmentInfoResponse getFileMetadata(@PathVariable("fileId") String fileId);
 }
