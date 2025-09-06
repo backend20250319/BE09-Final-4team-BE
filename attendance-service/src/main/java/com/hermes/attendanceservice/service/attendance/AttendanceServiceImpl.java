@@ -8,6 +8,7 @@ import com.hermes.attendanceservice.entity.attendance.AttendanceStatus;
 import com.hermes.attendanceservice.entity.attendance.WorkStatus;
 import com.hermes.attendanceservice.repository.attendance.AttendanceRepository;
 import com.hermes.attendanceservice.service.workschedule.WorkScheduleService;
+import com.hermes.attendanceservice.service.workmonitor.WorkMonitorService;
 import com.hermes.attendanceservice.dto.workschedule.WorkTimeInfoDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final WorkScheduleService workScheduleService;
+    private final WorkMonitorService workMonitorService;
 
     @Override
     public AttendanceResponse checkIn(Long userId, Instant checkInTime) {
@@ -83,7 +85,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         a.setAutoRecorded(false);
-        return toResponse(attendanceRepository.save(a));
+        AttendanceResponse response = toResponse(attendanceRepository.save(a));
+        workMonitorService.refreshTodayWorkMonitor();
+        return response;
     }
 
     @Override
@@ -109,7 +113,9 @@ public class AttendanceServiceImpl implements AttendanceService {
             a.setWorkStatus(WorkStatus.EARLY_LEAVE);
         }
 
-        return toResponse(attendanceRepository.save(a));
+        AttendanceResponse response = toResponse(attendanceRepository.save(a));
+        workMonitorService.refreshTodayWorkMonitor();
+        return response;
     }
 
     @Override
@@ -134,7 +140,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (checkOutTime != null) a.setCheckOut(checkOutTime);
         a.setAutoRecorded(autoRecorded);
 
-        return toResponse(attendanceRepository.save(a));
+        AttendanceResponse response = toResponse(attendanceRepository.save(a));
+        workMonitorService.refreshTodayWorkMonitor();
+        return response;
     }
 
     @Override
@@ -159,7 +167,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (checkOutTime != null) a.setCheckOut(checkOutTime);
         a.setAutoRecorded(autoRecorded);
 
-        return toResponse(attendanceRepository.save(a));
+        AttendanceResponse response = toResponse(attendanceRepository.save(a));
+        workMonitorService.refreshTodayWorkMonitor();
+        return response;
     }
 
     @Override
