@@ -72,8 +72,6 @@ public class TemplateCategoryController {
     }
 
     @Operation(summary = "카테고리 삭제", description = "기존 템플릿 카테고리를 삭제합니다. (관리자만 가능)")
-    @ApiResponse(responseCode = "200", description = "카테고리 삭제 성공")
-    @ApiResponse(responseCode = "409", description = "사용중인 카테고리는 삭제할 수 없습니다")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCategory(
