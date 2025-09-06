@@ -200,7 +200,7 @@ public class ApprovalDocumentService {
         ApiResult<UserProfile> authorResult = userServiceClient.getUserProfile(document.getAuthorId());
         response.setAuthor(authorResult.getData());
         
-        response.setTemplateTitle(document.getTemplate().getTitle());
+        response.setTemplate(responseConverter.convertToTemplateSummaryResponse(document.getTemplate()));
         response.setCurrentStage(document.getCurrentStage());
         response.setTotalStages(document.getApprovalStages().size());
         

@@ -14,7 +14,7 @@ public class DocumentSummaryResponse {
     private String content;
     private DocumentStatus status;
     private UserProfile author;
-    private String templateTitle;
+    private TemplateSummaryResponse template;
     private Integer currentStage;
     private Integer totalStages;
     private UserRole userRole;

@@ -177,4 +177,29 @@ public class ResponseConverter {
 
         return response;
     }
+
+    public TemplateSummaryResponse convertToTemplateSummaryResponse(DocumentTemplate template) {
+        TemplateSummaryResponse response = new TemplateSummaryResponse();
+        response.setId(template.getId());
+        response.setTitle(template.getTitle());
+        response.setIcon(template.getIcon());
+        response.setColor(template.getColor());
+        response.setDescription(template.getDescription());
+        response.setUseBody(template.getUseBody());
+        response.setUseAttachment(template.getUseAttachment());
+        response.setAllowTargetChange(template.getAllowTargetChange());
+        response.setIsHidden(template.getIsHidden());
+        response.setCreatedAt(template.getCreatedAt());
+        response.setUpdatedAt(template.getUpdatedAt());
+
+        if (template.getCategory() != null) {
+            CategoryResponse categoryResponse = new CategoryResponse();
+            categoryResponse.setId(template.getCategory().getId());
+            categoryResponse.setName(template.getCategory().getName());
+            categoryResponse.setSortOrder(template.getCategory().getSortOrder());
+            response.setCategory(categoryResponse);
+        }
+
+        return response;
+    }
 }

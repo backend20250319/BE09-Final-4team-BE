@@ -31,7 +31,6 @@ public class DocumentTemplateService {
     private final TemplateApprovalStageRepository stageRepository;
     private final TemplateApprovalTargetRepository targetRepository;
     private final AttachmentClientService attachmentService;
-    private final UserServiceClient userServiceClient;
     private final ResponseConverter responseConverter;
 
     public List<TemplateSummaryResponse> getAllTemplates(boolean isAdmin) {
@@ -40,7 +39,7 @@ public class DocumentTemplateService {
             : templateRepository.findByIsHiddenFalse();
         
         return templates.stream()
-                .map(this::convertToSummaryResponse)
+                .map(responseConverter::convertToTemplateSummaryResponse)
                 .toList();
     }
 
@@ -50,7 +49,7 @@ public class DocumentTemplateService {
             : templateRepository.findByCategoryIdAndIsHiddenFalse(categoryId);
         
         return templates.stream()
-                .map(this::convertToSummaryResponse)
+                .map(responseConverter::convertToTemplateSummaryResponse)
                 .toList();
     }
 
@@ -70,7 +69,7 @@ public class DocumentTemplateService {
         if (!uncategorizedTemplates.isEmpty()) {
             TemplatesByCategoryResponse uncategorizedResponse = new TemplatesByCategoryResponse();
             uncategorizedResponse.setTemplates(uncategorizedTemplates.stream()
-                    .map(this::convertToSummaryResponse)
+                    .map(responseConverter::convertToTemplateSummaryResponse)
                     .toList());
             result.add(uncategorizedResponse);
         }
@@ -85,7 +84,7 @@ public class DocumentTemplateService {
                     response.setCategoryId(entry.getKey().getId());
                     response.setCategoryName(entry.getKey().getName());
                     response.setTemplates(entry.getValue().stream()
-                            .map(this::convertToSummaryResponse)
+                            .map(responseConverter::convertToTemplateSummaryResponse)
                             .toList());
                     return response;
                 })
@@ -270,28 +269,4 @@ public class DocumentTemplateService {
         targetRepository.saveAll(targets);
     }
 
-    private TemplateSummaryResponse convertToSummaryResponse(DocumentTemplate template) {
-        TemplateSummaryResponse response = new TemplateSummaryResponse();
-        response.setId(template.getId());
-        response.setTitle(template.getTitle());
-        response.setIcon(template.getIcon());
-        response.setColor(template.getColor());
-        response.setDescription(template.getDescription());
-        response.setUseBody(template.getUseBody());
-        response.setUseAttachment(template.getUseAttachment());
-        response.setAllowTargetChange(template.getAllowTargetChange());
-        response.setIsHidden(template.getIsHidden());
-        response.setCreatedAt(template.getCreatedAt());
-        response.setUpdatedAt(template.getUpdatedAt());
-
-        if (template.getCategory() != null) {
-            CategoryResponse categoryResponse = new CategoryResponse();
-            categoryResponse.setId(template.getCategory().getId());
-            categoryResponse.setName(template.getCategory().getName());
-            categoryResponse.setSortOrder(template.getCategory().getSortOrder());
-            response.setCategory(categoryResponse);
-        }
-
-        return response;
-    }
 }
