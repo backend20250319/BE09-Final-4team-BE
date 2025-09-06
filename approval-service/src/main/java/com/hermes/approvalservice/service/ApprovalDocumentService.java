@@ -109,6 +109,15 @@ public class ApprovalDocumentService {
 
         activityService.recordActivity(savedDocument, user.getId(), ActivityType.CREATE, "문서를 작성했습니다.");
 
+        // 즉시 제출 옵션 처리
+        if (request.isSubmitImmediately()) {
+            savedDocument.setStatus(DocumentStatus.IN_PROGRESS);
+            savedDocument.setSubmittedAt(LocalDateTime.now());
+            savedDocument.setCurrentStage(1);
+            
+            activityService.recordActivity(savedDocument, user.getId(), ActivityType.SUBMIT, "결재를 요청했습니다.");
+        }
+
         return convertToResponse(savedDocument, user);
     }
 
