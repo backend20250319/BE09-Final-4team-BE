@@ -96,9 +96,9 @@ public class UserMapper {
                 .isAdmin(user.getIsAdmin())
                 .needsPasswordReset(user.getNeedsPasswordReset())
                 .employmentType(user.getEmploymentType())
-                .rank(user.getRank())
-                .position(user.getPosition())
-                .job(user.getJob())
+                .rank(toRankDto(user.getRank()))
+                .position(toPositionDto(user.getPosition()))
+                .job(toJobDto(user.getJob()))
                 .role(user.getRole())
                 .profileImageUrl(user.getProfileImageUrl())
                 .selfIntroduction(user.getSelfIntroduction())
@@ -131,6 +131,39 @@ public class UserMapper {
                 .isLeader((Boolean) remoteData.get("isLeader"))
                 .assignedAt(remoteData.get("assignedAt") != null ? 
                         java.time.LocalDateTime.parse((String) remoteData.get("assignedAt")) : null)
+                .build();
+    }
+    
+    private RankDto toRankDto(com.hermes.userservice.entity.Rank rank) {
+        if (rank == null) {
+            return null;
+        }
+        return RankDto.builder()
+                .id(rank.getId())
+                .name(rank.getName())
+                .sortOrder(rank.getSortOrder())
+                .build();
+    }
+    
+    private JobDto toJobDto(com.hermes.userservice.entity.Job job) {
+        if (job == null) {
+            return null;
+        }
+        return JobDto.builder()
+                .id(job.getId())
+                .name(job.getName())
+                .sortOrder(job.getSortOrder())
+                .build();
+    }
+    
+    private PositionDto toPositionDto(com.hermes.userservice.entity.Position position) {
+        if (position == null) {
+            return null;
+        }
+        return PositionDto.builder()
+                .id(position.getId())
+                .name(position.getName())
+                .sortOrder(position.getSortOrder())
                 .build();
     }
 }
