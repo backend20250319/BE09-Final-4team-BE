@@ -19,6 +19,7 @@ public class DocumentSummaryResponse {
     private Integer totalStages;
     private UserRole userRole;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private LocalDateTime submittedAt;
     private LocalDateTime approvedAt;
 }

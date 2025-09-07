@@ -219,6 +219,7 @@ public class ApprovalDocumentService {
         }
         
         response.setCreatedAt(document.getCreatedAt());
+        response.setUpdatedAt(document.getUpdatedAt());
         response.setSubmittedAt(document.getSubmittedAt());
         response.setApprovedAt(document.getApprovedAt());
         return response;
