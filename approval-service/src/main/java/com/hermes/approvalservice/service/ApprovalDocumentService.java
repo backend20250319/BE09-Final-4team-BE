@@ -2,6 +2,7 @@ package com.hermes.approvalservice.service;
 
 import com.hermes.api.common.ApiResult;
 import com.hermes.approvalservice.dto.request.*;
+import com.hermes.approvalservice.enums.DocumentRole;
 import com.hermes.attachment.entity.AttachmentInfo;
 import com.hermes.attachment.service.AttachmentClientService;
 import com.hermes.approvalservice.client.UserServiceClient;
@@ -258,7 +259,12 @@ public class ApprovalDocumentService {
         response.setAuthor(authorResult.getData());
         
         if (user != null) {
-            response.setMyRole(permissionService.getMyRole(user, document));
+            DocumentRole myRole = permissionService.getMyRole(user, document);
+            response.setMyRole(myRole);
+            
+            if (myRole == DocumentRole.APPROVER) {
+                response.setMyApprovalInfo(permissionService.getMyApprovalInfo(user, document));
+            }
         }
         
         response.setCreatedAt(document.getCreatedAt());

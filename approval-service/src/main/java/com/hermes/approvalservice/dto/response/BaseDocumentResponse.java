@@ -16,6 +16,7 @@ public abstract class BaseDocumentResponse {
     protected UserProfile author;
     protected Integer currentStage;
     protected DocumentRole myRole;
+    protected MyApprovalInfo myApprovalInfo;
     protected LocalDateTime createdAt;
     protected LocalDateTime updatedAt;
     protected LocalDateTime submittedAt;

@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.service;
 
+import com.hermes.approvalservice.dto.response.MyApprovalInfo;
 import com.hermes.approvalservice.entity.ApprovalDocument;
 import com.hermes.approvalservice.entity.DocumentApprovalTarget;
 import com.hermes.approvalservice.enums.ApprovalStatus;
@@ -93,6 +94,31 @@ public class DocumentPermissionService {
 
         // 그 외의 경우 (권한이 있어서 조회는 가능하지만 특별한 역할이 없는 경우)
         return DocumentRole.VIEWER;
+    }
+
+    public MyApprovalInfo getMyApprovalInfo(UserPrincipal user, ApprovalDocument document) {
+        Long userId = user.getId();
+        
+        MyApprovalInfo approvalInfo = new MyApprovalInfo();
+        
+        // 현재 사용자의 승인 상태와 단계 정보 찾기
+        for (var stage : document.getApprovalStages()) {
+            for (var target : stage.getApprovalTargets()) {
+                if (!target.getIsReference() && isTargetUser(target, userId)) {
+                    approvalInfo.setMyApprovalStatus(target.getApprovalStatus());
+                    approvalInfo.setMyApprovalStage(stage.getStageOrder());
+                    
+                    // 현재 단계에서 승인이 필요한지 확인
+                    boolean isCurrentStage = stage.getStageOrder().equals(document.getCurrentStage());
+                    boolean isPending = target.getApprovalStatus() == ApprovalStatus.PENDING;
+                    approvalInfo.setIsApprovalRequired(isCurrentStage && isPending);
+                    
+                    return approvalInfo;
+                }
+            }
+        }
+        
+        return approvalInfo;
     }
 
     private boolean isTargetUser(DocumentApprovalTarget target, Long userId) {
