@@ -167,23 +167,7 @@ hermes:
 - **Dynamic DataSource routing** - transparent to application code
 
 ### Usage Pattern
-Standard JPA entities and repositories work automatically:
-
-```java
-@Entity
-@Table(name = "users")
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) 
-    private Long id;
-    // fields...
-}
-
-@Repository
-public interface UserRepository extends JpaRepository<User, Long> {
-    Optional<User> findByEmail(String email);
-}
-```
+Standard JPA entities and repositories work automatically
 
 **📋 For detailed configuration options, events, and advanced usage, see [`libs/mt-starter/README.md`](libs/mt-starter/README.md)**
 

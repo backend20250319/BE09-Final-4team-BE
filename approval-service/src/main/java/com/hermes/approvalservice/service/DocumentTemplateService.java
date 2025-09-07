@@ -172,10 +172,10 @@ public class DocumentTemplateService {
         template.setAllowTargetChange(request.getAllowTargetChange());
         template.setCategory(category);
 
-        // Clear existing fields, stages, and targets
-        fieldRepository.deleteByTemplateId(id);
-        stageRepository.deleteByTemplateId(id);
-        targetRepository.deleteByTemplateId(id);
+        // Clear existing fields, stages, and targets using orphanRemoval
+        template.getFields().clear();
+        template.getApprovalStages().clear();
+        template.getReferenceTargets().clear();
 
         // Save new fields
         if (request.getFields() != null) {
@@ -223,7 +223,7 @@ public class DocumentTemplateService {
                         .build())
                 .toList();
         
-        fieldRepository.saveAll(fields);
+        template.getFields().addAll(fields);
     }
 
     private void saveApprovalStages(DocumentTemplate template, List<ApprovalStageRequest> stageRequests) {
@@ -233,8 +233,6 @@ public class DocumentTemplateService {
                     .stageName(stageRequest.getStageName())
                     .template(template)
                     .build();
-            
-            TemplateApprovalStage savedStage = stageRepository.save(stage);
 
             if (stageRequest.getApprovalTargets() != null) {
                 List<TemplateApprovalTarget> targets = stageRequest.getApprovalTargets().stream()
@@ -245,12 +243,14 @@ public class DocumentTemplateService {
                                 .managerLevel(targetRequest.getManagerLevel())
                                 .isReference(targetRequest.getIsReference())
                                 .template(template)
-                                .approvalStage(savedStage)
+                                .approvalStage(stage)
                                 .build())
                         .toList();
                 
-                targetRepository.saveAll(targets);
+                stage.getApprovalTargets().addAll(targets);
             }
+            
+            template.getApprovalStages().add(stage);
         }
     }
 
@@ -266,7 +266,7 @@ public class DocumentTemplateService {
                         .build())
                 .toList();
         
-        targetRepository.saveAll(targets);
+        template.getReferenceTargets().addAll(targets);
     }
 
 }

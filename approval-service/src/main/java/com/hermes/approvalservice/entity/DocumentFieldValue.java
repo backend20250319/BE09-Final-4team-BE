@@ -25,8 +25,4 @@ public class DocumentFieldValue {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id", nullable = false)
     private ApprovalDocument document;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "template_field_id")
-    private TemplateField templateField;
 }

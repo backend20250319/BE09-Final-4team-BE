@@ -61,10 +61,6 @@ public class ResponseConverter {
         response.setFieldName(fieldValue.getFieldName());
         response.setFieldValue(fieldValue.getFieldValue());
         
-        if (fieldValue.getTemplateField() != null) {
-            response.setTemplateField(convertToTemplateFieldResponse(fieldValue.getTemplateField()));
-        }
-        
         return response;
     }
 

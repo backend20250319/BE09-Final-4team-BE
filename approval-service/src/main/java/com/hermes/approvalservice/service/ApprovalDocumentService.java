@@ -283,12 +283,13 @@ public class ApprovalDocumentService {
     private void saveFieldValues(ApprovalDocument document, List<DocumentFieldValueRequest> fieldValues) {
         if (fieldValues != null) {
             for (DocumentFieldValueRequest fieldValueRequest : fieldValues) {
+                TemplateField templateField = templateFieldRepository.findById(fieldValueRequest.getTemplateFieldId())
+                        .orElseThrow(() -> new NotFoundException("템플릿 필드를 찾을 수 없습니다."));
+                
                 DocumentFieldValue fieldValue = DocumentFieldValue.builder()
-                        .fieldName(fieldValueRequest.getFieldName())
+                        .fieldName(templateField.getName())
                         .fieldValue(fieldValueRequest.getFieldValue())
                         .document(document)
-                        .templateField(fieldValueRequest.getTemplateFieldId() != null ? 
-                            templateFieldRepository.findById(fieldValueRequest.getTemplateFieldId()).orElse(null) : null)
                         .build();
                 document.getFieldValues().add(fieldValue);
             }
