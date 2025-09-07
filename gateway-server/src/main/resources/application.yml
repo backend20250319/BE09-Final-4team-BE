@@ -20,6 +20,10 @@ spring:
               uri: lb://approval-service
               predicates:
                 - Path=/api/approval/**
+            - id: communication-service-websocket
+              uri: lb:ws://communication-service
+              predicates:
+                - Path=/ws/**,/ws-pure/**
             - id: communication-service
               uri: lb://communication-service
               predicates:
@@ -101,7 +105,7 @@ spring:
 
           globalcors:
             cors-configurations:
-              '[/**]':
+              '[/api/**]':
                 allowedOrigins:
                   - "http://localhost:3000"
                 allowedMethods:
@@ -110,6 +114,16 @@ spring:
                   - PUT
                   - PATCH
                   - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - "*"
+                allowCredentials: true
+              '[/v3/**]':
+                allowedOrigins:
+                  - "http://localhost:3000"
+                allowedMethods:
+                  - GET
+                  - POST
                   - OPTIONS
                 allowedHeaders:
                   - "*"

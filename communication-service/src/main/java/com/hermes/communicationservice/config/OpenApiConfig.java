@@ -13,8 +13,15 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @OpenAPIDefinition(
     info = @Info(
-        title = "Hermes Attachment Service API",
-        description = "공지사항과 댓글을 위한 REST API",
+        title = "Hermes Communication Service API",
+        description = """
+            공지사항과 결재 알림을 위한 REST API 및 WebSocket 실시간 통신
+            
+            ## 주요 기능
+            - 공지사항 알림
+            - 결재 알림
+            - WebSocket 실시간 알림 (상세 정보는 'WebSocket 정보' 섹션 참조)
+            """,
         version = "1.0.0"
     ),
     security = @SecurityRequirement(name = "Bearer Authentication")

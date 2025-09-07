@@ -914,7 +914,7 @@ public class WorkScheduleService {
     public ColleagueScheduleResponseDto getColleagueSchedule(Long colleagueId, LocalDate startDate, LocalDate endDate) {
         try {
             // 1. 동료 정보 조회 (User Service에서)
-            Map<String, Object> colleagueInfo = userServiceClient.getUserById(colleagueId, null);
+            Map<String, Object> colleagueInfo = userServiceClient.getUserById(colleagueId);
             if (colleagueInfo == null) {
                 log.error("Colleague not found: {}", colleagueId);
                 return null;

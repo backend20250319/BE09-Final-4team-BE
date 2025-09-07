@@ -90,6 +90,36 @@ public class AttachmentController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @Operation(summary = "파일 미리보기/표시", description = "파일 ID를 통해 파일을 브라우저에서 직접 표시합니다. 이미지 파일 등의 미리보기에 사용.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "파일 표시 성공"),
+        @ApiResponse(responseCode = "404", description = "파일을 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    @GetMapping("/{fileId}/view")
+    public ResponseEntity<Resource> viewFile(
+            @Parameter(description = "표시할 파일 ID", required = true, example = "uuid-file-id") @PathVariable String fileId) {
+        log.info("파일 미리보기 요청: {}", fileId);
+        
+        try {
+            // 메타데이터 조회
+            AttachmentInfoResponse metadata = attachmentService.getFileMetadata(fileId);
+            
+            // 파일 리소스 조회
+            Resource resource = attachmentService.getFileResource(fileId);
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(metadata.getContentType()))
+                    .contentLength(metadata.getFileSize())
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                    .body(resource);
+                    
+        } catch (Exception e) {
+            log.error("파일 미리보기 실패: {}", e.getMessage(), e);
+            return ResponseEntity.notFound().build();
+        }
+    }
     
     @Operation(summary = "파일 삭제", description = "파일을 삭제합니다. ADMIN 권한 필요.")
     @ApiResponses(value = {

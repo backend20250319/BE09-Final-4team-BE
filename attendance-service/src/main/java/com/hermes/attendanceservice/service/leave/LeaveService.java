@@ -27,6 +27,7 @@ public class LeaveService {
     private static final LocalTime WORK_END_TIME = LocalTime.of(18, 0);
     
     private final LeaveRepository leaveRequestRepository;
+    private final EmployeeLeaveBalanceService employeeLeaveBalanceService;
     
     /**
      * 휴가 신청을 생성합니다.
@@ -40,14 +41,30 @@ public class LeaveService {
         // 2. 총 휴가 시간/일수 계산
         double totalHours = calculateTotalHours(createDto);
         double totalDays = totalHours / WORK_HOURS_PER_DAY;
+        int requestedDays = (int) Math.ceil(totalDays); // 올림 처리
         
-        // 3. LeaveRequest 엔티티 생성 (엔티티의 정적 팩토리 메서드 사용)
+        // 3. 연차 잔액 확인 및 차감
+        Integer remainingLeave = employeeLeaveBalanceService.getRemainingLeave(createDto.getEmployeeId(), createDto.getLeaveType());
+        if (remainingLeave < requestedDays) {
+            throw new IllegalArgumentException("잔여 연차가 부족합니다. 잔여: " + remainingLeave + "일, 요청: " + requestedDays + "일");
+        }
+        
+        // 4. LeaveRequest 엔티티 생성 (엔티티의 정적 팩토리 메서드 사용)
         LeaveRequest leaveRequest = LeaveRequest.createFromDto(createDto, totalDays);
         
-        // 4. 저장
+        // 5. 저장
         LeaveRequest savedRequest = leaveRequestRepository.save(leaveRequest);
         
-        // 5. 응답 DTO 변환
+        // 6. 연차 잔액 차감 (신청 즉시 차감, 승인/반려 시 복구/확정)
+        try {
+            employeeLeaveBalanceService.useLeave(createDto.getEmployeeId(), createDto.getLeaveType(), requestedDays);
+        } catch (Exception e) {
+            // 연차 차감 실패 시 휴가 신청도 롤백
+            leaveRequestRepository.delete(savedRequest);
+            throw new RuntimeException("연차 차감 중 오류가 발생했습니다: " + e.getMessage());
+        }
+        
+        // 7. 응답 DTO 변환
         return convertToResponseDto(savedRequest);
     }
     

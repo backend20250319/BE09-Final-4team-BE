@@ -16,8 +16,8 @@ public class SecurityConfig extends BaseSecurityConfig {
     protected void configureAuthorization(
         AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth
     ) {
-        // BaseSecurityConfig에서 설정되지 않은 경로들만 추가
-        auth.requestMatchers("/api-docs/**").permitAll();  // application.yml에서 설정한 경로
+        // BaseSecurityConfig에서 이미 /v3/api-docs/**와 /swagger-ui/**를 허용하므로
+        // attendance-service API들만 추가로 허용
         auth.requestMatchers("/api/**").permitAll();       // attendance-service API들
     }
 }
