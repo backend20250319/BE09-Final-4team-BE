@@ -5,6 +5,7 @@ package com.hermes.attendanceservice.entity.workschedule;
  */
 public enum ScheduleType {
     WORK("근무"),
+    CORETIME("코어타임"),
     SICK_LEAVE("병가"),
     VACATION("휴가"),
     BUSINESS_TRIP("출장"),

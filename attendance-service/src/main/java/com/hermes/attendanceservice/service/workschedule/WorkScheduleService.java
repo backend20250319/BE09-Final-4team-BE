@@ -642,15 +642,14 @@ public class WorkScheduleService {
     }
 
     /**
-     * 코어 타임 스케줄 생성 (코어시간 반영)
-     * 시차 근무의 경우 출근 가능 시간대가 설정되어 있을 수 있음
+     * 코어 타임 스케줄 생성 (코어타임이 설정된 경우)
      */
     private List<Schedule> createCoreTimeSchedules(Long userId, WorkPolicyDto workPolicy, Long workPolicyId, LocalDate startDate, LocalDate endDate) {
         List<Schedule> coreTimeSchedules = new ArrayList<>();
         
-        // 코어 타임은 선택 근무에서만 적용
-        // 시차 근무의 경우 출근 가능 시간대(startTimeEnd)가 설정되어 있을 수 있음
+        // 코어타임 시작/종료 시간이 설정되어 있어야 함
         if (workPolicy.getCoreTimeStart() == null || workPolicy.getCoreTimeEnd() == null) {
+            log.debug("코어타임이 설정되지 않음. userId: {}, workPolicyId: {}", userId, workPolicyId);
             return coreTimeSchedules;
         }
         
@@ -661,14 +660,14 @@ public class WorkScheduleService {
             if (workPolicy.getWorkDays() != null && workPolicy.getWorkDays().contains(dayOfWeek)) {
                 Schedule coreTimeSchedule = Schedule.builder()
                         .userId(userId)
-                        .title("코어 타임")
-                        .description(String.format("필수 근무시간: %s ~ %s", 
-                                workPolicy.getCoreTimeStart(), workPolicy.getCoreTimeEnd()))
+                        .title(ScheduleType.CORETIME.getDescription())
+                        .description(String.format("필수 근무시간: %s ~ %s (근무정책: %s)", 
+                                workPolicy.getCoreTimeStart(), workPolicy.getCoreTimeEnd(), workPolicy.getType()))
                         .startDate(currentDate)
                         .endDate(currentDate)
                         .startTime(workPolicy.getCoreTimeStart())
                         .endTime(workPolicy.getCoreTimeEnd())
-                        .scheduleType(ScheduleType.WORK) // CORE_TIME은 WORK로 처리
+                        .scheduleType(ScheduleType.CORETIME)
                         .color("#28a745")
                         .isAllDay(false)
                         .isRecurring(false)
@@ -681,11 +680,16 @@ public class WorkScheduleService {
                         .build();
                 
                 coreTimeSchedules.add(coreTimeSchedule);
+                
+                log.debug("코어타임 스케줄 생성: userId={}, date={}, time={}~{}, workType={}", 
+                        userId, currentDate, workPolicy.getCoreTimeStart(), workPolicy.getCoreTimeEnd(), workPolicy.getType());
             }
             
             currentDate = currentDate.plusDays(1);
         }
         
+        log.info("코어타임 스케줄 {} 개 생성 완료: userId={}, workType={}", 
+                coreTimeSchedules.size(), userId, workPolicy.getType());
         return coreTimeSchedules;
     }
 
