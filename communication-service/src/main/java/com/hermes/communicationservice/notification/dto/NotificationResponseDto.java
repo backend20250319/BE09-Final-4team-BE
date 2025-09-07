@@ -32,6 +32,7 @@ public class NotificationResponseDto {
         .type(notification.getType())
         .content(notification.getContent())
         .referenceId(notification.getReferenceId())
+        .createdAt(notification.getCreatedAt())
         .isRead(notification.isRead())
         .build();
   }
