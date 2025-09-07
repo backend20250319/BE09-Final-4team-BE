@@ -6,7 +6,7 @@ import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.DuplicateEmailException;
 import com.hermes.userservice.exception.UserNotFoundException;
 import com.hermes.userservice.mapper.UserMapper;
-import com.hermes.userservice.repository.UserRepository;
+import com.hermes.userservice.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +29,10 @@ public class UserService {
     private final UserMapper userMapper;
     private final OrganizationIntegrationService organizationIntegrationService;
     private final WorkPolicyIntegrationService workPolicyIntegrationService;
+    private final EmploymentTypeRepository employmentTypeRepository;
+    private final RankRepository rankRepository;
+    private final PositionRepository positionRepository;
+    private final JobRepository jobRepository;
 
     @Transactional(readOnly = true)
     public UserResponseDto getUserById(Long userId) {
@@ -97,7 +101,18 @@ public class UserService {
         }
 
         user.updateInfo(userUpdateDto.getName(), userUpdateDto.getPhone(), userUpdateDto.getAddress(), userUpdateDto.getProfileImageUrl(), userUpdateDto.getSelfIntroduction());
-        user.updateWorkInfo(userUpdateDto.getEmploymentType(), userUpdateDto.getRank(), userUpdateDto.getPosition(), userUpdateDto.getJob(), userUpdateDto.getRole(), userUpdateDto.getWorkPolicyId());
+        user.updateWorkInfo(
+            userUpdateDto.getEmploymentType() != null && userUpdateDto.getEmploymentType().getId() != null && userUpdateDto.getEmploymentType().getId() != 0 ? 
+                employmentTypeRepository.findById(userUpdateDto.getEmploymentType().getId()).orElse(null) : null,
+            userUpdateDto.getRank() != null && userUpdateDto.getRank().getId() != null && userUpdateDto.getRank().getId() != 0 ? 
+                rankRepository.findById(userUpdateDto.getRank().getId()).orElse(null) : null,
+            userUpdateDto.getPosition() != null && userUpdateDto.getPosition().getId() != null && userUpdateDto.getPosition().getId() != 0 ? 
+                positionRepository.findById(userUpdateDto.getPosition().getId()).orElse(null) : null,
+            userUpdateDto.getJob() != null && userUpdateDto.getJob().getId() != null && userUpdateDto.getJob().getId() != 0 ? 
+                jobRepository.findById(userUpdateDto.getJob().getId()).orElse(null) : null,
+            userUpdateDto.getRole(), 
+            userUpdateDto.getWorkPolicyId()
+        );
         user.updateAdminStatus(userUpdateDto.getIsAdmin());
         user.updatePasswordResetFlag(userUpdateDto.getNeedsPasswordReset());
 
@@ -140,7 +155,7 @@ public class UserService {
 
         Map<Long, List<Map<String, Object>>> allOrganizations = organizationIntegrationService.getAllUsersOrganizations();
 
-        return users.stream()
+        List<UserResponseDto> result = users.stream()
                 .map(user -> {
                     List<Map<String, Object>> userOrganizations = allOrganizations.getOrDefault(user.getId(), List.of());
 
@@ -156,6 +171,8 @@ public class UserService {
                     return userMapper.toResponseDto(user, userOrganizations, workPolicy);
                 })
                 .collect(Collectors.toList());
+        
+        return result;
     }
 
     public User updateUserWorkPolicy(Long userId, Long workPolicyId) {

@@ -1,14 +1,13 @@
 package com.hermes.userservice.dto;
 
-import com.hermes.userservice.entity.EmploymentType;
-import com.hermes.userservice.entity.Job;
-import com.hermes.userservice.entity.Position;
-import com.hermes.userservice.entity.Rank;
+import com.hermes.userservice.dto.title.EmploymentTypeDto;
+import com.hermes.userservice.dto.title.JobDto;
+import com.hermes.userservice.dto.title.PositionDto;
+import com.hermes.userservice.dto.title.RankDto;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,10 +26,10 @@ public class UserResponseDto {
     
     private Boolean isAdmin;
     private Boolean needsPasswordReset;
-    private EmploymentType employmentType;
-    private Rank rank;
-    private Position position;
-    private Job job;
+    private EmploymentTypeDto employmentType;
+    private RankDto rank;
+    private PositionDto position;
+    private JobDto job;
     private String role;
     private String profileImageUrl;
     private String selfIntroduction;

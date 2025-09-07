@@ -1,9 +1,11 @@
 package com.hermes.userservice.mapper;
 
 import com.hermes.userservice.dto.*;
+import com.hermes.userservice.dto.title.*;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.entity.UserOrganization;
+import com.hermes.userservice.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -19,6 +21,10 @@ import java.util.stream.Collectors;
 public class UserMapper {
 
     private final PasswordEncoder passwordEncoder;
+    private final EmploymentTypeRepository employmentTypeRepository;
+    private final RankRepository rankRepository;
+    private final PositionRepository positionRepository;
+    private final JobRepository jobRepository;
 
     public User toEntity(UserCreateDto userCreateDto) {
         return User.builder()
@@ -30,10 +36,10 @@ public class UserMapper {
                 .joinDate(Optional.ofNullable(userCreateDto.getJoinDate()).orElse(LocalDate.now()))
                 .isAdmin(Optional.ofNullable(userCreateDto.getIsAdmin()).orElse(false))
                 .needsPasswordReset(Optional.ofNullable(userCreateDto.getNeedsPasswordReset()).orElse(false))
-                .employmentType(userCreateDto.getEmploymentType())
-                .rank(userCreateDto.getRank())
-                .position(userCreateDto.getPosition())
-                .job(userCreateDto.getJob())
+                .employmentType(convertToEmploymentTypeEntity(userCreateDto.getEmploymentType()))
+                .rank(convertToRankEntity(userCreateDto.getRank()))
+                .position(convertToPositionEntity(userCreateDto.getPosition()))
+                .job(convertToJobEntity(userCreateDto.getJob()))
                 .role(userCreateDto.getRole())
                 .workPolicyId(userCreateDto.getWorkPolicyId())
                 .build();
@@ -95,10 +101,10 @@ public class UserMapper {
                 // .joinDate(user.getJoinDate())
                 .isAdmin(user.getIsAdmin())
                 .needsPasswordReset(user.getNeedsPasswordReset())
-                .employmentType(user.getEmploymentType())
-                .rank(user.getRank())
-                .position(user.getPosition())
-                .job(user.getJob())
+                .employmentType(convertToEmploymentTypeDto(user.getEmploymentType()))
+                .rank(convertToRankDto(user.getRank()))
+                .position(convertToPositionDto(user.getPosition()))
+                .job(convertToJobDto(user.getJob()))
                 .role(user.getRole())
                 .profileImageUrl(user.getProfileImageUrl())
                 .selfIntroduction(user.getSelfIntroduction())
@@ -109,6 +115,78 @@ public class UserMapper {
                 .workPolicy(workPolicy)
                 .organizations(organizations)
                 .build();
+    }
+    
+    private EmploymentTypeDto convertToEmploymentTypeDto(com.hermes.userservice.entity.EmploymentType employmentType) {
+        if (employmentType == null) {
+            return null;
+        }
+        return EmploymentTypeDto.builder()
+                .id(employmentType.getId())
+                .name(employmentType.getName())
+                .sortOrder(employmentType.getSortOrder())
+                .build();
+    }
+    
+    private RankDto convertToRankDto(com.hermes.userservice.entity.Rank rank) {
+        if (rank == null) {
+            return null;
+        }
+        return RankDto.builder()
+                .id(rank.getId())
+                .name(rank.getName())
+                .sortOrder(rank.getSortOrder())
+                .build();
+    }
+    
+    private PositionDto convertToPositionDto(com.hermes.userservice.entity.Position position) {
+        if (position == null) {
+            return null;
+        }
+        return PositionDto.builder()
+                .id(position.getId())
+                .name(position.getName())
+                .sortOrder(position.getSortOrder())
+                .build();
+    }
+    
+    private JobDto convertToJobDto(com.hermes.userservice.entity.Job job) {
+        if (job == null) {
+            return null;
+        }
+        return JobDto.builder()
+                .id(job.getId())
+                .name(job.getName())
+                .sortOrder(job.getSortOrder())
+                .build();
+    }
+    
+    private com.hermes.userservice.entity.EmploymentType convertToEmploymentTypeEntity(EmploymentTypeDto employmentTypeDto) {
+        if (employmentTypeDto == null || employmentTypeDto.getId() == null || employmentTypeDto.getId() == 0) {
+            return null;
+        }
+        return employmentTypeRepository.findById(employmentTypeDto.getId()).orElse(null);
+    }
+    
+    private com.hermes.userservice.entity.Rank convertToRankEntity(RankDto rankDto) {
+        if (rankDto == null || rankDto.getId() == null || rankDto.getId() == 0) {
+            return null;
+        }
+        return rankRepository.findById(rankDto.getId()).orElse(null);
+    }
+    
+    private com.hermes.userservice.entity.Position convertToPositionEntity(PositionDto positionDto) {
+        if (positionDto == null || positionDto.getId() == null || positionDto.getId() == 0) {
+            return null;
+        }
+        return positionRepository.findById(positionDto.getId()).orElse(null);
+    }
+    
+    private com.hermes.userservice.entity.Job convertToJobEntity(JobDto jobDto) {
+        if (jobDto == null || jobDto.getId() == null || jobDto.getId() == 0) {
+            return null;
+        }
+        return jobRepository.findById(jobDto.getId()).orElse(null);
     }
     
     public UserOrganizationDto toUserOrganizationDto(UserOrganization userOrganization) {

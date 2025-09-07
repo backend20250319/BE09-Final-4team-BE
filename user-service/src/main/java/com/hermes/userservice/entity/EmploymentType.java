@@ -7,6 +7,9 @@ import lombok.*;
 @Table(name = "employment_type")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class EmploymentType {
 
     @Id

@@ -1,6 +1,6 @@
 package com.hermes.userservice.dto;
 
-import com.hermes.userservice.entity.*;
+import com.hermes.userservice.dto.title.*;
 import lombok.Getter;
 import lombok.Setter;
 import jakarta.validation.constraints.Email;
@@ -18,10 +18,10 @@ public class UserUpdateDto {
     private LocalDate joinDate;
     private Boolean isAdmin;
     private Boolean needsPasswordReset;
-    private EmploymentType employmentType;
-    private Rank rank;
-    private Position position;
-    private Job job;
+    private EmploymentTypeDto employmentType;
+    private RankDto rank;
+    private PositionDto position;
+    private JobDto job;
     private String role;
     private Long workPolicyId;
     private String profileImageUrl;

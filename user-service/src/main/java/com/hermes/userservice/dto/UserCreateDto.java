@@ -1,6 +1,6 @@
 package com.hermes.userservice.dto;
 
-import com.hermes.userservice.entity.*;
+import com.hermes.userservice.dto.title.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,16 +41,16 @@ public class UserCreateDto {
     private Boolean needsPasswordReset;
     
     @Schema(description = "고용 형태")
-    private EmploymentType employmentType;
+    private EmploymentTypeDto employmentType;
     
     @Schema(description = "직급")
-    private Rank rank;
+    private RankDto rank;
     
     @Schema(description = "직책")
-    private Position position;
+    private PositionDto position;
     
     @Schema(description = "직무")
-    private Job job;
+    private JobDto job;
     
     @Schema(description = "역할", example = "DEVELOPER")
     private String role;
