@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,10 +47,12 @@ public class TitleController {
     }
 
     @PostMapping("/ranks")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "직급 생성", description = "새로운 직급을 생성합니다.")
     @ApiResponse(responseCode = "201", description = "직급 생성 성공")
     @ApiResponse(responseCode = "400", description = "잘못된 요청")
     @ApiResponse(responseCode = "409", description = "중복된 직급명")
+    @ApiResponse(responseCode = "403", description = "권한 없음")
     public ResponseEntity<RankDto> createRank(
             @Valid @RequestBody CreateRankRequest request) {
         log.info("직급 생성 API 호출: name={}", request.getName());
@@ -58,11 +61,13 @@ public class TitleController {
     }
 
     @PutMapping("/ranks/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "직급 수정", description = "기존 직급의 정보를 수정합니다.")
     @ApiResponse(responseCode = "200", description = "직급 수정 성공")
     @ApiResponse(responseCode = "400", description = "잘못된 요청")
     @ApiResponse(responseCode = "404", description = "직급을 찾을 수 없음")
     @ApiResponse(responseCode = "409", description = "중복된 직급명")
+    @ApiResponse(responseCode = "403", description = "권한 없음")
     public ResponseEntity<RankDto> updateRank(
             @Parameter(description = "직급 ID", required = true) @PathVariable Long id,
             @Valid @RequestBody UpdateRankRequest request) {
@@ -72,9 +77,11 @@ public class TitleController {
     }
 
     @DeleteMapping("/ranks/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "직급 삭제", description = "기존 직급을 삭제합니다.")
     @ApiResponse(responseCode = "200", description = "직급 삭제 성공")
     @ApiResponse(responseCode = "404", description = "직급을 찾을 수 없음")
+    @ApiResponse(responseCode = "403", description = "권한 없음")
     public ResponseEntity<Void> deleteRank(
             @Parameter(description = "직급 ID", required = true) @PathVariable Long id) {
         log.info("직급 삭제 API 호출: id={}", id);
@@ -104,10 +111,12 @@ public class TitleController {
     }
 
     @PostMapping("/positions")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "직위 생성", description = "새로운 직위를 생성합니다.")
     @ApiResponse(responseCode = "201", description = "직위 생성 성공")
     @ApiResponse(responseCode = "400", description = "잘못된 요청")
     @ApiResponse(responseCode = "409", description = "중복된 직위명")
+    @ApiResponse(responseCode = "403", description = "권한 없음")
     public ResponseEntity<PositionDto> createPosition(
             @Valid @RequestBody CreatePositionRequest request) {
         log.info("직위 생성 API 호출: name={}", request.getName());
@@ -116,11 +125,13 @@ public class TitleController {
     }
 
     @PutMapping("/positions/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "직위 수정", description = "기존 직위의 정보를 수정합니다.")
     @ApiResponse(responseCode = "200", description = "직위 수정 성공")
     @ApiResponse(responseCode = "400", description = "잘못된 요청")
     @ApiResponse(responseCode = "404", description = "직위를 찾을 수 없음")
     @ApiResponse(responseCode = "409", description = "중복된 직위명")
+    @ApiResponse(responseCode = "403", description = "권한 없음")
     public ResponseEntity<PositionDto> updatePosition(
             @Parameter(description = "직위 ID", required = true) @PathVariable Long id,
             @Valid @RequestBody UpdatePositionRequest request) {
@@ -130,9 +141,11 @@ public class TitleController {
     }
 
     @DeleteMapping("/positions/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "직위 삭제", description = "기존 직위를 삭제합니다.")
     @ApiResponse(responseCode = "200", description = "직위 삭제 성공")
     @ApiResponse(responseCode = "404", description = "직위를 찾을 수 없음")
+    @ApiResponse(responseCode = "403", description = "권한 없음")
     public ResponseEntity<Void> deletePosition(
             @Parameter(description = "직위 ID", required = true) @PathVariable Long id) {
         log.info("직위 삭제 API 호출: id={}", id);
@@ -162,10 +175,12 @@ public class TitleController {
     }
 
     @PostMapping("/jobs")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "직책 생성", description = "새로운 직책을 생성합니다.")
     @ApiResponse(responseCode = "201", description = "직책 생성 성공")
     @ApiResponse(responseCode = "400", description = "잘못된 요청")
     @ApiResponse(responseCode = "409", description = "중복된 직책명")
+    @ApiResponse(responseCode = "403", description = "권한 없음")
     public ResponseEntity<JobDto> createJob(
             @Valid @RequestBody CreateJobRequest request) {
         log.info("직책 생성 API 호출: name={}", request.getName());
@@ -174,11 +189,13 @@ public class TitleController {
     }
 
     @PutMapping("/jobs/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "직책 수정", description = "기존 직책의 정보를 수정합니다.")
     @ApiResponse(responseCode = "200", description = "직책 수정 성공")
     @ApiResponse(responseCode = "400", description = "잘못된 요청")
     @ApiResponse(responseCode = "404", description = "직책을 찾을 수 없음")
     @ApiResponse(responseCode = "409", description = "중복된 직책명")
+    @ApiResponse(responseCode = "403", description = "권한 없음")
     public ResponseEntity<JobDto> updateJob(
             @Parameter(description = "직책 ID", required = true) @PathVariable Long id,
             @Valid @RequestBody UpdateJobRequest request) {
@@ -188,9 +205,11 @@ public class TitleController {
     }
 
     @DeleteMapping("/jobs/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "직책 삭제", description = "기존 직책을 삭제합니다.")
     @ApiResponse(responseCode = "200", description = "직책 삭제 성공")
     @ApiResponse(responseCode = "404", description = "직책을 찾을 수 없음")
+    @ApiResponse(responseCode = "403", description = "권한 없음")
     public ResponseEntity<Void> deleteJob(
             @Parameter(description = "직책 ID", required = true) @PathVariable Long id) {
         log.info("직책 삭제 API 호출: id={}", id);
