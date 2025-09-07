@@ -59,6 +59,7 @@ public class ResponseConverter {
         DocumentFieldValueResponse response = new DocumentFieldValueResponse();
         response.setId(fieldValue.getId());
         response.setFieldName(fieldValue.getFieldName());
+        response.setFieldType(fieldValue.getFieldType());
         response.setFieldValue(fieldValue.getFieldValue());
         
         return response;

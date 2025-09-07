@@ -288,6 +288,7 @@ public class ApprovalDocumentService {
                 
                 DocumentFieldValue fieldValue = DocumentFieldValue.builder()
                         .fieldName(templateField.getName())
+                        .fieldType(templateField.getFieldType())
                         .fieldValue(fieldValueRequest.getFieldValue())
                         .document(document)
                         .build();

@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.entity;
 
+import com.hermes.approvalservice.enums.FieldType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,6 +19,10 @@ public class DocumentFieldValue {
 
     @Column(nullable = false, length = 100)
     private String fieldName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private FieldType fieldType;
 
     @Column(columnDefinition = "TEXT")
     private String fieldValue;
