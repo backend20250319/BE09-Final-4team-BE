@@ -213,9 +213,9 @@ public class ApprovalDocumentService {
         response.setCurrentStage(document.getCurrentStage());
         response.setTotalStages(document.getApprovalStages().size());
         
-        // Set user role if user information is available
+        // Set my role if user information is available
         if (user != null) {
-            response.setUserRole(permissionService.getUserRole(document, user));
+            response.setMyRole(permissionService.getMyRole(user, document));
         }
         
         response.setCreatedAt(document.getCreatedAt());
@@ -236,9 +236,9 @@ public class ApprovalDocumentService {
         
         response.setCurrentStage(document.getCurrentStage());
         
-        // Set user role if user information is available
+        // Set my role if user information is available
         if (user != null) {
-            response.setUserRole(permissionService.getUserRole(document, user));
+            response.setMyRole(permissionService.getMyRole(user, document));
         }
         
         // Template 정보 변환
