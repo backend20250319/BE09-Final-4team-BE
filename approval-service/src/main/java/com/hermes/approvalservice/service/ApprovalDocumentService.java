@@ -202,44 +202,17 @@ public class ApprovalDocumentService {
 
     private DocumentSummaryResponse convertToSummaryResponse(ApprovalDocument document, UserPrincipal user) {
         DocumentSummaryResponse response = new DocumentSummaryResponse();
-        response.setId(document.getId());
-        response.setContent(document.getContent());
-        response.setStatus(document.getStatus());
-        
-        ApiResult<UserProfile> authorResult = userServiceClient.getUserProfile(document.getAuthorId());
-        response.setAuthor(authorResult.getData());
+        setCommonFields(response, document, user);
         
         response.setTemplate(responseConverter.convertToTemplateSummaryResponse(document.getTemplate()));
-        response.setCurrentStage(document.getCurrentStage());
         response.setTotalStages(document.getApprovalStages().size());
         
-        // Set my role if user information is available
-        if (user != null) {
-            response.setMyRole(permissionService.getMyRole(user, document));
-        }
-        
-        response.setCreatedAt(document.getCreatedAt());
-        response.setUpdatedAt(document.getUpdatedAt());
-        response.setSubmittedAt(document.getSubmittedAt());
-        response.setApprovedAt(document.getApprovedAt());
         return response;
     }
 
     private DocumentResponse convertToResponse(ApprovalDocument document, UserPrincipal user) {
         DocumentResponse response = new DocumentResponse();
-        response.setId(document.getId());
-        response.setContent(document.getContent());
-        response.setStatus(document.getStatus());
-        
-        ApiResult<UserProfile> authorResult = userServiceClient.getUserProfile(document.getAuthorId());
-        response.setAuthor(authorResult.getData());
-        
-        response.setCurrentStage(document.getCurrentStage());
-        
-        // Set my role if user information is available
-        if (user != null) {
-            response.setMyRole(permissionService.getMyRole(user, document));
-        }
+        setCommonFields(response, document, user);
         
         // Template 정보 변환
         response.setTemplate(responseConverter.convertToTemplateResponse(document.getTemplate()));
@@ -272,12 +245,26 @@ public class ApprovalDocumentService {
         // 첨부파일 정보 변환
         response.setAttachments(attachmentService.convertToResponseList(document.getAttachments()));
         
+        return response;
+    }
+
+    private void setCommonFields(BaseDocumentResponse response, ApprovalDocument document, UserPrincipal user) {
+        response.setId(document.getId());
+        response.setContent(document.getContent());
+        response.setStatus(document.getStatus());
+        response.setCurrentStage(document.getCurrentStage());
+        
+        ApiResult<UserProfile> authorResult = userServiceClient.getUserProfile(document.getAuthorId());
+        response.setAuthor(authorResult.getData());
+        
+        if (user != null) {
+            response.setMyRole(permissionService.getMyRole(user, document));
+        }
+        
         response.setCreatedAt(document.getCreatedAt());
         response.setUpdatedAt(document.getUpdatedAt());
         response.setSubmittedAt(document.getSubmittedAt());
         response.setApprovedAt(document.getApprovedAt());
-        
-        return response;
     }
 
     private void saveFieldValues(ApprovalDocument document, List<DocumentFieldValueRequest> fieldValues) {
