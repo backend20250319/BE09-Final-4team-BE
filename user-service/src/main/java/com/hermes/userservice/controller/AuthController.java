@@ -4,6 +4,7 @@ import com.hermes.api.common.ApiResult;
 import com.hermes.userservice.dto.LoginRequestDto;
 import com.hermes.userservice.dto.LoginResponse;
 import com.hermes.userservice.dto.LoginResult;
+import com.hermes.userservice.dto.PasswordChangeRequestDto;
 import com.hermes.auth.principal.UserPrincipal;
 import com.hermes.userservice.service.AuthService;
 import com.hermes.userservice.service.AuthCookieService;
@@ -59,6 +60,7 @@ public class AuthController {
                 .email(loginResult.getEmail())
                 .name(loginResult.getName())
                 .role(loginResult.getRole())
+                .needsPasswordReset(loginResult.getNeedsPasswordReset())
                 .build();
 
         return ResponseEntity.ok()
@@ -118,11 +120,36 @@ public class AuthController {
                 .email(loginResult.getEmail())
                 .name(loginResult.getName())
                 .role(loginResult.getRole())
+                .needsPasswordReset(loginResult.getNeedsPasswordReset())
                 .expiresIn(loginResult.getExpiresIn())
                 .build();
                 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                 .body(ApiResult.success("토큰이 성공적으로 갱신되었습니다.", responseDto));
+    }
+
+    @PostMapping("/change-password")
+    @Operation(summary = "비밀번호 변경", description = "현재 로그인된 사용자의 비밀번호를 변경합니다. 비밀번호 변경 후 needsPasswordReset 플래그가 false로 설정됩니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "비밀번호 변경 성공"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+        @ApiResponse(responseCode = "401", description = "인증 실패 또는 현재 비밀번호 불일치")
+    })
+    public ResponseEntity<ApiResult<Void>> changePassword(
+            @AuthenticationPrincipal UserPrincipal user,
+            @Parameter(description = "비밀번호 변경 정보", required = true)
+            @Valid @RequestBody PasswordChangeRequestDto passwordChangeDto) {
+        
+        if (user == null) {
+            return ResponseEntity.status(401)
+                    .body(ApiResult.failure("인증이 필요합니다."));
+        }
+        
+        log.info("비밀번호 변경 요청: userId={}", user.getId());
+        authService.changePassword(user.getId(), passwordChangeDto);
+        
+        return ResponseEntity.ok()
+                .body(ApiResult.success("비밀번호가 성공적으로 변경되었습니다.", null));
     }
 }

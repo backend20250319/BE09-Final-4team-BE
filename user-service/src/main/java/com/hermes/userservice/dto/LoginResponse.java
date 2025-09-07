@@ -30,4 +30,7 @@ public class LoginResponse {
     
     @Schema(description = "사용자 역할", example = "USER")
     private String role;
+    
+    @Schema(description = "비밀번호 재설정 필요 여부", example = "true")
+    private Boolean needsPasswordReset;
 }

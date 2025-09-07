@@ -17,4 +17,5 @@ public class LoginResult {
     private String email;
     private String name;
     private String role;
+    private Boolean needsPasswordReset;
 }

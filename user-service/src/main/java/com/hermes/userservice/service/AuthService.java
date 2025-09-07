@@ -3,6 +3,7 @@ package com.hermes.userservice.service;
 import com.hermes.userservice.dto.LoginResult;
 import com.hermes.auth.enums.Role;
 import com.hermes.userservice.dto.LoginRequestDto;
+import com.hermes.userservice.dto.PasswordChangeRequestDto;
 import com.hermes.userservice.entity.RefreshToken;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.exception.InvalidCredentialsException;
@@ -52,7 +53,7 @@ public class AuthService {
         // 추후 다중 로그인을 지원하려면 device_id 같은 정보를 추가하여 여러 개의 Refresh Token을 관리할 수 있도록 개선 필요
         saveOrUpdateRefreshToken(user.getId(), refreshToken);
 
-        log.info("[Auth Service] 로그인 성공 - userId: {}, email: {}", user.getId(), user.getEmail());
+        log.info("[Auth Service] 로그인 성공 - userId: {}, email: {}, needsPasswordReset: {}", user.getId(), user.getEmail(), user.getNeedsPasswordReset());
         return LoginResult.builder()
                 .refreshToken(refreshToken)
                 .accessToken(accessToken)
@@ -61,6 +62,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .name(user.getName())
                 .role(userRole.name())
+                .needsPasswordReset(user.getNeedsPasswordReset())
                 .build();
     }
 
@@ -77,6 +79,23 @@ public class AuthService {
         // 대신 Access Token의 TTL을 짧게 설정하는 것으로 어느정도 대응 가능
 
         log.info("[Auth Service] 로그아웃 완료 - userId: {}", userId);
+    }
+
+    /**
+     * 비밀번호 변경 처리
+     */
+    public void changePassword(Long userId, PasswordChangeRequestDto passwordChangeDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("해당 사용자가 존재하지 않습니다."));
+
+        if (!passwordEncoder.matches(passwordChangeDto.getCurrentPassword(), user.getPassword())) {
+            throw new InvalidCredentialsException("현재 비밀번호가 일치하지 않습니다.");
+        }
+        
+        user.updatePassword(passwordEncoder.encode(passwordChangeDto.getNewPassword()));
+        userRepository.save(user);
+
+        log.info("[Auth Service] 비밀번호 변경 완료 - userId: {}", userId);
     }
 
     /**
@@ -108,6 +127,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .name(user.getName())
                 .role(userRole.name())
+                .needsPasswordReset(user.getNeedsPasswordReset())
                 .expiresIn(jwtTokenService.getAccessTokenTTL())
                 .build();
     }
