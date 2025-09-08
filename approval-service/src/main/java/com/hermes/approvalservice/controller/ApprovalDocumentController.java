@@ -11,6 +11,8 @@ import com.hermes.approvalservice.service.ApprovalProcessService;
 import com.hermes.auth.principal.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,11 +38,6 @@ public class ApprovalDocumentController {
     private final ApprovalProcessService approvalProcessService;
 
     @Operation(summary = "문서 목록 조회", description = "현재 사용자가 접근할 수 있는 문서 목록을 필터링하여 페이지네이션으로 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "문서 목록 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @GetMapping
     public ResponseEntity<Page<DocumentSummaryResponse>> getDocuments(
             @AuthenticationPrincipal UserPrincipal user,
@@ -56,13 +53,6 @@ public class ApprovalDocumentController {
 
 
     @Operation(summary = "문서 상세 조회", description = "지정한 ID의 문서 상세 정보를 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "문서 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "문서 조회 권한이 없습니다"),
-            @ApiResponse(responseCode = "404", description = "문서를 찾을 수 없습니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @GetMapping("/{id}")
     public ResponseEntity<DocumentResponse> getDocumentById(
             @AuthenticationPrincipal UserPrincipal user,
@@ -72,12 +62,6 @@ public class ApprovalDocumentController {
     }
 
     @Operation(summary = "문서 작성", description = "새로운 결재 문서를 작성합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "문서 작성 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @PostMapping
     public ResponseEntity<DocumentResponse> createDocument(
             @AuthenticationPrincipal UserPrincipal user,
@@ -87,14 +71,6 @@ public class ApprovalDocumentController {
     }
 
     @Operation(summary = "문서 수정", description = "기존 결재 문서를 수정합니다. (임시저장 상태에서만 가능)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "문서 수정 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "문서 수정 권한이 없습니다"),
-            @ApiResponse(responseCode = "404", description = "문서를 찾을 수 없습니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @PutMapping("/{id}")
     public ResponseEntity<DocumentResponse> updateDocument(
             @AuthenticationPrincipal UserPrincipal user,
@@ -105,14 +81,8 @@ public class ApprovalDocumentController {
     }
 
     @Operation(summary = "문서 제출", description = "임시저장된 문서를 결재 프로세스에 제출합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "문서 제출 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "문서 제출 권한이 없습니다"),
-            @ApiResponse(responseCode = "404", description = "문서를 찾을 수 없습니다"),
-            @ApiResponse(responseCode = "409", description = "이미 제출된 문서입니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
+    @ApiResponse(responseCode = "200", description = "문서 제출 성공")
+    @ApiResponse(responseCode = "409", description = "이미 제출된 문서입니다")
     @PostMapping("/{id}/submit")
     public ResponseEntity<Void> submitDocument(
             @AuthenticationPrincipal UserPrincipal user,
@@ -123,15 +93,8 @@ public class ApprovalDocumentController {
     }
 
     @Operation(summary = "문서 승인", description = "제출된 문서를 승인합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "문서 승인 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "문서 승인 권한이 없습니다"),
-            @ApiResponse(responseCode = "404", description = "문서를 찾을 수 없습니다"),
-            @ApiResponse(responseCode = "409", description = "승인할 수 없는 문서 상태입니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
+    @ApiResponse(responseCode = "200", description = "문서 승인 성공")
+    @ApiResponse(responseCode = "409", description = "승인할 수 없는 문서 상태입니다")
     @PostMapping("/{id}/approve")
     public ResponseEntity<Void> approveDocument(
             @AuthenticationPrincipal UserPrincipal user,
@@ -142,15 +105,8 @@ public class ApprovalDocumentController {
     }
 
     @Operation(summary = "문서 반려", description = "제출된 문서를 반려합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "문서 반려 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "문서 반려 권한이 없습니다"),
-            @ApiResponse(responseCode = "404", description = "문서를 찾을 수 없습니다"),
-            @ApiResponse(responseCode = "409", description = "반려할 수 없는 문서 상태입니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
+    @ApiResponse(responseCode = "200", description = "문서 반려 성공")
+    @ApiResponse(responseCode = "409", description = "반려할 수 없는 문서 상태입니다")
     @PostMapping("/{id}/reject")
     public ResponseEntity<Void> rejectDocument(
             @AuthenticationPrincipal UserPrincipal user,
@@ -161,14 +117,8 @@ public class ApprovalDocumentController {
     }
 
     @Operation(summary = "문서 삭제", description = "문서를 삭제합니다. 일반 사용자는 본인이 작성한 임시저장 상태의 문서만 삭제할 수 있으며, 관리자는 모든 문서를 삭제할 수 있습니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "문서 삭제 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "문서 삭제 권한이 없습니다"),
-            @ApiResponse(responseCode = "404", description = "문서를 찾을 수 없습니다"),
-            @ApiResponse(responseCode = "409", description = "삭제할 수 없는 문서 상태입니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
+    @ApiResponse(responseCode = "200", description = "문서 삭제 성공")
+    @ApiResponse(responseCode = "409", description = "삭제할 수 없는 문서 상태입니다")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDocument(
             @AuthenticationPrincipal UserPrincipal user,

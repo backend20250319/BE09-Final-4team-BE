@@ -2,6 +2,7 @@ package com.hermes.approvalservice.service;
 
 import com.hermes.api.common.ApiResult;
 import com.hermes.approvalservice.dto.request.*;
+import com.hermes.approvalservice.enums.DocumentRole;
 import com.hermes.attachment.entity.AttachmentInfo;
 import com.hermes.attachment.service.AttachmentClientService;
 import com.hermes.approvalservice.client.UserServiceClient;
@@ -70,10 +71,8 @@ public class ApprovalDocumentService {
 
 
     public DocumentResponse getDocumentById(Long id, UserPrincipal user) {
-        ApprovalDocument document = documentRepository.findByIdWithDetails(id);
-        if (document == null) {
-            throw new NotFoundException("문서를 찾을 수 없습니다.");
-        }
+        ApprovalDocument document = documentRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
 
         if (!permissionService.canViewDocument(document, user)) {
             throw new UnauthorizedException("문서 조회 권한이 없습니다.");
@@ -110,6 +109,15 @@ public class ApprovalDocumentService {
         saveReferenceTargets(savedDocument, request.getReferenceTargets());
 
         activityService.recordActivity(savedDocument, user.getId(), ActivityType.CREATE, "문서를 작성했습니다.");
+
+        // 즉시 제출 옵션 처리
+        if (request.isSubmitImmediately()) {
+            savedDocument.setStatus(DocumentStatus.IN_PROGRESS);
+            savedDocument.setSubmittedAt(LocalDateTime.now());
+            savedDocument.setCurrentStage(1);
+            
+            activityService.recordActivity(savedDocument, user.getId(), ActivityType.SUBMIT, "결재를 요청했습니다.");
+        }
 
         return convertToResponse(savedDocument, user);
     }
@@ -195,43 +203,17 @@ public class ApprovalDocumentService {
 
     private DocumentSummaryResponse convertToSummaryResponse(ApprovalDocument document, UserPrincipal user) {
         DocumentSummaryResponse response = new DocumentSummaryResponse();
-        response.setId(document.getId());
-        response.setContent(document.getContent());
-        response.setStatus(document.getStatus());
+        setCommonFields(response, document, user);
         
-        ApiResult<UserProfile> authorResult = userServiceClient.getUserProfile(document.getAuthorId());
-        response.setAuthor(authorResult.getData());
-        
-        response.setTemplateTitle(document.getTemplate().getTitle());
-        response.setCurrentStage(document.getCurrentStage());
+        response.setTemplate(responseConverter.convertToTemplateSummaryResponse(document.getTemplate()));
         response.setTotalStages(document.getApprovalStages().size());
         
-        // Set user role if user information is available
-        if (user != null) {
-            response.setUserRole(permissionService.getUserRole(document, user));
-        }
-        
-        response.setCreatedAt(document.getCreatedAt());
-        response.setSubmittedAt(document.getSubmittedAt());
-        response.setApprovedAt(document.getApprovedAt());
         return response;
     }
 
     private DocumentResponse convertToResponse(ApprovalDocument document, UserPrincipal user) {
         DocumentResponse response = new DocumentResponse();
-        response.setId(document.getId());
-        response.setContent(document.getContent());
-        response.setStatus(document.getStatus());
-        
-        ApiResult<UserProfile> authorResult = userServiceClient.getUserProfile(document.getAuthorId());
-        response.setAuthor(authorResult.getData());
-        
-        response.setCurrentStage(document.getCurrentStage());
-        
-        // Set user role if user information is available
-        if (user != null) {
-            response.setUserRole(permissionService.getUserRole(document, user));
-        }
+        setCommonFields(response, document, user);
         
         // Template 정보 변환
         response.setTemplate(responseConverter.convertToTemplateResponse(document.getTemplate()));
@@ -264,23 +246,44 @@ public class ApprovalDocumentService {
         // 첨부파일 정보 변환
         response.setAttachments(attachmentService.convertToResponseList(document.getAttachments()));
         
+        return response;
+    }
+
+    private void setCommonFields(BaseDocumentResponse response, ApprovalDocument document, UserPrincipal user) {
+        response.setId(document.getId());
+        response.setContent(document.getContent());
+        response.setStatus(document.getStatus());
+        response.setCurrentStage(document.getCurrentStage());
+        
+        ApiResult<UserProfile> authorResult = userServiceClient.getUserProfile(document.getAuthorId());
+        response.setAuthor(authorResult.getData());
+        
+        if (user != null) {
+            DocumentRole myRole = permissionService.getMyRole(user, document);
+            response.setMyRole(myRole);
+            
+            if (myRole == DocumentRole.APPROVER) {
+                response.setMyApprovalInfo(permissionService.getMyApprovalInfo(user, document));
+            }
+        }
+        
         response.setCreatedAt(document.getCreatedAt());
         response.setUpdatedAt(document.getUpdatedAt());
         response.setSubmittedAt(document.getSubmittedAt());
         response.setApprovedAt(document.getApprovedAt());
-        
-        return response;
     }
 
     private void saveFieldValues(ApprovalDocument document, List<DocumentFieldValueRequest> fieldValues) {
         if (fieldValues != null) {
             for (DocumentFieldValueRequest fieldValueRequest : fieldValues) {
+                TemplateField templateField = templateFieldRepository.findById(fieldValueRequest.getTemplateFieldId())
+                        .orElseThrow(() -> new NotFoundException("템플릿 필드를 찾을 수 없습니다."));
+                
                 DocumentFieldValue fieldValue = DocumentFieldValue.builder()
-                        .fieldName(fieldValueRequest.getFieldName())
+                        .fieldName(templateField.getName())
+                        .fieldType(templateField.getFieldType())
                         .fieldValue(fieldValueRequest.getFieldValue())
                         .document(document)
-                        .templateField(fieldValueRequest.getTemplateFieldId() != null ? 
-                            templateFieldRepository.findById(fieldValueRequest.getTemplateFieldId()).orElse(null) : null)
                         .build();
                 document.getFieldValues().add(fieldValue);
             }

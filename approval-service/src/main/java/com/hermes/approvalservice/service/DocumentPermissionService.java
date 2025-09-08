@@ -1,11 +1,12 @@
 package com.hermes.approvalservice.service;
 
+import com.hermes.approvalservice.dto.response.MyApprovalInfo;
 import com.hermes.approvalservice.entity.ApprovalDocument;
 import com.hermes.approvalservice.entity.DocumentApprovalTarget;
+import com.hermes.approvalservice.enums.ApprovalStatus;
 import com.hermes.approvalservice.enums.DocumentStatus;
-import com.hermes.approvalservice.enums.UserRole;
+import com.hermes.approvalservice.enums.DocumentRole;
 import com.hermes.auth.principal.UserPrincipal;
-import com.hermes.auth.enums.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -35,10 +36,6 @@ public class DocumentPermissionService {
 
     public boolean canEditDocument(ApprovalDocument document, UserPrincipal user) {
         Long userId = user.getId();
-        // 관리자는 항상 수정 가능
-        if (user.isAdmin()) {
-            return true;
-        }
         
         // 작성자만 수정 가능 (임시저장 상태일 때)
         return document.getAuthorId().equals(userId);
@@ -46,17 +43,13 @@ public class DocumentPermissionService {
 
     public boolean canApproveDocument(ApprovalDocument document, Integer stageOrder, UserPrincipal user) {
         Long userId = user.getId();
-        // 관리자는 항상 승인 가능
-        if (user.isAdmin()) {
-            return true;
-        }
         
         // 해당 단계의 승인 대상자인지 확인
         return document.getApprovalStages().stream()
                 .filter(stage -> stage.getStageOrder().equals(stageOrder))
                 .flatMap(stage -> stage.getApprovalTargets().stream())
                 .filter(target -> !target.getIsReference())
-                .anyMatch(target -> isTargetUser(target, userId) && !target.getIsApproved());
+                .anyMatch(target -> isTargetUser(target, userId) && target.getApprovalStatus() == ApprovalStatus.PENDING);
     }
 
     public boolean canDeleteDocument(ApprovalDocument document, UserPrincipal user) {
@@ -70,16 +63,11 @@ public class DocumentPermissionService {
         return document.getAuthorId().equals(userId) && document.getStatus() == DocumentStatus.DRAFT;
     }
 
-    public UserRole getUserRole(ApprovalDocument document, UserPrincipal user) {
+    public DocumentRole getMyRole(UserPrincipal user, ApprovalDocument document) {
         Long userId = user.getId();
         // 작성자인 경우
         if (document.getAuthorId().equals(userId)) {
-            return UserRole.AUTHOR;
-        }
-
-        // 관리자인 경우 (작성자가 아닌 경우)
-        if (user.isAdmin()) {
-            return UserRole.VIEWER;
+            return DocumentRole.AUTHOR;
         }
 
         // 승인 대상자인지 확인
@@ -89,7 +77,7 @@ public class DocumentPermissionService {
                 .anyMatch(target -> isTargetUser(target, userId));
 
         if (isApprover) {
-            return UserRole.APPROVER;
+            return DocumentRole.APPROVER;
         }
 
         // 참조 대상자인지 확인
@@ -101,11 +89,36 @@ public class DocumentPermissionService {
                         .anyMatch(target -> isTargetUser(target, userId));
 
         if (isReference) {
-            return UserRole.REFERENCE;
+            return DocumentRole.REFERENCE;
         }
 
         // 그 외의 경우 (권한이 있어서 조회는 가능하지만 특별한 역할이 없는 경우)
-        return UserRole.VIEWER;
+        return DocumentRole.VIEWER;
+    }
+
+    public MyApprovalInfo getMyApprovalInfo(UserPrincipal user, ApprovalDocument document) {
+        Long userId = user.getId();
+        
+        MyApprovalInfo approvalInfo = new MyApprovalInfo();
+        
+        // 현재 사용자의 승인 상태와 단계 정보 찾기
+        for (var stage : document.getApprovalStages()) {
+            for (var target : stage.getApprovalTargets()) {
+                if (!target.getIsReference() && isTargetUser(target, userId)) {
+                    approvalInfo.setMyApprovalStatus(target.getApprovalStatus());
+                    approvalInfo.setMyApprovalStage(stage.getStageOrder());
+                    
+                    // 현재 단계에서 승인이 필요한지 확인
+                    boolean isCurrentStage = stage.getStageOrder().equals(document.getCurrentStage());
+                    boolean isPending = target.getApprovalStatus() == ApprovalStatus.PENDING;
+                    approvalInfo.setIsApprovalRequired(isCurrentStage && isPending);
+                    
+                    return approvalInfo;
+                }
+            }
+        }
+        
+        return approvalInfo;
     }
 
     private boolean isTargetUser(DocumentApprovalTarget target, Long userId) {

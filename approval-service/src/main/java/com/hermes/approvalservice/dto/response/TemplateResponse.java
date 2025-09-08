@@ -13,6 +13,7 @@ public class TemplateResponse {
     private Long id;
     private String title;
     private String icon;
+    private String color;
     private String description;
     private String bodyTemplate;
     private Boolean useBody;

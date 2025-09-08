@@ -16,6 +16,8 @@ public class UpdateTemplateRequest {
     
     private String icon;
     
+    private String color;
+    
     private String description;
     
     private String bodyTemplate;

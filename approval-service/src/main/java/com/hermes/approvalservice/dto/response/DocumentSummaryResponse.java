@@ -1,24 +1,12 @@
 package com.hermes.approvalservice.dto.response;
 
-import com.hermes.approvalservice.client.dto.UserProfile;
-import com.hermes.approvalservice.enums.DocumentStatus;
-import com.hermes.approvalservice.enums.UserRole;
 import lombok.Data;
-
-import java.time.LocalDateTime;
+import lombok.EqualsAndHashCode;
 
 @Data
-public class DocumentSummaryResponse {
+@EqualsAndHashCode(callSuper = true)
+public class DocumentSummaryResponse extends BaseDocumentResponse {
     
-    private Long id;
-    private String content;
-    private DocumentStatus status;
-    private UserProfile author;
-    private String templateTitle;
-    private Integer currentStage;
+    private TemplateSummaryResponse template;
     private Integer totalStages;
-    private UserRole userRole;
-    private LocalDateTime createdAt;
-    private LocalDateTime submittedAt;
-    private LocalDateTime approvedAt;
 }

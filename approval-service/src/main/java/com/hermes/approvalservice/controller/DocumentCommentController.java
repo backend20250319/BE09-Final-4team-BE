@@ -39,13 +39,6 @@ public class DocumentCommentController {
     private final ResponseConverter responseConverter;
 
     @Operation(summary = "문서 댓글 목록 조회", description = "지정한 문서의 댓글 목록을 시간순으로 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "댓글 목록 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "문서 조회 권한이 없습니다"),
-            @ApiResponse(responseCode = "404", description = "문서를 찾을 수 없습니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @GetMapping
     public ResponseEntity<List<DocumentCommentResponse>> getComments(
             @AuthenticationPrincipal UserPrincipal user,
@@ -66,14 +59,6 @@ public class DocumentCommentController {
     }
 
     @Operation(summary = "문서 댓글 작성", description = "지정한 문서에 새로운 댓글을 작성합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "댓글 작성 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다"),
-            @ApiResponse(responseCode = "403", description = "댓글 작성 권한이 없습니다"),
-            @ApiResponse(responseCode = "404", description = "문서를 찾을 수 없습니다"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @PostMapping
     public ResponseEntity<DocumentCommentResponse> createComment(
             @AuthenticationPrincipal UserPrincipal user,

@@ -167,23 +167,7 @@ hermes:
 - **Dynamic DataSource routing** - transparent to application code
 
 ### Usage Pattern
-Standard JPA entities and repositories work automatically:
-
-```java
-@Entity
-@Table(name = "users")
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) 
-    private Long id;
-    // fields...
-}
-
-@Repository
-public interface UserRepository extends JpaRepository<User, Long> {
-    Optional<User> findByEmail(String email);
-}
-```
+Standard JPA entities and repositories work automatically
 
 **📋 For detailed configuration options, events, and advanced usage, see [`libs/mt-starter/README.md`](libs/mt-starter/README.md)**
 
@@ -274,11 +258,10 @@ public class OpenApiConfig {
 
 ### Standards
 - **Language**: All descriptions in Korean
-- **Error Codes**: Document 403 for admin-only endpoints
 - **Parameters**: Use `@Parameter` for clear documentation
 
 ## Deprecated Components
 
 ### ApiResult<T>
-- **사용 금지**: `libs/api-common/src/main/java/com/hermes/api/common/ApiResult.java`
-- **대신 사용**: ResponseEntity로 직접 응답, 예외는 글로벌 핸들러에서 처리
+- `libs/api-common/src/main/java/com/hermes/api/common/ApiResult.java`
+- 새 API에 사용하지 마세요. 대신 ResponseEntity로 직접 응답하고, 예외는 글로벌 핸들러에서 처리하세요.

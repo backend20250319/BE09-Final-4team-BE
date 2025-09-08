@@ -29,7 +29,7 @@ public class AttachmentClientService {
     
     public AttachmentInfo validateAndConvertAttachment(String fileId) {
         try {
-            AttachmentInfoResponse metadata = attachmentServiceClient.getFileMetadata(fileId).getData();
+            AttachmentInfoResponse metadata = attachmentServiceClient.getFileMetadata(fileId);
             
             log.info("File metadata validated for fileId: {}, size: {}, type: {}", 
                     fileId, metadata.getFileSize(), metadata.getContentType());
@@ -43,7 +43,7 @@ public class AttachmentClientService {
                     
         } catch (Exception e) {
             log.error("Failed to validate attachment: {}", fileId, e);
-            throw new RuntimeException("첨부파일 검증에 실패했습니다: " + fileId);
+            throw new RuntimeException("첨부파일 검증에 실패했습니다: " + fileId, e);
         }
     }
     

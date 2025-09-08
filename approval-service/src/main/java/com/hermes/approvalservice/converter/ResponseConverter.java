@@ -6,6 +6,7 @@ import com.hermes.approvalservice.client.UserServiceClient;
 import com.hermes.approvalservice.client.dto.UserProfile;
 import com.hermes.approvalservice.dto.response.*;
 import com.hermes.approvalservice.entity.*;
+import com.hermes.approvalservice.enums.ApprovalStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -58,11 +59,8 @@ public class ResponseConverter {
         DocumentFieldValueResponse response = new DocumentFieldValueResponse();
         response.setId(fieldValue.getId());
         response.setFieldName(fieldValue.getFieldName());
+        response.setFieldType(fieldValue.getFieldType());
         response.setFieldValue(fieldValue.getFieldValue());
-        
-        if (fieldValue.getTemplateField() != null) {
-            response.setTemplateField(convertToTemplateFieldResponse(fieldValue.getTemplateField()));
-        }
         
         return response;
     }
@@ -74,17 +72,17 @@ public class ResponseConverter {
         response.setOrganizationId(target.getOrganizationId());
         response.setManagerLevel(target.getManagerLevel());
         response.setIsReference(target.getIsReference());
-        response.setIsApproved(target.getIsApproved());
-        response.setApprovedAt(target.getApprovedAt());
+        response.setApprovalStatus(target.getApprovalStatus());
+        response.setProcessedAt(target.getProcessedAt());
         
         if (target.getUserId() != null) {
             ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(target.getUserId());
             response.setUser(userResult.getData());
         }
         
-        if (target.getApprovedBy() != null) {
-            ApiResult<UserProfile> approverResult = userServiceClient.getUserProfile(target.getApprovedBy());
-            response.setApprover(approverResult.getData());
+        if (target.getProcessedBy() != null) {
+            ApiResult<UserProfile> processorResult = userServiceClient.getUserProfile(target.getProcessedBy());
+            response.setProcessor(processorResult.getData());
         }
         
         return response;
@@ -97,8 +95,8 @@ public class ResponseConverter {
         response.setOrganizationId(target.getOrganizationId());
         response.setManagerLevel(target.getManagerLevel());
         response.setIsReference(target.getIsReference());
-        response.setIsApproved(false); // 템플릿은 승인 상태 없음
-        response.setApprovedAt(null);
+        response.setApprovalStatus(ApprovalStatus.PENDING); // 템플릿은 기본 대기중 상태
+        response.setProcessedAt(null);
         
         if (target.getUserId() != null) {
             ApiResult<UserProfile> userResult = userServiceClient.getUserProfile(target.getUserId());
@@ -143,6 +141,7 @@ public class ResponseConverter {
         response.setId(template.getId());
         response.setTitle(template.getTitle());
         response.setIcon(template.getIcon());
+        response.setColor(template.getColor());
         response.setDescription(template.getDescription());
         response.setBodyTemplate(template.getBodyTemplate());
         response.setUseBody(template.getUseBody());
@@ -157,7 +156,6 @@ public class ResponseConverter {
             CategoryResponse categoryResponse = new CategoryResponse();
             categoryResponse.setId(template.getCategory().getId());
             categoryResponse.setName(template.getCategory().getName());
-            categoryResponse.setDescription(template.getCategory().getDescription());
             categoryResponse.setSortOrder(template.getCategory().getSortOrder());
             response.setCategory(categoryResponse);
         }
@@ -173,6 +171,31 @@ public class ResponseConverter {
         response.setReferenceTargets(template.getReferenceTargets().stream()
                 .map(this::convertToApprovalTargetResponse)
                 .toList());
+
+        return response;
+    }
+
+    public TemplateSummaryResponse convertToTemplateSummaryResponse(DocumentTemplate template) {
+        TemplateSummaryResponse response = new TemplateSummaryResponse();
+        response.setId(template.getId());
+        response.setTitle(template.getTitle());
+        response.setIcon(template.getIcon());
+        response.setColor(template.getColor());
+        response.setDescription(template.getDescription());
+        response.setUseBody(template.getUseBody());
+        response.setUseAttachment(template.getUseAttachment());
+        response.setAllowTargetChange(template.getAllowTargetChange());
+        response.setIsHidden(template.getIsHidden());
+        response.setCreatedAt(template.getCreatedAt());
+        response.setUpdatedAt(template.getUpdatedAt());
+
+        if (template.getCategory() != null) {
+            CategoryResponse categoryResponse = new CategoryResponse();
+            categoryResponse.setId(template.getCategory().getId());
+            categoryResponse.setName(template.getCategory().getName());
+            categoryResponse.setSortOrder(template.getCategory().getSortOrder());
+            response.setCategory(categoryResponse);
+        }
 
         return response;
     }

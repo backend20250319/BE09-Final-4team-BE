@@ -1,5 +1,6 @@
 package com.hermes.approvalservice.entity;
 
+import com.hermes.approvalservice.enums.FieldType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,14 +20,14 @@ public class DocumentFieldValue {
     @Column(nullable = false, length = 100)
     private String fieldName;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private FieldType fieldType;
+
     @Column(columnDefinition = "TEXT")
     private String fieldValue;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id", nullable = false)
     private ApprovalDocument document;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "template_field_id")
-    private TemplateField templateField;
 }

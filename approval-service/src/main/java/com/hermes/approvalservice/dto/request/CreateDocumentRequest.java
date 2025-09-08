@@ -12,8 +12,7 @@ public class CreateDocumentRequest {
     
     @NotNull(message = "템플릿 ID는 필수입니다")
     private Long templateId;
-    
-    
+
     private String content;
     
     @Valid
@@ -27,4 +26,6 @@ public class CreateDocumentRequest {
     
     @Valid
     private List<@NotBlank(message = "파일 ID는 필수입니다") String> attachments;
+    
+    private boolean submitImmediately = false;
 }
