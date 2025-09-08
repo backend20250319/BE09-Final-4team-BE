@@ -3,9 +3,6 @@ spring:
     name: attendance-service
   config:
     import: optional:configserver:http://localhost:8888
-  cloud:
-    config:
-      fail-fast: false
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
