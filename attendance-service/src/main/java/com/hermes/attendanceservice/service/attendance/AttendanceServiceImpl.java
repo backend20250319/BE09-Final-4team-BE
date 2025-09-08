@@ -8,6 +8,7 @@ import com.hermes.attendanceservice.entity.attendance.AttendanceStatus;
 import com.hermes.attendanceservice.entity.attendance.WorkStatus;
 import com.hermes.attendanceservice.repository.attendance.AttendanceRepository;
 import com.hermes.attendanceservice.service.workschedule.WorkScheduleService;
+import com.hermes.attendanceservice.service.workmonitor.WorkMonitorService;
 import com.hermes.attendanceservice.dto.workschedule.WorkTimeInfoDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final WorkScheduleService workScheduleService;
+    private final WorkMonitorService workMonitorService;
 
     @Override
     public AttendanceResponse checkIn(Long userId, Instant checkInTime) {
@@ -83,7 +85,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         a.setAutoRecorded(false);
-        return toResponse(attendanceRepository.save(a));
+        AttendanceResponse response = toResponse(attendanceRepository.save(a));
+        workMonitorService.refreshTodayWorkMonitor();
+        return response;
     }
 
     @Override
@@ -109,7 +113,9 @@ public class AttendanceServiceImpl implements AttendanceService {
             a.setWorkStatus(WorkStatus.EARLY_LEAVE);
         }
 
-        return toResponse(attendanceRepository.save(a));
+        AttendanceResponse response = toResponse(attendanceRepository.save(a));
+        workMonitorService.refreshTodayWorkMonitor();
+        return response;
     }
 
     @Override
@@ -134,7 +140,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (checkOutTime != null) a.setCheckOut(checkOutTime);
         a.setAutoRecorded(autoRecorded);
 
-        return toResponse(attendanceRepository.save(a));
+        AttendanceResponse response = toResponse(attendanceRepository.save(a));
+        workMonitorService.refreshTodayWorkMonitor();
+        return response;
     }
 
     @Override
@@ -159,7 +167,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (checkOutTime != null) a.setCheckOut(checkOutTime);
         a.setAutoRecorded(autoRecorded);
 
-        return toResponse(attendanceRepository.save(a));
+        AttendanceResponse response = toResponse(attendanceRepository.save(a));
+        workMonitorService.refreshTodayWorkMonitor();
+        return response;
     }
 
     @Override
@@ -325,31 +335,67 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Scheduled(cron = "0 0 0 * * ?") // 매일 24시(자정)에 실행
     public void autoCheckOut() {
         LocalDate today = LocalDate.now(ZONE_SEOUL);
+        LocalDate yesterday = today.minusDays(1);
         
+        log.info("자동 퇴근 처리 시작: 오늘({}), 어제({})", today, yesterday);
+        
+        // 어제와 오늘의 미완료 기록 처리
+        processAutoCheckOutForDate(yesterday);
+        processAutoCheckOutForDate(today);
+        
+        // WorkMonitor 데이터 갱신
+        try {
+            workMonitorService.refreshTodayWorkMonitor();
+            log.info("자동 퇴근 처리 후 WorkMonitor 갱신 완료");
+        } catch (Exception e) {
+            log.error("WorkMonitor 갱신 실패", e);
+        }
+    }
+    
+    /**
+     * 특정 날짜의 미완료 출근 기록에 대해 자동 퇴근 처리
+     */
+    private void processAutoCheckOutForDate(LocalDate targetDate) {
+        try {
         // 출근했지만 퇴근하지 않은 모든 기록 조회
         List<Attendance> incompleteRecords = attendanceRepository
-            .findAllByCheckInIsNotNullAndCheckOutIsNullAndDate(today);
+                .findAllByCheckInIsNotNullAndCheckOutIsNullAndDate(targetDate);
+            
+            if (incompleteRecords.isEmpty()) {
+                log.debug("자동 퇴근 대상 없음: {}", targetDate);
+                return;
+            }
+            
+            log.info("자동 퇴근 처리 대상: {} 건 (날짜: {})", incompleteRecords.size(), targetDate);
         
         for (Attendance attendance : incompleteRecords) {
             try {
                 // WorkSchedule에서 근무 종료 시간 조회
                 WorkTimeInfoDto workTime = 
-                    workScheduleService.getUserWorkTime(attendance.getUserId(), today);
+                        workScheduleService.getUserWorkTime(attendance.getUserId(), targetDate);
                 LocalTime scheduledEndTime = workTime.getEndTime();
                 
                 // 스케줄된 퇴근 시간으로 자동 퇴근 처리 (Asia/Seoul 기준)
-                ZonedDateTime autoZdt = today.atTime(scheduledEndTime).atZone(ZONE_SEOUL);
+                    ZonedDateTime autoZdt = targetDate.atTime(scheduledEndTime).atZone(ZONE_SEOUL);
                 attendance.setCheckOut(autoZdt.toInstant());
                 attendance.setAutoRecorded(true);
+                    
+                    // 근무 종료 시간 이후에 실제로 퇴근한 것으로 간주하므로 정상 처리
+                    // (조퇴 상태는 실제 퇴근 버튼을 누른 경우에만 적용)
                 
                 attendanceRepository.save(attendance);
                 
-                log.info("자동 퇴근 처리: 사용자 {}, 시간: {}", 
-                    attendance.getUserId(), autoZdt);
+                    log.info("자동 퇴근 처리 완료: 사용자 {}, 날짜: {}, 퇴근시간: {}", 
+                        attendance.getUserId(), targetDate, autoZdt.format(DateTimeFormatter.ofPattern("HH:mm")));
                     
             } catch (Exception e) {
-                log.error("자동 퇴근 처리 실패: 사용자 {}", attendance.getUserId(), e);
+                    log.error("자동 퇴근 처리 실패: 사용자 {}, 날짜: {}", 
+                        attendance.getUserId(), targetDate, e);
+                }
             }
+            
+        } catch (Exception e) {
+            log.error("자동 퇴근 처리 전체 실패: 날짜 {}", targetDate, e);
         }
     }
 } 

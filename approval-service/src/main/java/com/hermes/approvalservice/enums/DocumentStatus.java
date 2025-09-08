@@ -1,11 +1,13 @@
 package com.hermes.approvalservice.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum DocumentStatus {
     DRAFT("임시저장"),
-    PENDING("승인대기"),
-    IN_PROGRESS("승인중"),
-    APPROVED("승인완료"),
-    REJECTED("반려");
+    IN_PROGRESS("진행중"),
+    APPROVED("승인됨"),
+    REJECTED("반려됨");
 
     private final String description;
 
@@ -13,7 +15,4 @@ public enum DocumentStatus {
         this.description = description;
     }
 
-    public String getDescription() {
-        return description;
-    }
 }

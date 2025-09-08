@@ -11,6 +11,7 @@ public class TemplateSummaryResponse {
     private Long id;
     private String title;
     private String icon;
+    private String color;
     private String description;
     private Boolean useBody;
     private AttachmentUsageType useAttachment;

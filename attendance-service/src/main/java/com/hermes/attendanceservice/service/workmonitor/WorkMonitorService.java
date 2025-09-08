@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
@@ -26,6 +28,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
+@EnableScheduling
 public class WorkMonitorService {
     
     private final WorkMonitorRepository workMonitorRepository;
@@ -87,10 +90,12 @@ public class WorkMonitorService {
         // 2. 출석 데이터 조회
         List<Attendance> attendances = attendanceRepository.findByDate(date);
         
-        int attendanceCount = 0; // 정상 출근, 재택, 출장, 외근
+        int attendanceCount = 0; // 정상 출근 + 재택 + 출장 + 외근
         int lateCount = 0; // 지각
         
         for (Attendance attendance : attendances) {
+            // 체크인이 있는 경우만 집계 (실제 출근한 사람)
+            if (attendance.getCheckIn() != null) {
             // 출근 상태에 따른 분류
             switch (attendance.getAttendanceStatus()) {
                 case REGULAR:
@@ -102,21 +107,14 @@ public class WorkMonitorService {
                 default:
                     break;
             }
-            
-            // 근무 상태에 따른 추가 분류
-            switch (attendance.getWorkStatus()) {
-                case REMOTE:
-                case BUSINESS_TRIP:
-                case OUT_OF_OFFICE:
-                    attendanceCount++;
-                    break;
-                default:
-                    break;
             }
         }
         
         // 3. 휴가 데이터 조회
         int vacationCount = getVacationCount(date);
+        
+        log.info("Generated work monitor data for {}: total={}, attendance={}, late={}, vacation={}", 
+                date, totalEmployees, attendanceCount, lateCount, vacationCount);
         
         return WorkMonitorDto.builder()
                 .date(date)
@@ -203,5 +201,63 @@ public class WorkMonitorService {
         workMonitor.setAttendanceCount(dto.getAttendanceCount());
         workMonitor.setLateCount(dto.getLateCount());
         workMonitor.setVacationCount(dto.getVacationCount());
+    }
+    
+    /**
+     * 매일 자정에 전날 데이터 최종 집계 및 오늘 데이터 초기화
+     * 새로운 날짜가 시작될 때마다 실행
+     */
+    @Scheduled(cron = "0 0 0 * * *") // 매일 자정
+    public void dailyWorkMonitorUpdate() {
+        try {
+            LocalDate yesterday = LocalDate.now().minusDays(1);
+            LocalDate today = LocalDate.now();
+            
+            log.info("Starting daily work monitor update for yesterday: {}", yesterday);
+            
+            // 전날 데이터 최종 집계
+            updateWorkMonitorData(yesterday);
+            
+            // 오늘 데이터 초기화 (새로운 날짜 시작)
+            Optional<WorkMonitor> todayMonitor = workMonitorRepository.findByDate(today);
+            if (!todayMonitor.isPresent()) {
+                // 오늘 날짜의 초기 데이터 생성
+                WorkMonitorDto initialData = generateWorkMonitorData(today);
+                WorkMonitor newMonitor = convertToEntity(initialData);
+                workMonitorRepository.save(newMonitor);
+                log.info("Created initial work monitor data for today: {}", today);
+            }
+            
+        } catch (Exception e) {
+            log.error("Failed to perform daily work monitor update", e);
+        }
+    }
+    
+    /**
+     * 매 30분마다 오늘 데이터 갱신 (실시간성 확보)
+     */
+    @Scheduled(fixedRate = 1800000) // 30분마다 (30 * 60 * 1000 ms)
+    public void periodicWorkMonitorUpdate() {
+        try {
+            LocalDate today = LocalDate.now();
+            log.debug("Performing periodic work monitor update for today: {}", today);
+            updateWorkMonitorData(today);
+        } catch (Exception e) {
+            log.error("Failed to perform periodic work monitor update", e);
+        }
+    }
+    
+    /**
+     * 출근/퇴근 이벤트 발생 시 즉시 호출할 수 있는 메서드
+     * AttendanceService에서 체크인/체크아웃 후 호출하여 실시간 업데이트
+     */
+    public void refreshTodayWorkMonitor() {
+        try {
+            LocalDate today = LocalDate.now();
+            log.info("Refreshing work monitor data due to attendance event: {}", today);
+            updateWorkMonitorData(today);
+        } catch (Exception e) {
+            log.error("Failed to refresh today's work monitor data", e);
+        }
     }
 } 

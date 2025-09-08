@@ -1,6 +1,9 @@
 package com.hermes.approvalservice.enums;
 
-public enum UserRole {
+import lombok.Getter;
+
+@Getter
+public enum DocumentRole {
     AUTHOR("작성자"),
     APPROVER("승인자"),
     REFERENCE("참조자"),
@@ -8,11 +11,8 @@ public enum UserRole {
 
     private final String description;
 
-    UserRole(String description) {
+    DocumentRole(String description) {
         this.description = description;
     }
 
-    public String getDescription() {
-        return description;
-    }
 }

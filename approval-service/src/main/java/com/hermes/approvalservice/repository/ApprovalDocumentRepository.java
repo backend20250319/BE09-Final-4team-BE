@@ -19,12 +19,6 @@ public interface ApprovalDocumentRepository extends JpaRepository<ApprovalDocume
 
     Page<ApprovalDocument> findByStatusOrderByCreatedAtDesc(DocumentStatus status, Pageable pageable);
 
-
-
-    @Query("SELECT d FROM ApprovalDocument d LEFT JOIN FETCH d.template LEFT JOIN FETCH d.fieldValues " +
-           "LEFT JOIN FETCH d.approvalStages LEFT JOIN FETCH d.referenceTargets WHERE d.id = :id")
-    ApprovalDocument findByIdWithDetails(@Param("id") Long id);
-
     List<ApprovalDocument> findByTemplateId(Long templateId);
 
     @Query("SELECT d FROM ApprovalDocument d WHERE " +

@@ -39,4 +39,7 @@ public interface AttendanceService {
     
     /** 출근 가능 시간 조회 */
     Map<String, Object> getCheckInAvailableTime(Long userId);
+    
+    /** 자동 퇴근 처리 (스케줄링용) */
+    void autoCheckOut();
 } 

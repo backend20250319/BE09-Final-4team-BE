@@ -4,6 +4,8 @@ import com.hermes.approvalservice.enums.AttachmentUsageType;
 import com.hermes.attachment.entity.AttachmentInfo;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,6 +29,9 @@ public class DocumentTemplate {
 
     @Column(length = 100)
     private String icon;
+
+    @Column(length = 7)
+    private String color;
 
     @Column(length = 1000)
     private String description;
@@ -58,6 +63,7 @@ public class DocumentTemplate {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private TemplateCategory category;
 
     @OneToMany(mappedBy = "template", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

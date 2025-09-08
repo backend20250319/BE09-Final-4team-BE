@@ -5,6 +5,7 @@ import com.hermes.approvalservice.entity.ApprovalDocument;
 import com.hermes.approvalservice.entity.DocumentApprovalStage;
 import com.hermes.approvalservice.entity.DocumentApprovalTarget;
 import com.hermes.approvalservice.enums.ActivityType;
+import com.hermes.approvalservice.enums.ApprovalStatus;
 import com.hermes.approvalservice.enums.DocumentStatus;
 import com.hermes.approvalservice.exception.NotFoundException;
 import com.hermes.approvalservice.exception.UnauthorizedException;
@@ -26,10 +27,9 @@ public class ApprovalProcessService {
     private final DocumentActivityService activityService;
 
     public void approveDocument(Long documentId, UserPrincipal user, ApprovalActionRequest request) {
-        ApprovalDocument document = documentRepository.findByIdWithDetails(documentId);
-        if (document == null) {
-            throw new NotFoundException("문서를 찾을 수 없습니다.");
-        }
+        ApprovalDocument document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
+
         Long userId = user.getId();
 
         if (!permissionService.canApproveDocument(document, document.getCurrentStage(), user)) {
@@ -46,15 +46,15 @@ public class ApprovalProcessService {
         currentStage.getApprovalTargets().stream()
                 .filter(target -> !target.getIsReference() && isTargetUser(target, userId))
                 .forEach(target -> {
-                    target.setIsApproved(true);
-                    target.setApprovedBy(userId);
-                    target.setApprovedAt(LocalDateTime.now());
+                    target.setApprovalStatus(ApprovalStatus.APPROVED);
+                    target.setProcessedBy(userId);
+                    target.setProcessedAt(LocalDateTime.now());
                 });
 
         // 현재 단계의 모든 승인이 완료되었는지 확인
         boolean allApproved = currentStage.getApprovalTargets().stream()
                 .filter(target -> !target.getIsReference())
-                .allMatch(DocumentApprovalTarget::getIsApproved);
+                .allMatch(target -> target.getApprovalStatus() == ApprovalStatus.APPROVED);
 
         if (allApproved) {
             currentStage.setIsCompleted(true);
@@ -78,15 +78,29 @@ public class ApprovalProcessService {
     }
 
     public void rejectDocument(Long documentId, UserPrincipal user, ApprovalActionRequest request) {
-        ApprovalDocument document = documentRepository.findByIdWithDetails(documentId);
-        if (document == null) {
-            throw new NotFoundException("문서를 찾을 수 없습니다.");
-        }
+        ApprovalDocument document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new NotFoundException("문서를 찾을 수 없습니다."));
+
         Long userId = user.getId();
 
         if (!permissionService.canApproveDocument(document, document.getCurrentStage(), user)) {
             throw new UnauthorizedException("반려 권한이 없습니다.");
         }
+
+        // 현재 단계의 승인 대상자 반려 처리
+        DocumentApprovalStage currentStage = document.getApprovalStages().stream()
+                .filter(stage -> stage.getStageOrder().equals(document.getCurrentStage()))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("승인 단계를 찾을 수 없습니다."));
+
+        // 해당 사용자의 반려 처리
+        currentStage.getApprovalTargets().stream()
+                .filter(target -> !target.getIsReference() && isTargetUser(target, userId))
+                .forEach(target -> {
+                    target.setApprovalStatus(ApprovalStatus.REJECTED);
+                    target.setProcessedBy(userId);
+                    target.setProcessedAt(LocalDateTime.now());
+                });
 
         document.setStatus(DocumentStatus.REJECTED);
         activityService.recordActivity(document, userId, ActivityType.REJECT, "문서를 반려했습니다.", request.getReason());
