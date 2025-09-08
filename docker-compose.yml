@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # Infrastructure Services
+  config-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: config-server
+    ports:
+      - "8888:8080"
+    networks:
+      - hermes-network
+
+  discovery-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: discovery-server
+    ports:
+      - "8761:8080"
+    depends_on:
+      - config-server
+    networks:
+      - hermes-network
+
+  gateway-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: gateway-server
+    ports:
+      - "80:8080"
+    depends_on:
+      - discovery-server
+    networks:
+      - hermes-network
+
+  # Business Services (Random Ports)
+  approval-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: approval-service
+    ports:
+      - "0:8080"  # Random external port
+    depends_on:
+      - discovery-server
+      - config-server
+    networks:
+      - hermes-network
+
+  attendance-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: attendance-service
+    ports:
+      - "0:8080"  # Random external port
+    depends_on:
+      - discovery-server
+      - config-server
+    networks:
+      - hermes-network
+
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: user-service
+    ports:
+      - "0:8080"  # Random external port
+    depends_on:
+      - discovery-server
+      - config-server
+    networks:
+      - hermes-network
+
+  # Add more services as needed...
+
+  # External Dependencies
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: hermes
+      POSTGRES_USER: hermes
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hermes-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: myuser
+      RABBITMQ_DEFAULT_PASS: mypassword
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # Management UI
+    networks:
+      - hermes-network
+
+networks:
+  hermes-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
