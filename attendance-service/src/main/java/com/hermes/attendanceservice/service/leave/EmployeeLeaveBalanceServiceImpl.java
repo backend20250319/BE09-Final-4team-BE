@@ -10,6 +10,7 @@ import com.hermes.attendanceservice.repository.workpolicy.AnnualLeaveRepository;
 import com.hermes.attendanceservice.client.UserServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,22 @@ public class EmployeeLeaveBalanceServiceImpl implements EmployeeLeaveBalanceServ
     private final AnnualLeaveRepository annualLeaveRepository;
     private final UserServiceClient userServiceClient;
     
+    /**
+     * 매일 자정에 실행되는 자동 연차 부여 스케줄러
+     * 근무년수가 변경된 직원들에게 자동으로 연차를 재부여
+     */
+    @Scheduled(cron = "0 10 0 * * ?", zone = "Asia/Seoul") // 자정 10분 후 실행
+    public void scheduleAnnualLeaveGrant() {
+        log.info("자동 연차 부여 스케줄러 실행 시작");
+        
+        try {
+            grantAnnualLeaveToAllEmployees();
+            log.info("자동 연차 부여 스케줄러 실행 완료");
+        } catch (Exception e) {
+            log.error("자동 연차 부여 스케줄러 실행 실패", e);
+        }
+    }
+    
     @Override
     public List<EmployeeLeaveBalanceResponseDto> grantAnnualLeave(Long employeeId, LocalDate baseDate) {
         log.info("연차 자동 부여 시작: employeeId={}, baseDate={}", employeeId, baseDate);
@@ -40,17 +57,36 @@ public class EmployeeLeaveBalanceServiceImpl implements EmployeeLeaveBalanceServ
             throw new IllegalArgumentException("존재하지 않는 직원입니다: " + employeeId);
         }
         
-        // 2. 근무년수 조회 (user-service에서 계산된 값)
-        Integer workYears = (Integer) user.get("workYears");
-        if (workYears == null) {
-            // 임시: workYears가 없으면 기본값 1년으로 설정 (향후 user-service에서 제공해야 함)
-            workYears = 1;
-            log.warn("직원의 근무년수 정보를 찾을 수 없어 기본값 1년으로 설정합니다: employeeId={}", employeeId);
+        // 2. 근무년수 조회 (user-service의 전용 API 사용)
+        Integer workYears = null;
+        try {
+            Map<String, Integer> workYearsResponse = userServiceClient.getUserWorkYears(employeeId);
+            workYears = workYearsResponse.get("workYears");
+            log.info("user-service에서 조회된 근무년수: {}년", workYears);
+        } catch (Exception e) {
+            log.warn("user-service에서 근무년수 조회 실패, 사용자 정보에서 확인: {}", e.getMessage());
+            // fallback: 기존 사용자 정보에서 workYears 확인
+            Object workYearsObj = user.get("workYears");
+            if (workYearsObj != null) {
+                workYears = Integer.valueOf(workYearsObj.toString());
+            }
         }
-        log.info("조회된 근무년수: {}년", workYears);
+        
+        if (workYears == null) {
+            // 최후 수단: 기본값 0년으로 설정
+            workYears = 0;
+            log.warn("직원의 근무년수 정보를 찾을 수 없어 기본값 0년으로 설정합니다: employeeId={}", employeeId);
+        }
+        
+        log.info("최종 확인된 근무년수: {}년", workYears);
         
         // 3. 직원의 근무정책 조회 및 연차 규정 가져오기
-        Long workPolicyId = (Long) user.get("workPolicyId");
+        Long workPolicyId = null;
+        Object workPolicyIdObj = user.get("workPolicyId");
+        if (workPolicyIdObj != null) {
+            workPolicyId = Long.valueOf(workPolicyIdObj.toString());
+        }
+        
         if (workPolicyId == null) {
             throw new IllegalArgumentException("직원에게 근무정책이 할당되지 않았습니다: " + employeeId);
         }
@@ -60,12 +96,16 @@ public class EmployeeLeaveBalanceServiceImpl implements EmployeeLeaveBalanceServ
             throw new IllegalArgumentException("근무정책에 연차 규정이 없습니다: " + workPolicyId);
         }
         
-        // 4. 해당 근무년수에 맞는 연차 규정 찾기 및 부여
+        // 4. 기존 연차 잔액 삭제 (새로운 연차 부여 전)
+        employeeLeaveBalanceRepository.deleteByEmployeeId(employeeId);
+        log.info("기존 연차 잔액 삭제 완료: employeeId={}", employeeId);
+        
+        // 5. 해당 근무년수에 맞는 연차 규정 찾기 및 부여
         List<EmployeeLeaveBalance> grantedLeaves = new ArrayList<>();
         
         for (AnnualLeave annualLeave : annualLeaves) {
             if (annualLeave.isInRange(workYears)) {
-                // 기본 연차로 부여 (실제로는 연차 타입 매핑 로직 필요)
+                // 연차 타입 매핑
                 LeaveType leaveType = mapToLeaveType(annualLeave.getName());
                 
                 EmployeeLeaveBalance leaveBalance = EmployeeLeaveBalance.builder()
@@ -78,17 +118,18 @@ public class EmployeeLeaveBalanceServiceImpl implements EmployeeLeaveBalanceServ
                         .build();
                 
                 grantedLeaves.add(leaveBalance);
-                log.info("연차 부여: type={}, days={}", leaveType, annualLeave.getLeaveDays());
+                log.info("연차 부여: employeeId={}, type={}, days={}, workYears={}", 
+                        employeeId, leaveType, annualLeave.getLeaveDays(), workYears);
             }
         }
         
         if (grantedLeaves.isEmpty()) {
-            log.warn("해당 근무년수에 맞는 연차 규정이 없습니다: workYears={}", workYears);
+            log.warn("해당 근무년수에 맞는 연차 규정이 없습니다: employeeId={}, workYears={}", employeeId, workYears);
             return new ArrayList<>();
         }
         
         List<EmployeeLeaveBalance> savedLeaves = employeeLeaveBalanceRepository.saveAll(grantedLeaves);
-        log.info("연차 자동 부여 완료: employeeId={}, count={}", employeeId, savedLeaves.size());
+        log.info("연차 자동 부여 완료: employeeId={}, count={}, workYears={}년", employeeId, savedLeaves.size(), workYears);
         
         return savedLeaves.stream()
                 .map(this::convertToResponseDto)
@@ -202,13 +243,70 @@ public class EmployeeLeaveBalanceServiceImpl implements EmployeeLeaveBalanceServ
     }
     
     @Override
+    public List<EmployeeLeaveBalanceResponseDto> grantAnnualLeaveByWorkYears(Long employeeId) {
+        log.info("근무년수 기반 연차 자동 부여 시작: employeeId={}", employeeId);
+        return grantAnnualLeave(employeeId, LocalDate.now());
+    }
+    
+    @Override
+    public void grantAnnualLeaveToAllEmployees() {
+        log.info("모든 직원에게 근무년수 기반 연차 부여 시작");
+        
+        try {
+            // 1. 전체 직원 수 조회
+            Map<String, Object> totalEmployeesResponse = userServiceClient.getTotalEmployees();
+            Long totalEmployees = (Long) totalEmployeesResponse.get("totalUsers");
+            
+            if (totalEmployees == null || totalEmployees == 0) {
+                log.warn("부여할 직원이 없습니다.");
+                return;
+            }
+            
+            log.info("총 {}명의 직원에게 연차 부여 시작", totalEmployees);
+            
+            // 2. 페이지별로 직원들을 가져와서 연차 부여 (메모리 효율성을 위해)
+            int pageSize = 100; // 한 번에 처리할 직원 수
+            int totalPages = (int) Math.ceil((double) totalEmployees / pageSize);
+            int successCount = 0;
+            int failCount = 0;
+            
+            for (int page = 0; page < totalPages; page++) {
+                try {
+                    // 실제로는 UserServiceClient에 페이징 API가 필요하지만, 
+                    // 현재는 간단히 ID 범위로 처리
+                    for (long employeeId = page * pageSize + 1; employeeId <= Math.min((page + 1) * pageSize, totalEmployees); employeeId++) {
+                        try {
+                            grantAnnualLeaveByWorkYears(employeeId);
+                            successCount++;
+                            log.debug("직원 연차 부여 성공: employeeId={}", employeeId);
+                        } catch (Exception e) {
+                            failCount++;
+                            log.warn("직원 연차 부여 실패: employeeId={}, error={}", employeeId, e.getMessage());
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("페이지 {} 처리 중 오류 발생: {}", page, e.getMessage());
+                }
+            }
+            
+            log.info("모든 직원 연차 부여 완료: 성공={}명, 실패={}명", successCount, failCount);
+            
+        } catch (Exception e) {
+            log.error("모든 직원 연차 부여 중 오류 발생", e);
+            throw new RuntimeException("모든 직원 연차 부여 실패", e);
+        }
+    }
+    
+    @Override
     public void resetAllEmployeesAnnualLeave(LocalDate newGrantDate) {
         log.info("모든 직원 연차 초기화 및 재부여 시작: newGrantDate={}", newGrantDate);
         
         // 1. 모든 연차 잔액 삭제
         employeeLeaveBalanceRepository.deleteAll();
+        log.info("모든 연차 잔액 삭제 완료");
         
-        // 2. 모든 활성 직원에게 연차 재부여 (UserService에서 활성 직원 목록 가져와야 함)
+        // 2. 모든 활성 직원에게 연차 재부여
+        grantAnnualLeaveToAllEmployees();
         
         log.info("모든 직원 연차 초기화 및 재부여 완료");
     }

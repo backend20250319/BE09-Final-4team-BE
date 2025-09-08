@@ -15,6 +15,16 @@ public interface EmployeeLeaveBalanceService {
     List<EmployeeLeaveBalanceResponseDto> grantAnnualLeave(Long employeeId, LocalDate baseDate);
     
     /**
+     * 직원의 근무년수 기반 연차 자동 부여 (workYears 직접 사용)
+     */
+    List<EmployeeLeaveBalanceResponseDto> grantAnnualLeaveByWorkYears(Long employeeId);
+    
+    /**
+     * 모든 직원에게 근무년수 기반 연차 부여
+     */
+    void grantAnnualLeaveToAllEmployees();
+    
+    /**
      * 연차 사용 (차감)
      */
     void useLeave(Long employeeId, LeaveType leaveType, Integer days);

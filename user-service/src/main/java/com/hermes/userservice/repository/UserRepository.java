@@ -40,4 +40,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying
     @Query("UPDATE User u SET u.profileImageUrl = :profileImageUrl WHERE u.id = :userId")
     void updateProfileImageUrl(@Param("userId") Long userId, @Param("profileImageUrl") String profileImageUrl);
+    
+    /**
+     * workYears가 null인 사용자 목록 조회
+     */
+    List<User> findByWorkYearsIsNull();
 }

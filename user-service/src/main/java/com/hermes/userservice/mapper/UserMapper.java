@@ -6,6 +6,7 @@ import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.entity.UserOrganization;
 import com.hermes.userservice.repository.*;
+import com.hermes.userservice.util.CareerCalculator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -27,13 +28,17 @@ public class UserMapper {
     private final JobRepository jobRepository;
 
     public User toEntity(UserCreateDto userCreateDto) {
+        LocalDate joinDate = Optional.ofNullable(userCreateDto.getJoinDate()).orElse(LocalDate.now());
+        int workYears = CareerCalculator.calculateCareerYears(joinDate);
+        
         return User.builder()
                 .name(userCreateDto.getName())
                 .email(userCreateDto.getEmail())
                 .password(passwordEncoder.encode(userCreateDto.getPassword()))
                 .phone(userCreateDto.getPhone())
                 .address(userCreateDto.getAddress())
-                .joinDate(Optional.ofNullable(userCreateDto.getJoinDate()).orElse(LocalDate.now()))
+                .joinDate(joinDate)
+                .workYears(workYears)
                 .isAdmin(Optional.ofNullable(userCreateDto.getIsAdmin()).orElse(false))
                 .needsPasswordReset(Optional.ofNullable(userCreateDto.getNeedsPasswordReset()).orElse(false))
                 .employmentType(convertToEmploymentTypeEntity(userCreateDto.getEmploymentType()))
@@ -115,6 +120,7 @@ public class UserMapper {
                 .profileImageUrl(user.getProfileImageUrl())
                 .selfIntroduction(user.getSelfIntroduction())
                 .workPolicyId(user.getWorkPolicyId())
+                .workYears(user.getWorkYears())
                 .lastLoginAt(user.getLastLoginAt())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())

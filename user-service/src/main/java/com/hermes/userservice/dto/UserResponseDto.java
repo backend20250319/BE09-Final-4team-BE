@@ -40,6 +40,7 @@ public class UserResponseDto {
     private String profileImageUrl;
     private String selfIntroduction;
     private Long workPolicyId;
+    private Integer workYears;
     private LocalDateTime lastLoginAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -154,4 +154,33 @@ public class EmployeeLeaveBalanceController {
         employeeLeaveBalanceService.resetAllEmployeesAnnualLeave(newGrantDate);
         return ResponseEntity.ok(ApiResult.success("모든 직원의 연차 초기화 및 재부여가 완료되었습니다."));
     }
+    
+    @Operation(summary = "근무년수 기반 연차 부여", description = "user-service에서 조회한 근무년수를 기반으로 직원에게 연차를 부여합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "연차 부여 성공"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (직원 정보 없음, 근무정책 없음 등)")
+    })
+    @PostMapping("/grant-by-work-years/{employeeId}")
+    public ResponseEntity<ApiResult<List<EmployeeLeaveBalanceResponseDto>>> grantAnnualLeaveByWorkYears(
+            @Parameter(description = "직원 ID", required = true) @PathVariable Long employeeId) {
+        
+        log.info("근무년수 기반 연차 부여 요청: employeeId={}", employeeId);
+        
+        List<EmployeeLeaveBalanceResponseDto> responses = employeeLeaveBalanceService.grantAnnualLeaveByWorkYears(employeeId);
+        return ResponseEntity.ok(ApiResult.success(responses));
+    }
+    
+    @Operation(summary = "모든 직원 근무년수 기반 연차 부여", description = "모든 직원에게 각각의 근무년수에 따라 연차를 부여합니다. (관리자 전용)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "전체 연차 부여 성공"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @PostMapping("/grant-all-by-work-years")
+    public ResponseEntity<ApiResult<String>> grantAnnualLeaveToAllEmployees() {
+        
+        log.info("모든 직원 근무년수 기반 연차 부여 요청");
+        
+        employeeLeaveBalanceService.grantAnnualLeaveToAllEmployees();
+        return ResponseEntity.ok(ApiResult.success("모든 직원에게 근무년수 기반 연차 부여가 완료되었습니다."));
+    }
 } 

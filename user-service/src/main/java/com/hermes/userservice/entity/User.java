@@ -42,6 +42,9 @@ public class User {
     @Column(nullable = false)
     private LocalDate joinDate;
 
+    @Column(name = "work_years")
+    private Integer workYears;
+
     @Column(nullable = false)
     private Boolean isAdmin;
 
@@ -103,6 +106,12 @@ public class User {
         log.info("updateJoinDate 호출: joinDate={}", joinDate);
         this.joinDate = joinDate;
         log.info("updateJoinDate 완료: this.joinDate={}", this.joinDate);
+    }
+
+    public void updateWorkYears(Integer workYears) {
+        log.info("updateWorkYears 호출: workYears={}", workYears);
+        this.workYears = workYears;
+        log.info("updateWorkYears 완료: this.workYears={}", this.workYears);
     }
 
     public void updateWorkInfo(EmploymentType employmentType, Rank rank, Position position, Job job, String role, Long workPolicyId) {

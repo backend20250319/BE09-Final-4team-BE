@@ -12,8 +12,11 @@ import com.hermes.userservice.exception.DuplicateEmailException;
 import com.hermes.userservice.exception.UserNotFoundException;
 import com.hermes.userservice.mapper.UserMapper;
 import com.hermes.userservice.repository.*;
+import com.hermes.userservice.util.CareerCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +32,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class UserService {
+public class UserService implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -40,6 +43,25 @@ public class UserService {
     private final RankRepository rankRepository;
     private final PositionRepository positionRepository;
     private final JobRepository jobRepository;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        log.info("애플리케이션 시작 시 근무년수가 null인 사용자들을 초기화합니다.");
+        List<User> usersWithNullWorkYears = userRepository.findByWorkYearsIsNull();
+        int initializedCount = 0;
+        for (User user : usersWithNullWorkYears) {
+            try {
+                int workYears = CareerCalculator.calculateCareerYears(user.getJoinDate());
+                user.updateWorkYears(workYears);
+                userRepository.save(user);
+                initializedCount++;
+                log.debug("근무년수 초기화: userId={}, workYears={}", user.getId(), workYears);
+            } catch (Exception e) {
+                log.error("사용자 근무년수 초기화 실패: userId={}", user.getId(), e);
+            }
+        }
+        log.info("애플리케이션 시작 시 근무년수 초기화 완료: 총 {}명 초기화", initializedCount);
+    }
 
     @Transactional(readOnly = true)
     public UserResponseDto getUserById(Long userId) {
@@ -348,5 +370,84 @@ public class UserService {
         userRepository.updateProfileImageUrl(userId, profileImageUrl);
 
         log.info("프로필 이미지 업데이트 완료: userId={}", userId);
+    }
+
+    /**
+     * 특정 사용자의 근무년수를 계산하여 업데이트
+     */
+    public void updateWorkYears(Long userId) {
+        log.info("근무년수 업데이트 시작: userId={}", userId);
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        int workYears = CareerCalculator.calculateCareerYears(user.getJoinDate());
+        user.updateWorkYears(workYears);
+        
+        userRepository.save(user);
+        
+        log.info("근무년수 업데이트 완료: userId={}, workYears={}", userId, workYears);
+    }
+
+    /**
+     * 모든 사용자의 근무년수를 계산하여 업데이트
+     */
+    public void updateAllUsersWorkYears() {
+        log.info("전체 사용자 근무년수 업데이트 시작");
+        
+        List<User> allUsers = userRepository.findAll();
+        int updatedCount = 0;
+        
+        for (User user : allUsers) {
+            try {
+                int workYears = CareerCalculator.calculateCareerYears(user.getJoinDate());
+                user.updateWorkYears(workYears);
+                userRepository.save(user);
+                updatedCount++;
+                log.debug("근무년수 업데이트: userId={}, workYears={}", user.getId(), workYears);
+            } catch (Exception e) {
+                log.error("사용자 근무년수 업데이트 실패: userId={}", user.getId(), e);
+            }
+        }
+        
+        log.info("전체 사용자 근무년수 업데이트 완료: 총 {}명 업데이트", updatedCount);
+    }
+
+    /**
+     * 사용자의 현재 근무년수 조회
+     */
+    @Transactional(readOnly = true)
+    public int getUserWorkYears(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        if (user.getWorkYears() != null) {
+            return user.getWorkYears();
+        }
+        
+        // workYears가 null인 경우 실시간 계산 후 저장
+        int calculatedWorkYears = CareerCalculator.calculateCareerYears(user.getJoinDate());
+        
+        // 별도 트랜잭션에서 업데이트 (readOnly 트랜잭션이므로)
+        updateWorkYearsAsync(userId, calculatedWorkYears);
+        
+        return calculatedWorkYears;
+    }
+    
+    /**
+     * 비동기적으로 workYears 업데이트 (내부 사용)
+     */
+    @Transactional
+    public void updateWorkYearsAsync(Long userId, int workYears) {
+        try {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user != null && user.getWorkYears() == null) {
+                user.updateWorkYears(workYears);
+                userRepository.save(user);
+                log.info("workYears 자동 설정 완료: userId={}, workYears={}", userId, workYears);
+            }
+        } catch (Exception e) {
+            log.warn("workYears 자동 설정 실패: userId={}, workYears={}", userId, workYears, e);
+        }
     }
 }
