@@ -2,7 +2,7 @@
 ARG SERVICE_NAME
 
 # Build stage  
-FROM gradle:8.10-jdk17 AS builder
+FROM gradle:8.14-jdk17 AS builder
 
 WORKDIR /app
 
@@ -34,5 +34,12 @@ RUN addgroup -g 1000 -S hermes && adduser -u 1000 -S hermes -G hermes
 RUN chown -R hermes:hermes /app
 USER hermes
 
+ARG SERVER_PORT=8080
+ENV SERVER_PORT=$SERVER_PORT
+EXPOSE $SERVER_PORT
+
+ARG SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+ENV SPRING_CONFIG_IMPORT=$SPRING_CONFIG_IMPORT
+
 # Run the application
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar", "--spring.profiles.active=prod"]

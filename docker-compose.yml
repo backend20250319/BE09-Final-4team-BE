@@ -8,8 +8,17 @@ services:
       dockerfile: Dockerfile
       args:
         SERVICE_NAME: config-server
+        SERVER_PORT: 8888
+        SPRING_CONFIG_IMPORT: ""
     ports:
-      - "8888:8080"
+      - "8888:8888"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
     networks:
       - hermes-network
 
@@ -19,10 +28,10 @@ services:
       dockerfile: Dockerfile
       args:
         SERVICE_NAME: discovery-server
+        SERVER_PORT: 8761
+        SPRING_CONFIG_IMPORT: ""
     ports:
-      - "8761:8080"
-    depends_on:
-      - config-server
+      - "8761:8761"
     networks:
       - hermes-network
 
@@ -35,7 +44,8 @@ services:
     ports:
       - "80:8080"
     depends_on:
-      - discovery-server
+      config-server:
+        condition: service_healthy
     networks:
       - hermes-network
 
@@ -49,8 +59,8 @@ services:
     ports:
       - "0:8080"  # Random external port
     depends_on:
-      - discovery-server
-      - config-server
+      config-server:
+        condition: service_healthy
     networks:
       - hermes-network
 
@@ -63,8 +73,8 @@ services:
     ports:
       - "0:8080"  # Random external port
     depends_on:
-      - discovery-server
-      - config-server
+      config-server:
+        condition: service_healthy
     networks:
       - hermes-network
 
@@ -77,27 +87,14 @@ services:
     ports:
       - "0:8080"  # Random external port
     depends_on:
-      - discovery-server
-      - config-server
+      config-server:
+        condition: service_healthy
     networks:
       - hermes-network
 
   # Add more services as needed...
 
   # External Dependencies
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: hermes
-      POSTGRES_USER: hermes
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - hermes-network
-
   rabbitmq:
     image: rabbitmq:3-management-alpine
     environment:
