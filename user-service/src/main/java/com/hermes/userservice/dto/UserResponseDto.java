@@ -27,9 +27,15 @@ public class UserResponseDto {
     private Boolean isAdmin;
     private Boolean needsPasswordReset;
     private EmploymentTypeDto employmentType;
-    private RankDto rank;
-    private PositionDto position;
-    private JobDto job;
+    
+    private String rank;
+    private String position;
+    private String job;
+    
+    private RankDto rankDto;
+    private PositionDto positionDto;
+    private JobDto jobDto;
+    
     private String role;
     private String profileImageUrl;
     private String selfIntroduction;

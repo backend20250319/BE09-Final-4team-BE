@@ -3,6 +3,10 @@ package com.hermes.userservice.service;
 import com.hermes.userservice.dto.*;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.entity.User;
+import com.hermes.userservice.entity.EmploymentType;
+import com.hermes.userservice.entity.Rank;
+import com.hermes.userservice.entity.Position;
+import com.hermes.userservice.entity.Job;
 import com.hermes.userservice.exception.DuplicateEmailException;
 import com.hermes.userservice.exception.UserNotFoundException;
 import com.hermes.userservice.mapper.UserMapper;
@@ -13,9 +17,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -55,12 +61,59 @@ public class UserService {
     }
 
     public UserResponseDto createUser(UserCreateDto userCreateDto) {
+        log.info("createUser 호출: userCreateDto={}", userCreateDto);
+        
         if (userRepository.findByEmail(userCreateDto.getEmail()).isPresent()) {
             throw new DuplicateEmailException("이미 존재하는 이메일입니다: " + userCreateDto.getEmail());
         }
 
-        User user = userMapper.toEntity(userCreateDto);
+        User user = User.builder()
+                .name(userCreateDto.getName())
+                .email(userCreateDto.getEmail())
+                .password(passwordEncoder.encode(userCreateDto.getPassword()))
+                .phone(userCreateDto.getPhone())
+                .address(userCreateDto.getAddress())
+                .joinDate(Optional.ofNullable(userCreateDto.getJoinDate()).orElse(LocalDate.now()))
+                .isAdmin(Optional.ofNullable(userCreateDto.getIsAdmin()).orElse(false))
+                .needsPasswordReset(Optional.ofNullable(userCreateDto.getNeedsPasswordReset()).orElse(false))
+                .role(userCreateDto.getRole())
+                .workPolicyId(userCreateDto.getWorkPolicyId())
+                .build();
+
         User createdUser = userRepository.save(user);
+        log.info("User 저장 완료: userId={}", createdUser.getId());
+
+        EmploymentType employmentType = null;
+        Rank rank = null;
+        Position position = null;
+        Job job = null;
+
+        if (userCreateDto.getEmploymentType() != null && userCreateDto.getEmploymentType().getId() != null && userCreateDto.getEmploymentType().getId() != 0) {
+            employmentType = employmentTypeRepository.findById(userCreateDto.getEmploymentType().getId()).orElse(null);
+            log.info("EmploymentType 조회: id={}, result={}", userCreateDto.getEmploymentType().getId(), employmentType);
+        }
+
+        if (userCreateDto.getRank() != null && userCreateDto.getRank().getId() != null && userCreateDto.getRank().getId() != 0) {
+            rank = rankRepository.findById(userCreateDto.getRank().getId()).orElse(null);
+            log.info("Rank 조회: id={}, result={}", userCreateDto.getRank().getId(), rank);
+        }
+
+        if (userCreateDto.getPosition() != null && userCreateDto.getPosition().getId() != null && userCreateDto.getPosition().getId() != 0) {
+            position = positionRepository.findById(userCreateDto.getPosition().getId()).orElse(null);
+            log.info("Position 조회: id={}, result={}", userCreateDto.getPosition().getId(), position);
+        }
+
+        if (userCreateDto.getJob() != null && userCreateDto.getJob().getId() != null && userCreateDto.getJob().getId() != 0) {
+            job = jobRepository.findById(userCreateDto.getJob().getId()).orElse(null);
+            log.info("Job 조회: id={}, result={}", userCreateDto.getJob().getId(), job);
+        }
+
+        // updateWorkInfo 메서드를 사용해서 rank, position, job 설정
+        createdUser.updateWorkInfo(employmentType, rank, position, job, userCreateDto.getRole(), userCreateDto.getWorkPolicyId());
+        log.info("updateWorkInfo 완료: rank={}, position={}, job={}", createdUser.getRank(), createdUser.getPosition(), createdUser.getJob());
+
+        User finalUser = userRepository.save(createdUser);
+        log.info("최종 저장 완료: userId={}, rank={}, position={}, job={}", finalUser.getId(), finalUser.getRank(), finalUser.getPosition(), finalUser.getJob());
 
         List<Map<String, Object>> remoteOrganizations = organizationIntegrationService.getUserOrganizations(createdUser.getId());
 
@@ -73,7 +126,7 @@ public class UserService {
             }
         }
 
-        return userMapper.toResponseDto(createdUser, remoteOrganizations, workPolicy);
+        return userMapper.toResponseDto(finalUser, remoteOrganizations, workPolicy);
     }
 
     @Transactional
