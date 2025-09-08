@@ -357,8 +357,8 @@ public class AttendanceServiceImpl implements AttendanceService {
      */
     private void processAutoCheckOutForDate(LocalDate targetDate) {
         try {
-            // 출근했지만 퇴근하지 않은 모든 기록 조회
-            List<Attendance> incompleteRecords = attendanceRepository
+        // 출근했지만 퇴근하지 않은 모든 기록 조회
+        List<Attendance> incompleteRecords = attendanceRepository
                 .findAllByCheckInIsNotNullAndCheckOutIsNullAndDate(targetDate);
             
             if (incompleteRecords.isEmpty()) {
@@ -367,28 +367,28 @@ public class AttendanceServiceImpl implements AttendanceService {
             }
             
             log.info("자동 퇴근 처리 대상: {} 건 (날짜: {})", incompleteRecords.size(), targetDate);
-            
-            for (Attendance attendance : incompleteRecords) {
-                try {
-                    // WorkSchedule에서 근무 종료 시간 조회
-                    WorkTimeInfoDto workTime = 
+        
+        for (Attendance attendance : incompleteRecords) {
+            try {
+                // WorkSchedule에서 근무 종료 시간 조회
+                WorkTimeInfoDto workTime = 
                         workScheduleService.getUserWorkTime(attendance.getUserId(), targetDate);
-                    LocalTime scheduledEndTime = workTime.getEndTime();
-                    
-                    // 스케줄된 퇴근 시간으로 자동 퇴근 처리 (Asia/Seoul 기준)
+                LocalTime scheduledEndTime = workTime.getEndTime();
+                
+                // 스케줄된 퇴근 시간으로 자동 퇴근 처리 (Asia/Seoul 기준)
                     ZonedDateTime autoZdt = targetDate.atTime(scheduledEndTime).atZone(ZONE_SEOUL);
-                    attendance.setCheckOut(autoZdt.toInstant());
-                    attendance.setAutoRecorded(true);
+                attendance.setCheckOut(autoZdt.toInstant());
+                attendance.setAutoRecorded(true);
                     
                     // 근무 종료 시간 이후에 실제로 퇴근한 것으로 간주하므로 정상 처리
                     // (조퇴 상태는 실제 퇴근 버튼을 누른 경우에만 적용)
-                    
-                    attendanceRepository.save(attendance);
-                    
+                
+                attendanceRepository.save(attendance);
+                
                     log.info("자동 퇴근 처리 완료: 사용자 {}, 날짜: {}, 퇴근시간: {}", 
                         attendance.getUserId(), targetDate, autoZdt.format(DateTimeFormatter.ofPattern("HH:mm")));
-                        
-                } catch (Exception e) {
+                    
+            } catch (Exception e) {
                     log.error("자동 퇴근 처리 실패: 사용자 {}, 날짜: {}", 
                         attendance.getUserId(), targetDate, e);
                 }

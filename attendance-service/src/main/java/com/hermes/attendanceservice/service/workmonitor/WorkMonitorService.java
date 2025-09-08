@@ -96,17 +96,17 @@ public class WorkMonitorService {
         for (Attendance attendance : attendances) {
             // 체크인이 있는 경우만 집계 (실제 출근한 사람)
             if (attendance.getCheckIn() != null) {
-                // 출근 상태에 따른 분류
-                switch (attendance.getAttendanceStatus()) {
-                    case REGULAR:
-                        attendanceCount++;
-                        break;
-                    case LATE:
-                        lateCount++;
-                        break;
-                    default:
-                        break;
-                }
+            // 출근 상태에 따른 분류
+            switch (attendance.getAttendanceStatus()) {
+                case REGULAR:
+                    attendanceCount++;
+                    break;
+                case LATE:
+                    lateCount++;
+                    break;
+                default:
+                    break;
+            }
             }
         }
         
