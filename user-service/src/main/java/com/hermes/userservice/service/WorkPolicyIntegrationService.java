@@ -46,12 +46,27 @@ public class WorkPolicyIntegrationService {
             log.info("근무 정책 ID가 null입니다");
             return null;
         }
-        return getWorkPolicy(workPolicyId);
+        log.info("근무 정책 조회 시작: workPolicyId={}", workPolicyId);
+        try {
+            WorkPolicyResponseDto result = getWorkPolicy(workPolicyId);
+            log.info("근무 정책 조회 성공: workPolicyId={}, result={}", workPolicyId, result);
+            return result;
+        } catch (Exception e) {
+            log.error("근무 정책 조회 실패: workPolicyId={}, error={}", workPolicyId, e.getMessage(), e);
+            throw e;
+        }
     }
 
     public WorkPolicyResponseDto getWorkPolicy(Long workPolicyId) {
-        log.info("근무 정책 조회: workPolicyId={}", workPolicyId);
-        return workPolicyServiceClient.getWorkPolicy(workPolicyId);
+        log.info("Feign Client 호출: workPolicyId={}", workPolicyId);
+        try {
+            WorkPolicyResponseDto result = workPolicyServiceClient.getWorkPolicy(workPolicyId);
+            log.info("Feign Client 응답: workPolicyId={}, result={}", workPolicyId, result);
+            return result;
+        } catch (Exception e) {
+            log.error("Feign Client 호출 실패: workPolicyId={}, error={}", workPolicyId, e.getMessage(), e);
+            throw e;
+        }
     }
 
     public List<AnnualLeaveResponseDto> getAnnualLeavesByWorkPolicyId(Long workPolicyId) {

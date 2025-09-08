@@ -14,4 +14,8 @@ public class MainProfileResponseDto {
     private String phone;
     private String profileImageUrl;
     private WorkPolicyResponseDto workPolicy;
+    private String rank;
+    private String position;
+    private String job;
+    private Long workPolicyId;
 }

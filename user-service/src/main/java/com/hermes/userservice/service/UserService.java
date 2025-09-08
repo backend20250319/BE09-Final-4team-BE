@@ -241,7 +241,25 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
-        return userMapper.toMainProfileDto(user);
+        log.info("사용자 정보: userId={}, workPolicyId={}", userId, user.getWorkPolicyId());
+
+        // 근무정책 정보 조회 추가
+        WorkPolicyResponseDto workPolicy = null;
+        if (user.getWorkPolicyId() != null) {
+            try {
+                log.info("근무정책 조회 시도: userId={}, workPolicyId={}", userId, user.getWorkPolicyId());
+                workPolicy = workPolicyIntegrationService.getWorkPolicyById(user.getWorkPolicyId());
+                log.info("근무정책 조회 결과: userId={}, workPolicy={}", userId, workPolicy);
+            } catch (Exception e) {
+                log.warn("근무 정책 조회 실패, null로 처리: userId={}, workPolicyId={}", userId, user.getWorkPolicyId(), e);
+            }
+        } else {
+            log.info("사용자에게 근무정책 ID가 설정되지 않음: userId={}", userId);
+        }
+
+        MainProfileResponseDto result = userMapper.toMainProfileDto(user, workPolicy);
+        log.info("최종 응답: userId={}, workPolicy={}", userId, result.getWorkPolicy());
+        return result;
     }
 
     @Transactional(readOnly = true)
