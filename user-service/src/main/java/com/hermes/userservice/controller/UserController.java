@@ -283,4 +283,33 @@ public class UserController {
         List<Long> userIds = userService.getAllUserIds();
         return ResponseEntity.ok(ApiResult.success("사용자 ID 목록 조회 성공", userIds));
     }
+
+    @PatchMapping("/{userId}/profile-image")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "프로필 이미지 수정", description = "본인의 프로필 이미지만 수정합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "프로필 이미지 수정 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "403", description = "권한 부족 (본인만 수정 가능)"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
+    public ResponseEntity<ApiResult<Void>> updateProfileImage(
+            @Parameter(description = "수정할 사용자 ID", required = true, example = "1")
+            @PathVariable Long userId,
+            @Parameter(description = "프로필 이미지 URL", required = true)
+            @RequestBody Map<String, String> request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        
+        if (!userPrincipal.getId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResult.failure("본인의 프로필 이미지만 수정할 수 있습니다."));
+        }
+        
+        String profileImageUrl = request.get("profileImageUrl");
+        
+        userService.updateProfileImage(userId, profileImageUrl);
+        
+        return ResponseEntity.ok(ApiResult.success("프로필 이미지 업데이트 성공", null));
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.hermes.userservice.service;
 
 import com.hermes.userservice.dto.*;
+import com.hermes.userservice.dto.title.*;
 import com.hermes.userservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.userservice.entity.User;
 import com.hermes.userservice.entity.EmploymentType;
@@ -314,5 +315,20 @@ public class UserService {
     public List<Long> getAllUserIds() {
         log.info("전체 사용자 ID 목록 조회 (알림 발송용)");
         return userRepository.findAllUserIds();
+    }
+
+    @Transactional
+    public void updateProfileImage(Long userId, String profileImageUrl) {
+        log.info("프로필 이미지 업데이트: userId={}, imageUrl={}", userId, profileImageUrl);
+
+        // 사용자 존재 여부 확인
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId);
+        }
+
+        // 프로필 이미지 URL만 업데이트
+        userRepository.updateProfileImageUrl(userId, profileImageUrl);
+
+        log.info("프로필 이미지 업데이트 완료: userId={}", userId);
     }
 }

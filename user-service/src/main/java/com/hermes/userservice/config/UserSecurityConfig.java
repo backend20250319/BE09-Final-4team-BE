@@ -21,6 +21,7 @@ public class UserSecurityConfig extends BaseSecurityConfig {
         auth.requestMatchers("/api/users/ids").hasRole("ADMIN");
         auth.requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN");
         auth.requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("ADMIN");
+        auth.requestMatchers(HttpMethod.PATCH, "/api/users/*/profile-image").authenticated();
         auth.requestMatchers(HttpMethod.PATCH, "/api/users/**").hasRole("ADMIN");
         auth.requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN");
         auth.requestMatchers("/api/users/sync-organizations").hasRole("ADMIN");
