@@ -38,8 +38,5 @@ ARG SERVER_PORT=8080
 ENV SERVER_PORT=$SERVER_PORT
 EXPOSE $SERVER_PORT
 
-ARG SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
-ENV SPRING_CONFIG_IMPORT=$SPRING_CONFIG_IMPORT
-
 # Run the application
 ENTRYPOINT ["java", "-jar", "/app/app.jar", "--spring.profiles.active=prod"]

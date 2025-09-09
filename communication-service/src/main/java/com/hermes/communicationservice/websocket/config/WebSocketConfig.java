@@ -18,8 +18,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
   private final WebSocketAuthInterceptor webSocketAuthInterceptor;
   
-  @Value("${FRONTEND_URL:http://localhost:3000}")
-  private String frontendUrl;
+  @Value("${CORS_ALLOWED_ORIGINS:http://localhost:3000}")
+  private String corsAllowedOrigins;
 
   @Override
   public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -46,13 +46,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     // WebSocket 연결 엔드포인트 (SockJS 지원)
     // SockJS: 일부 브라우저나 방화벽에서 WebSocket을 지원하지 않을 때 HTTP 폴링 등으로 대체해주는 라이브러리
     registry.addEndpoint("/ws")
-        .setAllowedOriginPatterns(frontendUrl)
+        .setAllowedOriginPatterns(corsAllowedOrigins.split(","))
         .withSockJS();  // SockJS 지원 활성화
 
     // 순수 WebSocket 엔드포인트 (SockJS 없이 순수한 WebSocket만 사용)
     // 모던 브라우저에서 WebSocket을 직접 지원할 때 사용
     registry.addEndpoint("/ws-pure")
-        .setAllowedOriginPatterns(frontendUrl);
+        .setAllowedOriginPatterns(corsAllowedOrigins.split(","));
 
     log.info("STOMP 엔드포인트 등록 완료: /ws, /ws-pure");
   }
