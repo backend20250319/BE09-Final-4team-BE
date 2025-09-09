@@ -39,12 +39,6 @@ public class VacationService {
         }
         
         int careerYears = CareerCalculator.calculateCareerYears(joinDate);
-        
-        // 근무년수 업데이트 (연차 부여와 함께)
-        user.updateWorkYears(careerYears);
-        userRepository.save(user);
-        log.info("근무년수 업데이트 완료: userId={}, workYears={}", userId, careerYears);
-        
         int leaveDays = getLeaveDaysByCareerYears(user.getWorkPolicyId(), careerYears);
         
         if (leaveDays > 0) {

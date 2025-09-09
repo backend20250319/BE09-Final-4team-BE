@@ -14,10 +14,4 @@ public interface UserServiceClient {
     
     @GetMapping("/api/users/count")
     Map<String, Object> getTotalEmployees();
-    
-    /**
-     * 사용자의 근무년수 조회
-     */
-    @GetMapping("/api/users/{userId}/work-years")
-    Map<String, Integer> getUserWorkYears(@PathVariable("userId") Long userId);
 } 
