@@ -1,6 +1,8 @@
 spring:
   application:
     name: attendance-service
+  profiles:
+    active: dev
   config:
     import: optional:configserver:http://localhost:8888
 
@@ -19,16 +21,6 @@ spring:
 # Server Configuration
 server:
   port: 8088
-
-# Logging Configuration
-logging:
-  level:
-    com.hermes.attendanceservice: DEBUG
-    org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.springframework.cloud.config: DEBUG
-    org.springframework.boot.autoconfigure: DEBUG
 
 # Attendance Service Configuration
 attendance:
@@ -49,16 +41,8 @@ workpolicy:
 # Eureka Client Configuration
 eureka:
   client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
     register-with-eureka: true
     fetch-registry: true
-
-# JWT Configuration
-jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-  expiration-time: 86400000 # 24시간 (밀리초)
-  refresh-expiration: 604800000 # 7일 (밀리초)
 
 # Swagger OpenAPI Configuration
 springdoc:

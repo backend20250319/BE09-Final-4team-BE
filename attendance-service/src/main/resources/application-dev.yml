@@ -1,0 +1,9 @@
+# Logging Configuration
+logging:
+  level:
+    com.hermes.attendanceservice: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.cloud.config: DEBUG
+    org.springframework.boot.autoconfigure: DEBUG

@@ -18,7 +18,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
   private final WebSocketAuthInterceptor webSocketAuthInterceptor;
   
-  @Value("${CORS_ALLOWED_ORIGINS:http://localhost:3000}")
+  @Value("${hermes.websocket.cors.allowedOrigins:http://localhost:3000}")
   private String corsAllowedOrigins;
 
   @Override
