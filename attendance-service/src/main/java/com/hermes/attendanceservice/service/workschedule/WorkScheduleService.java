@@ -104,17 +104,34 @@ public class WorkScheduleService {
      */
     public UserWorkPolicyDto getUserWorkPolicy(Long userId) {
         try {
-            // 1. User Service에서 사용자 정보 조회
-            Map<String, Object> userResponse = userServiceClient.getUserById(userId);
+            // 1. User Service에서 사용자 정보 조회 (simple 우선, 실패 시 전체 조회로 폴백)
+            Map<String, Object> userResponse = null;
+            try {
+                userResponse = userServiceClient.getUserWorkPolicy(userId); // /api/users/{userId}/simple
+            } catch (Exception ignore) {}
+            if (userResponse == null) {
+                userResponse = userServiceClient.getUserById(userId); // /api/users/{userId}
+            }
             
             if (userResponse == null) {
                 log.warn("User not found with id: {}", userId);
                 return null;
             }
             
-            // 2. workPolicyId 추출
-            Long workPolicyId = userResponse.get("workPolicyId") != null ? 
-                Long.valueOf(userResponse.get("workPolicyId").toString()) : null;
+            // 2. workPolicyId 추출 (top-level 우선, 없으면 nested workPolicy.id 시도)
+            Long workPolicyId = null;
+            Object workPolicyIdObj = userResponse.get("workPolicyId");
+            if (workPolicyIdObj != null) {
+                workPolicyId = Long.valueOf(workPolicyIdObj.toString());
+            } else {
+                Object wpObj = userResponse.get("workPolicy");
+                if (wpObj instanceof Map<?, ?> wpMap) {
+                    Object nestedId = ((Map<?, ?>) wpMap).get("id");
+                    if (nestedId != null) {
+                        workPolicyId = Long.valueOf(nestedId.toString());
+                    }
+                }
+            }
             
             if (workPolicyId == null) {
                 log.warn("User {} has no work policy assigned", userId);
