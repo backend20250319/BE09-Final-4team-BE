@@ -64,25 +64,19 @@ public class WorkScheduleService {
                 .build();
         }
         
-        // 스케줄이 없으면 기본 근무 정책 사용
+        // 스케줄이 없으면 근무 정책 사용 (하드코딩 제거: endTime 우선, 기본값 미사용)
         try {
             UserWorkPolicyDto userPolicy = getUserWorkPolicy(userId);
-            if (userPolicy.getWorkPolicy() != null) {
+            if (userPolicy != null && userPolicy.getWorkPolicy() != null) {
                 WorkPolicyDto workPolicy = userPolicy.getWorkPolicy();
                 LocalTime startTime = workPolicy.getStartTime();
-                
-                // 근무 시간을 계산하여 종료 시간 도출
-                LocalTime endTime;
-                if (workPolicy.getWorkHours() != null && workPolicy.getWorkMinutes() != null) {
+                LocalTime endTime = workPolicy.getEndTime();
+                if (endTime == null && workPolicy.getWorkHours() != null && workPolicy.getWorkMinutes() != null && startTime != null) {
                     int totalMinutes = workPolicy.getWorkHours() * 60 + workPolicy.getWorkMinutes();
                     endTime = startTime.plusMinutes(totalMinutes);
-                } else if (workPolicy.getWorkHours() != null) {
+                } else if (endTime == null && workPolicy.getWorkHours() != null && startTime != null) {
                     endTime = startTime.plusHours(workPolicy.getWorkHours());
-                } else {
-                    // 기본값: 8시간 근무
-                    endTime = startTime.plusHours(8);
                 }
-                
                 return WorkTimeInfoDto.builder()
                     .startTime(startTime)
                     .endTime(endTime)
@@ -92,10 +86,10 @@ public class WorkScheduleService {
             log.warn("Failed to get user work policy for userId: {}, date: {}", userId, date, e);
         }
         
-        // 기본값
+        // 정책/스케줄에서 결정 불가 시 null 반환 (기본 하드코딩 제거)
         return WorkTimeInfoDto.builder()
-            .startTime(LocalTime.of(9, 0))
-            .endTime(LocalTime.of(18, 0))
+            .startTime(null)
+            .endTime(null)
             .build();
     }
     
@@ -109,32 +103,76 @@ public class WorkScheduleService {
             try {
                 userResponse = userServiceClient.getUserWorkPolicy(userId); // /api/users/{userId}/simple
             } catch (Exception ignore) {}
-            if (userResponse == null) {
+            if (userResponse == null || userResponse.isEmpty()) {
                 userResponse = userServiceClient.getUserById(userId); // /api/users/{userId}
             }
             
-            if (userResponse == null) {
-                log.warn("User not found with id: {}", userId);
+            if (userResponse == null || userResponse.isEmpty()) {
+                log.warn("User not found with id: {} or response is empty", userId);
                 return null;
             }
             
-            // 2. workPolicyId 추출 (top-level 우선, 없으면 nested workPolicy.id 시도)
+            // 2. workPolicyId 추출 (다양한 키/구조 대응)
             Long workPolicyId = null;
-            Object workPolicyIdObj = userResponse.get("workPolicyId");
-            if (workPolicyIdObj != null) {
-                workPolicyId = Long.valueOf(workPolicyIdObj.toString());
-            } else {
+            Object workPolicyIdObj = null;
+            
+            // top-level 후보 키들
+            String[] candidateKeys = new String[] {"workPolicyId", "work_policy_id", "workPolicyID"};
+            for (String key : candidateKeys) {
+                if (userResponse.containsKey(key) && userResponse.get(key) != null) {
+                    workPolicyIdObj = userResponse.get(key);
+                    break;
+                }
+            }
+            
+            // nested: workPolicy.id 또는 workPolicyId
+            if (workPolicyIdObj == null) {
                 Object wpObj = userResponse.get("workPolicy");
                 if (wpObj instanceof Map<?, ?> wpMap) {
                     Object nestedId = ((Map<?, ?>) wpMap).get("id");
+                    if (nestedId == null) {
+                        nestedId = ((Map<?, ?>) wpMap).get("workPolicyId");
+                    }
+                    if (nestedId == null) {
+                        nestedId = ((Map<?, ?>) wpMap).get("work_policy_id");
+                    }
                     if (nestedId != null) {
-                        workPolicyId = Long.valueOf(nestedId.toString());
+                        workPolicyIdObj = nestedId;
+                    }
+                }
+            }
+            
+            if (workPolicyIdObj != null) {
+                try {
+                    workPolicyId = Long.valueOf(workPolicyIdObj.toString());
+                } catch (NumberFormatException nfe) {
+                    log.warn("workPolicyId parse failed for userId {}: value={}", userId, workPolicyIdObj);
+                }
+            }
+            
+            // 이름 기반 폴백 (가능하다면)
+            if (workPolicyId == null) {
+                Object nameObj = userResponse.get("workPolicyName");
+                if (nameObj == null) {
+                    Object wpObj = userResponse.get("workPolicy");
+                    if (wpObj instanceof Map<?, ?> wpMap) {
+                        nameObj = ((Map<?, ?>) wpMap).get("name");
+                    }
+                }
+                if (nameObj != null) {
+                    try {
+                        WorkPolicyResponseDto wpByName = workPolicyService.getWorkPolicyByName(nameObj.toString());
+                        if (wpByName != null) {
+                            workPolicyId = wpByName.getId();
+                        }
+                    } catch (Exception e) {
+                        log.warn("Fallback by workPolicy name failed for userId {}: {}", userId, nameObj, e);
                     }
                 }
             }
             
             if (workPolicyId == null) {
-                log.warn("User {} has no work policy assigned", userId);
+                log.warn("User {} has no work policy assigned (could not resolve workPolicyId)", userId);
                 return UserWorkPolicyDto.builder()
                         .workPolicyId(null)
                         .workPolicy(null)
@@ -507,27 +545,23 @@ public class WorkScheduleService {
             String dayOfWeek = currentDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH).toUpperCase();
             
             if (workPolicy.getWorkDays().contains(dayOfWeek)) {
-                // 출근 시간 계산
+                // 출근 시간
                 LocalTime startTime = workPolicy.getStartTime();
-                if (startTime == null) {
-                    startTime = LocalTime.of(9, 0); // 기본 출근시간 9시
-                }
                 
-                // 퇴근 시간 계산 (근무시간 반영)
-                LocalTime endTime;
-                if (workPolicy.getWorkHours() != null && workPolicy.getWorkMinutes() != null) {
-                    endTime = startTime.plusHours(workPolicy.getWorkHours()).plusMinutes(workPolicy.getWorkMinutes());
-                } else {
-                    endTime = startTime.plusHours(8); // 기본 8시간 근무
+                // 퇴근 시간: 정책 endTime 우선 사용, 없으면 기존 계산식으로 폴백 (startTime이 있을 때만)
+                LocalTime endTime = workPolicy.getEndTime();
+                if (endTime == null && startTime != null) {
+                    if (workPolicy.getWorkHours() != null && workPolicy.getWorkMinutes() != null) {
+                        endTime = startTime.plusHours(workPolicy.getWorkHours()).plusMinutes(workPolicy.getWorkMinutes());
+                    } else {
+                        endTime = startTime.plusHours(8); // 기본 8시간 근무
+                    }
                 }
                 
                 Schedule workSchedule = Schedule.builder()
                         .userId(userId)
                         .title(ScheduleType.WORK.getDescription())
-                        .description(String.format("출근: %s, 퇴근: %s, 근무시간: %d시간 %d분", 
-                                startTime, endTime, 
-                                workPolicy.getWorkHours() != null ? workPolicy.getWorkHours() : 8,
-                                workPolicy.getWorkMinutes() != null ? workPolicy.getWorkMinutes() : 0))
+                        .description(String.format("출근: %s, 퇴근: %s", startTime, endTime))
                         .startDate(currentDate)
                         .endDate(currentDate)
                         .startTime(startTime)
@@ -568,20 +602,19 @@ public class WorkScheduleService {
             String dayOfWeek = currentDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH).toUpperCase();
             
             if (workPolicy.getWorkDays() != null && workPolicy.getWorkDays().contains(dayOfWeek)) {
-                // 휴게 종료 시간 계산
-                LocalTime breakEndTime;
-                if (workPolicy.getBreakMinutes() != null) {
-                    breakEndTime = workPolicy.getBreakStartTime().plusMinutes(workPolicy.getBreakMinutes());
-                } else {
-                    breakEndTime = workPolicy.getBreakStartTime().plusHours(1); // 기본 1시간 휴게
+                // 정책에서 계산된 breakEndTime을 그대로 사용, 없으면 스킵
+                LocalTime breakEndTime = workPolicy.getBreakEndTime();
+                if (breakEndTime == null) {
+                    log.debug("breakEndTime is null. Skipping break schedule. userId={}, date={}", userId, currentDate);
+                    currentDate = currentDate.plusDays(1);
+                    continue;
                 }
                 
                 Schedule breakSchedule = Schedule.builder()
                         .userId(userId)
                         .title(ScheduleType.RESTTIME.getDescription())
-                        .description(String.format("휴게시간: %s ~ %s (%d분)", 
-                                workPolicy.getBreakStartTime(), breakEndTime,
-                                workPolicy.getBreakMinutes() != null ? workPolicy.getBreakMinutes() : 60))
+                        .description(String.format("휴게시간: %s ~ %s", 
+                                workPolicy.getBreakStartTime(), breakEndTime))
                         .startDate(currentDate)
                         .endDate(currentDate)
                         .startTime(workPolicy.getBreakStartTime())
@@ -914,6 +947,7 @@ public class WorkScheduleService {
                 .weeklyWorkingDays(responseDto.getWeeklyWorkingDays())
                 .startTime(responseDto.getStartTime())
                 .startTimeEnd(responseDto.getStartTimeEnd())
+                .endTime(responseDto.getEndTime())
                 .workHours(responseDto.getWorkHours())
                 .workMinutes(responseDto.getWorkMinutes())
                 .coreTimeStart(responseDto.getCoreTimeStart())
