@@ -1,28 +1,24 @@
-x-common-service: &common-service
+x-base-service: &base-service
   build:
     context: .
     dockerfile: Dockerfile
   networks:
     - hermes-network
-  volumes:
-    - ./keystore.p12:/app/keystore.p12
-  environment:
-    - CORS_ALLOWED_ORIGINS=$CORS_ALLOWED_ORIGINS
 
-x-business-service: &business-service
-  <<: *common-service
+x-common-service: &common-service
+  <<: *base-service
   ports:
     - "0:8080"
   depends_on:
     config-server:
       condition: service_healthy
   environment:
-    SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
+    SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
 
 services:
   # Infrastructure Services
   config-server:
-    <<: *common-service
+    <<: *base-service
     build:
       args:
         SERVICE_NAME: config-server
@@ -49,7 +45,7 @@ services:
       - "8761:8761"
 
   gateway-server:
-    <<: *business-service
+    <<: *common-service
     build:
       context: .
       dockerfile: Dockerfile
@@ -58,59 +54,61 @@ services:
     image: othereum/hermes-gateway-server
     ports:
       - "443:8080"
+    volumes:
+      - ./keystore.p12:/app/keystore.p12
 
   # Business Services
   user-service:
-    <<: *business-service
+    <<: *common-service
     build:
       args:
         SERVICE_NAME: user-service
     image: othereum/hermes-user-service
 
   org-service:
-    <<: *business-service
+    <<: *common-service
     build:
       args:
         SERVICE_NAME: org-service
     image: othereum/hermes-org-service
 
   attendance-service:
-    <<: *business-service
+    <<: *common-service
     build:
       args:
         SERVICE_NAME: attendance-service
     image: othereum/hermes-attendance-service
 
   approval-service:
-    <<: *business-service
+    <<: *common-service
     build:
       args:
         SERVICE_NAME: approval-service
     image: othereum/hermes-approval-service
 
   communication-service:
-    <<: *business-service
+    <<: *common-service
     build:
       args:
         SERVICE_NAME: communication-service
     image: othereum/hermes-communication-service
 
   attachment-service:
-    <<: *business-service
+    <<: *common-service
     build:
       args:
         SERVICE_NAME: attachment-service
     image: othereum/hermes-attachment-service
 
   companyinfo-service:
-    <<: *business-service
+    <<: *common-service
     build:
       args:
         SERVICE_NAME: companyinfo-service
     image: othereum/hermes-companyinfo-service
 
   news-crawler-service:
-    <<: *business-service
+    <<: *common-service
     build:
       args:
         SERVICE_NAME: news-crawler-service
