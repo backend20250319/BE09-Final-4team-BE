@@ -46,14 +46,11 @@ public class WorkScheduleController {
         @ApiResponse(responseCode = "404", description = "근무 정책을 찾을 수 없음")
     })
     @GetMapping("/users/{userId}/work-policy")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResult<UserWorkPolicyDto>> getUserWorkPolicy(
             @Parameter(description = "사용자 ID") @PathVariable Long userId,
             @Parameter(description = "인증된 사용자 정보") @AuthenticationPrincipal UserPrincipal user) {
         try {
-            // 본인 또는 관리자만 조회 가능
-            if (!user.getId().equals(userId) && !user.getRole().name().equals("ADMIN")) {
-                return ResponseEntity.ok(ApiResult.failure("권한이 없습니다."));
-            }
             
             // Authorization 헤더는 null로 전달 (User Service에서 직접 처리)
             UserWorkPolicyDto result = workScheduleService.getUserWorkPolicy(userId);

@@ -84,29 +84,43 @@ public class WorkMonitorService {
      * 실시간으로 근무 모니터링 데이터 생성
      */
     private WorkMonitorDto generateWorkMonitorData(LocalDate date) {
+        log.info("Generating work monitor data for date: {}", date);
+        
         // 1. 전체 직원 수 조회 (UserService에서 가져옴)
         int totalEmployees = getTotalEmployees();
+        log.info("Total employees: {}", totalEmployees);
         
         // 2. 출석 데이터 조회
         List<Attendance> attendances = attendanceRepository.findByDate(date);
+        log.info("Found {} attendance records for date: {}", attendances.size(), date);
         
         int attendanceCount = 0; // 정상 출근 + 재택 + 출장 + 외근
         int lateCount = 0; // 지각
         
         for (Attendance attendance : attendances) {
+            log.debug("Processing attendance: userId={}, checkIn={}, status={}", 
+                attendance.getUserId(), attendance.getCheckIn(), attendance.getAttendanceStatus());
+                
             // 체크인이 있는 경우만 집계 (실제 출근한 사람)
             if (attendance.getCheckIn() != null) {
-            // 출근 상태에 따른 분류
-            switch (attendance.getAttendanceStatus()) {
-                case REGULAR:
-                    attendanceCount++;
-                    break;
-                case LATE:
-                    lateCount++;
-                    break;
-                default:
-                    break;
-            }
+                // 출근 상태에 따른 분류
+                switch (attendance.getAttendanceStatus()) {
+                    case REGULAR:
+                        attendanceCount++;
+                        log.debug("Added to attendance count: userId={}", attendance.getUserId());
+                        break;
+                    case LATE:
+                        lateCount++;
+                        log.info("Added to late count: userId={}, checkIn={}", 
+                            attendance.getUserId(), attendance.getCheckIn());
+                        break;
+                    default:
+                        log.debug("Attendance status {} not counted for userId={}", 
+                            attendance.getAttendanceStatus(), attendance.getUserId());
+                        break;
+                }
+            } else {
+                log.debug("Skipping attendance without checkIn: userId={}", attendance.getUserId());
             }
         }
         

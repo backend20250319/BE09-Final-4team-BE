@@ -59,17 +59,10 @@ public class EmployeeLeaveBalanceServiceImpl implements EmployeeLeaveBalanceServ
         
         // 2. 근무년수 조회 (user-service의 전용 API 사용)
         Integer workYears = null;
-        try {
-            Map<String, Integer> workYearsResponse = userServiceClient.getUserWorkYears(employeeId);
-            workYears = workYearsResponse.get("workYears");
-            log.info("user-service에서 조회된 근무년수: {}년", workYears);
-        } catch (Exception e) {
-            log.warn("user-service에서 근무년수 조회 실패, 사용자 정보에서 확인: {}", e.getMessage());
-            // fallback: 기존 사용자 정보에서 workYears 확인
-            Object workYearsObj = user.get("workYears");
-            if (workYearsObj != null) {
-                workYears = Integer.valueOf(workYearsObj.toString());
-            }
+        Object workYearsObj = user.get("workYears");
+        if (workYearsObj != null) {
+            workYears = Integer.valueOf(workYearsObj.toString());
+            log.info("사용자 정보에서 조회된 근무년수: {}년", workYears);
         }
         
         if (workYears == null) {
