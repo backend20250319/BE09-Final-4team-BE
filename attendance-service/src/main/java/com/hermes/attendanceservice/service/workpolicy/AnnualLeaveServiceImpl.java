@@ -37,7 +37,6 @@ public class AnnualLeaveServiceImpl implements AnnualLeaveService {
                 .minYears(requestDto.getMinYears())
                 .maxYears(requestDto.getMaxYears())
                 .leaveDays(requestDto.getLeaveDays())
-                .holidayDays(requestDto.getHolidayDays())
                 .build();
         
         AnnualLeave savedLeave = annualLeaveRepository.save(annualLeave);
@@ -133,7 +132,6 @@ public class AnnualLeaveServiceImpl implements AnnualLeaveService {
                 .minYears(annualLeave.getMinYears())
                 .maxYears(annualLeave.getMaxYears())
                 .leaveDays(annualLeave.getLeaveDays())
-                .holidayDays(annualLeave.getHolidayDays())
                 .rangeDescription(annualLeave.getRangeDescription())
                 .createdAt(annualLeave.getCreatedAt())
                 .updatedAt(annualLeave.getUpdatedAt())

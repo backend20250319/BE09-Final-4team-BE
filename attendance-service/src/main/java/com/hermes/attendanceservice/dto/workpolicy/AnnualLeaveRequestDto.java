@@ -27,8 +27,4 @@ public class AnnualLeaveRequestDto {
     @Min(value = 1, message = "연차 일수는 1 이상이어야 합니다.")
     @Max(value = 365, message = "연차 일수는 365 이하여야 합니다.")
     private Integer leaveDays;
-    
-    @NotNull(message = "휴일 일수는 필수입니다.")
-    @Min(value = 0, message = "휴일 일수는 0 이상이어야 합니다.")
-    private Integer holidayDays; // 30일을 넘은 경우
 } 

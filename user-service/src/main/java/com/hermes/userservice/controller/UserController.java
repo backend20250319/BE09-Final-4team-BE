@@ -33,6 +33,7 @@ import java.util.HashMap;
 
 import com.hermes.userservice.dto.ColleagueSearchRequestDto;
 import com.hermes.userservice.dto.ColleagueResponseDto;
+import com.hermes.userservice.service.VacationService;
 
 @Slf4j
 @RestController
@@ -43,6 +44,7 @@ public class UserController {
 
     private final UserService userService;
     private final OrganizationSyncService organizationSyncService;
+    private final VacationService vacationService;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -162,7 +164,7 @@ public class UserController {
     public ResponseEntity<ApiResult<Void>> syncAllUsersOrganizations() {
         log.info("전체 사용자 조직 정보 동기화 요청");
         organizationSyncService.syncAllUsersOrganizations();
-        return ResponseEntity.ok(ApiResult.success("전체 사용자 조직 정보 동기화 완료", null));
+        return ResponseEntity.ok(ApiResult.success("전체 조직 정보 동기화 완료", null));
     }
 
     @GetMapping("/{userId}/profile")
@@ -314,7 +316,7 @@ public class UserController {
 
     @PatchMapping("/{userId}/work-years")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "사용자 근무년수 업데이트", description = "특정 사용자의 근무년수를 입사일 기준으로 계산하여 업데이트합니다. 본인 또는 관리자만 접근 가능합니다.")
+    @Operation(summary = "사용자 근무년수 업데이트", description = "사용자의 근무년수를 입사일 기준으로 계산하여 업데이트합니다. 본인 또는 관리자만 접근 가능합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "근무년수 업데이트 성공"),
             @ApiResponse(responseCode = "401", description = "인증 실패"),
@@ -325,19 +327,14 @@ public class UserController {
             @Parameter(description = "근무년수를 업데이트할 사용자 ID", required = true, example = "1")
             @PathVariable Long userId,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        
-        // 본인 또는 ADMIN만 업데이트 가능
         boolean isOwnProfile = userPrincipal.getId().equals(userId);
         boolean isAdmin = userPrincipal.isAdmin();
-        
         if (!isOwnProfile && !isAdmin) {
-            log.warn("근무년수 업데이트 권한 없음: userId={}, requesterId={}", userId, userPrincipal.getId());
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(ApiResult.failure("본인 또는 관리자만 근무년수를 업데이트할 수 있습니다."));
         }
-        
-        log.info("사용자 근무년수 업데이트 요청: userId={}, requesterId={}", userId, userPrincipal.getId());
-        userService.updateWorkYears(userId);
+        log.info("사용자 근무년수 업데이트 요청(VacationService): userId={}, requesterId={}", userId, userPrincipal.getId());
+        vacationService.updateWorkYears(userId);
         return ResponseEntity.ok(ApiResult.success("근무년수 업데이트 성공", null));
     }
 
@@ -350,8 +347,8 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "권한 부족 (ADMIN 권한 필요)")
     })
     public ResponseEntity<ApiResult<Void>> updateAllUsersWorkYears() {
-        log.info("전체 사용자 근무년수 업데이트 요청");
-        userService.updateAllUsersWorkYears();
+        log.info("전체 사용자 근무년수 업데이트 요청(VacationService)");
+        vacationService.updateAllUsersWorkYears();
         return ResponseEntity.ok(ApiResult.success("전체 사용자 근무년수 업데이트 성공", null));
     }
 
@@ -364,10 +361,9 @@ public class UserController {
     public ResponseEntity<ApiResult<Map<String, Integer>>> getUserWorkYears(
             @Parameter(description = "근무년수를 조회할 사용자 ID", required = true, example = "1")
             @PathVariable Long userId) {
-        log.info("사용자 근무년수 조회 요청: userId={}", userId);
-        int workYears = userService.getUserWorkYears(userId);
+        log.info("사용자 근무년수 조회 요청(VacationService): userId={}", userId);
+        int workYears = vacationService.getUserWorkYears(userId);
         Map<String, Integer> response = Map.of("workYears", workYears);
         return ResponseEntity.ok(ApiResult.success("근무년수 조회 성공", response));
     }
-
 }

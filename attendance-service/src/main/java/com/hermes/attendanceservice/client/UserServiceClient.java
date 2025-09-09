@@ -10,12 +10,29 @@ import java.util.Map;
 public interface UserServiceClient {
     
     @GetMapping("/api/users/{userId}")
-    Map<String, Object> getUserById(@PathVariable("userId") Long userId);
+    Map<String, Object> getUserByIdRaw(@PathVariable("userId") Long userId);
     
     @GetMapping("/api/users/count")
-    Map<String, Object> getTotalEmployees();
+    Map<String, Object> getTotalEmployeesRaw();
 
-    // 사용자의 근무정책 조회 (workPolicyId 또는 workPolicy 객체를 반환하는 사용자 서비스 엔드포인트)
     @GetMapping("/api/users/{userId}/simple")
-    Map<String, Object> getUserWorkPolicy(@PathVariable("userId") Long userId);
+    Map<String, Object> getUserWorkPolicyRaw(@PathVariable("userId") Long userId);
+
+    default Map<String, Object> getUserById(Long userId) {
+        Map<String, Object> wrapper = getUserByIdRaw(userId);
+        Object data = wrapper != null ? wrapper.get("data") : null;
+        return data instanceof Map ? (Map<String, Object>) data : Map.of();
+    }
+
+    default Map<String, Object> getTotalEmployees() {
+        Map<String, Object> wrapper = getTotalEmployeesRaw();
+        Object data = wrapper != null ? wrapper.get("data") : null;
+        return data instanceof Map ? (Map<String, Object>) data : Map.of();
+    }
+
+    default Map<String, Object> getUserWorkPolicy(Long userId) {
+        Map<String, Object> wrapper = getUserWorkPolicyRaw(userId);
+        Object data = wrapper != null ? wrapper.get("data") : null;
+        return data instanceof Map ? (Map<String, Object>) data : Map.of();
+    }
 } 

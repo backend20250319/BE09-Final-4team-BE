@@ -108,11 +108,12 @@ public class EmployeeLeaveBalanceServiceImpl implements EmployeeLeaveBalanceServ
                         .remainingDays(annualLeave.getLeaveDays())
                         .usedLeaveDays(0)
                         .workYears(workYears)
+                        .workPolicyId(workPolicyId)
                         .build();
                 
                 grantedLeaves.add(leaveBalance);
-                log.info("연차 부여: employeeId={}, type={}, days={}, workYears={}", 
-                        employeeId, leaveType, annualLeave.getLeaveDays(), workYears);
+                log.info("연차 부여: employeeId={}, type={}, days={}, workYears={}, workPolicyId={}", 
+                        employeeId, leaveType, annualLeave.getLeaveDays(), workYears, workPolicyId);
             }
         }
         
@@ -304,7 +305,7 @@ public class EmployeeLeaveBalanceServiceImpl implements EmployeeLeaveBalanceServ
         log.info("모든 직원 연차 초기화 및 재부여 완료");
     }
     
-
+    
     
     // Helper methods
     

@@ -38,6 +38,9 @@ public class EmployeeLeaveBalance {
     
     @Column(name = "work_years", nullable = false)
     private Integer workYears; // 근무년수 (연차 부여 시점의 년차)
+
+    @Column(name = "work_policy_id", nullable = false)
+    private Long workPolicyId; // 부여 기준이 된 근무정책 ID
     
     @Column(name = "created_at")
     private Instant createdAt;

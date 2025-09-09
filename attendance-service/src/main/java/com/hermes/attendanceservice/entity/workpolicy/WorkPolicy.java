@@ -155,7 +155,7 @@ public class WorkPolicy {
             return getTotalWorkMinutes() <= 9600;
         }
         return getTotalWorkMinutes() <= 2400;
-    }
+        }
     
     public boolean isValidFlexibleWorkSettings() {
         return isFlexibleWork() && startTime != null && startTimeEnd != null;
