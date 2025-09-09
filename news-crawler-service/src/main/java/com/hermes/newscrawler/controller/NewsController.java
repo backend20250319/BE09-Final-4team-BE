@@ -14,7 +14,6 @@ import java.util.Optional;
 @RequestMapping("/api/news")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "http://localhost:3000")
 public class NewsController {
 
     private final NewsArticleService newsArticleService;

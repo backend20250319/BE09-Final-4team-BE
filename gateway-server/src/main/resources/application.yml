@@ -110,23 +110,13 @@ spring:
             cors-configurations:
               '[/api/**]':
                 allowedOrigins:
-                  - "http://localhost:3000"
+                  - "${FRONTEND_URL:http://localhost:3000}"
                 allowedMethods:
                   - GET
                   - POST
                   - PUT
                   - PATCH
                   - DELETE
-                  - OPTIONS
-                allowedHeaders:
-                  - "*"
-                allowCredentials: true
-              '[/v3/**]':
-                allowedOrigins:
-                  - "http://localhost:3000"
-                allowedMethods:
-                  - GET
-                  - POST
                   - OPTIONS
                 allowedHeaders:
                   - "*"

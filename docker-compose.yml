@@ -1,11 +1,25 @@
 version: '3.8'
 
+x-common-service: &common-service
+  build:
+    context: .
+    dockerfile: Dockerfile
+  networks:
+    - hermes-network
+
+x-business-service: &business-service
+  <<: *common-service
+  ports:
+    - "0:8080"
+  depends_on:
+    config-server:
+      condition: service_healthy
+
 services:
   # Infrastructure Services
   config-server:
+    <<: *common-service
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
         SERVICE_NAME: config-server
         SERVER_PORT: 8888
@@ -19,23 +33,19 @@ services:
       retries: 3
       start_period: 40s
       start_interval: 5s
-    networks:
-      - hermes-network
 
   discovery-server:
+    <<: *common-service
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
         SERVICE_NAME: discovery-server
         SERVER_PORT: 8761
         SPRING_CONFIG_IMPORT: ""
     ports:
       - "8761:8761"
-    networks:
-      - hermes-network
 
   gateway-server:
+    <<: *business-service
     build:
       context: .
       dockerfile: Dockerfile
@@ -43,56 +53,55 @@ services:
         SERVICE_NAME: gateway-server
     ports:
       - "80:8080"
-    depends_on:
-      config-server:
-        condition: service_healthy
-    networks:
-      - hermes-network
 
-  # Business Services (Random Ports)
-  approval-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_NAME: approval-service
-    ports:
-      - "0:8080"  # Random external port
-    depends_on:
-      config-server:
-        condition: service_healthy
-    networks:
-      - hermes-network
-
-  attendance-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_NAME: attendance-service
-    ports:
-      - "0:8080"  # Random external port
-    depends_on:
-      config-server:
-        condition: service_healthy
-    networks:
-      - hermes-network
-
+  # Business Services
   user-service:
+    <<: *business-service
     build:
-      context: .
-      dockerfile: Dockerfile
       args:
         SERVICE_NAME: user-service
-    ports:
-      - "0:8080"  # Random external port
-    depends_on:
-      config-server:
-        condition: service_healthy
-    networks:
-      - hermes-network
 
-  # Add more services as needed...
+  org-service:
+    <<: *business-service
+    build:
+      args:
+        SERVICE_NAME: org-service
+
+  attendance-service:
+    <<: *business-service
+    build:
+      args:
+        SERVICE_NAME: attendance-service
+
+  approval-service:
+    <<: *business-service
+    build:
+      args:
+        SERVICE_NAME: approval-service
+
+  communication-service:
+    <<: *business-service
+    build:
+      args:
+        SERVICE_NAME: communication-service
+
+  attachment-service:
+    <<: *business-service
+    build:
+      args:
+        SERVICE_NAME: attachment-service
+
+  companyinfo-service:
+    <<: *business-service
+    build:
+      args:
+        SERVICE_NAME: companyinfo-service
+
+  news-crawler-service:
+    <<: *business-service
+    build:
+      args:
+        SERVICE_NAME: news-crawler-service
 
   # External Dependencies
   rabbitmq:
@@ -109,6 +118,3 @@ services:
 networks:
   hermes-network:
     driver: bridge
-
-volumes:
-  postgres_data:
