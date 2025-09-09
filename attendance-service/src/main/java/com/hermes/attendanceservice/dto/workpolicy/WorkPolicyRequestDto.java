@@ -43,6 +43,8 @@ public class WorkPolicyRequestDto {
     
     private LocalTime startTimeEnd; // 시차 근무용 (시차 근무시 필수, 다른 근무 타입시 nullable)
     
+    private LocalTime endTime; // 실제 퇴근 시간
+    
     @NotNull(message = "근무 시간은 필수입니다.")
     @Min(value = 0, message = "근무 시간은 0 이상이어야 합니다.")
     @Max(value = 24, message = "근무 시간은 24 이하여야 합니다.")
@@ -59,6 +61,9 @@ public class WorkPolicyRequestDto {
     
     @NotNull(message = "휴게 시작 시간은 필수입니다.")
     private LocalTime breakStartTime;
+    
+    @NotNull(message = "휴게 종료 시간은 필수입니다.")
+    private LocalTime breakEndTime;
     
     private LocalTime avgWorkTime; // 선택 근무 용도
     

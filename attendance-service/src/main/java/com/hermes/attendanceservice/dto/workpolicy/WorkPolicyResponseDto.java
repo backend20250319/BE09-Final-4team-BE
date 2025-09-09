@@ -26,6 +26,7 @@ public class WorkPolicyResponseDto {
     private Integer weeklyWorkingDays;
     private LocalTime startTime;
     private LocalTime startTimeEnd;
+    private LocalTime endTime; // 실제 퇴근 시간
     private Integer workHours;
     private Integer workMinutes;
     private LocalTime coreTimeStart;
@@ -63,6 +64,7 @@ public class WorkPolicyResponseDto {
                 .weeklyWorkingDays(workPolicy.getWeeklyWorkingDays())
                 .startTime(workPolicy.getStartTime())
                 .startTimeEnd(workPolicy.getStartTimeEnd())
+                .endTime(workPolicy.getEndTime())
                 .workHours(workPolicy.getWorkHours())
                 .workMinutes(workPolicy.getWorkMinutes())
                 .coreTimeStart(workPolicy.getCoreTimeStart())

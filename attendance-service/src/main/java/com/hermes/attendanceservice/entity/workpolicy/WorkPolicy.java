@@ -56,6 +56,9 @@ public class WorkPolicy {
     @Column(name = "start_time_end")
     private LocalTime startTimeEnd; // 출근 시간 범위 끝(시차 근무시 필수, 다른 근무 타입시 nullable)
     
+    @Column(name = "end_time")
+    private LocalTime endTime; // 퇴근 시간
+    
     @Column(name = "work_hours", nullable = false)
     private Integer workHours; // 1일근무 시간 (시간 단위)
     
@@ -125,78 +128,41 @@ public class WorkPolicy {
         updatedAt = Instant.now();
     }
     
-    /**
-     * 선택 근무인지 확인
-     */
+    public Integer getTotalWorkMinutes() {
+        int hours = workHours != null ? workHours : 0;
+        int minutes = workMinutes != null ? workMinutes : 0;
+        return hours * 60 + minutes;
+    }
+    
     public boolean isOptionalWork() {
         return type == WorkType.OPTIONAL;
     }
     
-    /**
-     * 교대 근무인지 확인
-     */
     public boolean isShiftWork() {
         return type == WorkType.SHIFT;
     }
     
-    /**
-     * 시차 근무인지 확인
-     */
     public boolean isFlexibleWork() {
         return type == WorkType.FLEXIBLE;
     }
     
-    /**
-     * 고정 근무인지 확인
-     */
     public boolean isFixedWork() {
         return type == WorkType.FIXED;
     }
     
-    /**
-     * 일근무 시간을 분단위로 반환
-     */
-    public int getTotalWorkMinutes() {
-        return (workHours * 60) + workMinutes;
-    }
-    
-    /**
-     * 노동법준수여부 확인 (1개월 160시간, 주단위기준)
-     */
     public boolean isCompliantWithLaborLaw() {
         if (workCycle == WorkCycle.ONE_MONTH) {
-            // 1개월 기준: 160시간 = 9600분
-            return totalRequiredMinutes <= 9600;
-        } else {
-            // 주기준: 40시간 = 2400분
-            return totalRequiredMinutes <= 2400;
+            return getTotalWorkMinutes() <= 9600;
         }
+        return getTotalWorkMinutes() <= 2400;
     }
     
-    /**
-     * 시차 근무 설정 유효성 검증
-     * 시차 근무인 경우 startTime과 startTimeEnd가 모두 필수
-     */
     public boolean isValidFlexibleWorkSettings() {
-        if (isFlexibleWork()) {
-            return startTime != null && startTimeEnd != null;
-        }
-        return true; // 시차 근무가 아닌 경우 항상 유효
-    }
-    
-    /**
-     * 시차 근무 출근 가능 시간대 설정 여부 확인
-     */
-    public boolean hasFlexibleWorkTimeRange() {
         return isFlexibleWork() && startTime != null && startTimeEnd != null;
     }
     
-    /**
-     * 시차 근무 출근 가능 시간대 유효성 검증
-     * startTime이 startTimeEnd보다 이전이어야 함
-     */
-    public boolean isValidFlexibleWorkTimeRange() {
-        if (!hasFlexibleWorkTimeRange()) {
+    public boolean isValidStartTimeRange() {
+        if (!isFlexibleWork() || startTime == null || startTimeEnd == null) {
             return false;
         }
         return startTime.isBefore(startTimeEnd);

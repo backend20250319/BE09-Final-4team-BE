@@ -35,6 +35,7 @@ public class WorkPolicyUpdateDto {
     
     private LocalTime startTime;
     private LocalTime startTimeEnd;
+    private LocalTime endTime; // 실제 퇴근 시간
     
     @Min(value = 0, message = "근무 시간은 0 이상이어야 합니다.")
     @Max(value = 24, message = "근무 시간은 24 이하여야 합니다.")
@@ -47,6 +48,7 @@ public class WorkPolicyUpdateDto {
     private LocalTime coreTimeStart;
     private LocalTime coreTimeEnd;
     private LocalTime breakStartTime;
+    private LocalTime breakEndTime;
     private LocalTime avgWorkTime;
     
     @Min(value = 1, message = "총 필요 분은 1 이상이어야 합니다.")

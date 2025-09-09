@@ -6,6 +6,7 @@ import com.hermes.attendanceservice.dto.workpolicy.WorkPolicyResponseDto;
 import com.hermes.attendanceservice.entity.workpolicy.WorkPolicy;
 import com.hermes.attendanceservice.entity.workpolicy.WorkType;
 import com.hermes.attendanceservice.repository.workpolicy.WorkPolicyRepository;
+import com.hermes.attendanceservice.service.workpolicy.WorkPolicyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +30,7 @@ import java.util.List;
 public class WorkPolicyController {
     
     private final WorkPolicyRepository workPolicyRepository;
+    private final WorkPolicyService workPolicyService;
     
     @Operation(summary = "근무 정책 생성", description = "새로운 근무 정책을 생성합니다.")
     @ApiResponses(value = {
@@ -42,40 +44,9 @@ public class WorkPolicyController {
     public ApiResult<WorkPolicyResponseDto> createWorkPolicy(
             @Parameter(description = "근무 정책 생성 정보") @Valid @RequestBody WorkPolicyRequestDto requestDto) {
         try {
-            log.info("Creating work policy: {}", requestDto.getName());
+            log.info("Creating work policy via service: {}", requestDto.getName());
             
-            // OPTIONAL 타입일 때 코어 타임 검증
-            if (requestDto.getType() == WorkType.OPTIONAL) {
-                if (requestDto.getCoreTimeStart() == null || requestDto.getCoreTimeEnd() == null) {
-                    return ApiResult.failure("선택 근무(OPTIONAL) 타입은 코어 타임 시작/종료 시간이 필수입니다.");
-                }
-                if (requestDto.getCoreTimeStart().isAfter(requestDto.getCoreTimeEnd())) {
-                    return ApiResult.failure("코어 타임 시작 시간은 종료 시간보다 빨라야 합니다.");
-                }
-            }
-            
-            WorkPolicy workPolicy = WorkPolicy.builder()
-                    .name(requestDto.getName())
-                    .type(requestDto.getType())
-                    .workCycle(requestDto.getWorkCycle())
-                    .startDayOfWeek(requestDto.getStartDayOfWeek())
-                    .workCycleStartDay(requestDto.getWorkCycleStartDay())
-                    .workDays(requestDto.getWorkDays())
-                    .weeklyWorkingDays(requestDto.getWeeklyWorkingDays())
-                    .startTime(requestDto.getStartTime())
-                    .startTimeEnd(requestDto.getStartTimeEnd())
-                    .workHours(requestDto.getWorkHours())
-                    .workMinutes(requestDto.getWorkMinutes())
-                    .coreTimeStart(requestDto.getCoreTimeStart())
-                    .coreTimeEnd(requestDto.getCoreTimeEnd())
-                    .breakStartTime(requestDto.getBreakStartTime())
-                    .avgWorkTime(requestDto.getAvgWorkTime())
-                    .totalRequiredMinutes(requestDto.getTotalRequiredMinutes())
-                    .build();
-            
-            WorkPolicy savedWorkPolicy = workPolicyRepository.save(workPolicy);
-            WorkPolicyResponseDto response = WorkPolicyResponseDto.from(savedWorkPolicy);
-            
+            WorkPolicyResponseDto response = workPolicyService.createWorkPolicy(requestDto);
             return ApiResult.success("근무 정책이 성공적으로 생성되었습니다.", response);
             
         } catch (Exception e) {
@@ -133,6 +104,29 @@ public class WorkPolicyController {
         } catch (Exception e) {
             log.error("Error getting work policy by id: {}", workPolicyId, e);
             return ApiResult.failure("근무 정책 조회에 실패했습니다: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "근무 정책 수정", description = "기존 근무 정책을 수정합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "근무 정책 수정 성공",
+            content = @Content(schema = @Schema(implementation = WorkPolicyResponseDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "403", description = "권한 없음"),
+        @ApiResponse(responseCode = "404", description = "근무 정책을 찾을 수 없음")
+    })
+    @PutMapping("/{workPolicyId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResult<WorkPolicyResponseDto> updateWorkPolicy(
+            @Parameter(description = "근무 정책 ID") @PathVariable Long workPolicyId,
+            @Parameter(description = "근무 정책 수정 정보") @Valid @RequestBody com.hermes.attendanceservice.dto.workpolicy.WorkPolicyUpdateDto updateDto) {
+        try {
+            log.info("Updating work policy via service: {}", workPolicyId);
+            WorkPolicyResponseDto response = workPolicyService.updateWorkPolicy(workPolicyId, updateDto);
+            return ApiResult.success("근무 정책이 성공적으로 수정되었습니다.", response);
+        } catch (Exception e) {
+            log.error("Error updating work policy: {}", workPolicyId, e);
+            return ApiResult.failure("근무 정책 수정에 실패했습니다: " + e.getMessage());
         }
     }
 } 

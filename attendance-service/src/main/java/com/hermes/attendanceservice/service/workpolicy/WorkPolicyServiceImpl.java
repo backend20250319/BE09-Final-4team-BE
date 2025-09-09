@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,15 +32,14 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
     public WorkPolicyResponseDto createWorkPolicy(WorkPolicyRequestDto requestDto) {
         log.info("근무 정책 생성 시작: {}", requestDto.getName());
         
-        // 중복 이름 검증
         if (workPolicyRepository.existsByName(requestDto.getName())) {
             throw new IllegalArgumentException("이미 존재하는 근무 정책 이름입니다: " + requestDto.getName());
         }
         
-        // 시차 근무 설정 검증
         validateFlexibleWorkSettings(requestDto);
+        validateAndComputeBreakMinutes(requestDto);
+        long breakMinutes = Duration.between(requestDto.getBreakStartTime(), requestDto.getBreakEndTime()).toMinutes();
         
-        // WorkPolicy 엔티티 생성
         WorkPolicy workPolicy = WorkPolicy.builder()
                 .name(requestDto.getName())
                 .type(requestDto.getType())
@@ -50,11 +50,14 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
                 .weeklyWorkingDays(requestDto.getWeeklyWorkingDays())
                 .startTime(requestDto.getStartTime())
                 .startTimeEnd(requestDto.getStartTimeEnd())
+                .endTime(requestDto.getEndTime())
                 .workHours(requestDto.getWorkHours())
                 .workMinutes(requestDto.getWorkMinutes())
                 .coreTimeStart(requestDto.getCoreTimeStart())
                 .coreTimeEnd(requestDto.getCoreTimeEnd())
                 .breakStartTime(requestDto.getBreakStartTime())
+                .breakEndTime(requestDto.getBreakEndTime())
+                .breakMinutes((int) breakMinutes)
                 .avgWorkTime(requestDto.getAvgWorkTime())
                 .totalRequiredMinutes(requestDto.getTotalRequiredMinutes())
                 .build();
@@ -62,7 +65,6 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
         WorkPolicy savedPolicy = workPolicyRepository.save(workPolicy);
         log.info("근무 정책 생성 완료: ID={}, 이름={}", savedPolicy.getId(), savedPolicy.getName());
         
-        // 휴가 목록 생성
         if (requestDto.getAnnualLeaves() != null && !requestDto.getAnnualLeaves().isEmpty()) {
             for (AnnualLeaveRequestDto annualLeaveDto : requestDto.getAnnualLeaves()) {
                 annualLeaveService.createAnnualLeave(savedPolicy.getId(), annualLeaveDto);
@@ -101,7 +103,6 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
     public Page<WorkPolicyListResponseDto> getWorkPolicyList(WorkPolicySearchDto searchDto) {
         log.info("근무 정책 목록 조회 시작: {}", searchDto);
         
-        // 페이징 및 정렬 설정
         Sort sort = Sort.by(
                 searchDto.getSortDirection().equalsIgnoreCase("DESC") ? 
                 Sort.Direction.DESC : Sort.Direction.ASC, 
@@ -109,7 +110,6 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
         );
         Pageable pageable = PageRequest.of(searchDto.getPage(), searchDto.getSize(), sort);
         
-        // 검색 조건에 따른 조회
         Page<WorkPolicy> workPolicyPage = workPolicyRepository.findBySearchConditions(
                 searchDto.getName(),
                 searchDto.getType(),
@@ -118,8 +118,7 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
         );
         
         Page<WorkPolicyListResponseDto> responsePage = workPolicyPage.map(this::convertToListResponseDto);
-        
-        log.info("근무 정책 목록 조회 완료: 총 {}개", responsePage.getTotalElements());
+        log.info("근무 정책 목록 조회 완료: 총 {}건", responsePage.getTotalElements());
         return responsePage;
     }
     
@@ -130,17 +129,9 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
         WorkPolicy workPolicy = workPolicyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 근무 정책입니다: " + id));
         
-        // 시차 근무 설정 검증
         validateFlexibleWorkSettingsForUpdate(workPolicy, updateDto);
+        validateAndComputeBreakMinutes(updateDto, workPolicy);
         
-        // 이름 변경시 중복 검증
-        if (updateDto.getName() != null && !updateDto.getName().equals(workPolicy.getName())) {
-            if (workPolicyRepository.existsByName(updateDto.getName())) {
-                throw new IllegalArgumentException("이미 존재하는 근무 정책 이름입니다: " + updateDto.getName());
-            }
-        }
-        
-        // 업데이트 가능한 필드들 수정
         if (updateDto.getName() != null) {
             workPolicy.setName(updateDto.getName());
         }
@@ -168,6 +159,9 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
         if (updateDto.getStartTimeEnd() != null) {
             workPolicy.setStartTimeEnd(updateDto.getStartTimeEnd());
         }
+        if (updateDto.getEndTime() != null) {
+            workPolicy.setEndTime(updateDto.getEndTime());
+        }
         if (updateDto.getWorkHours() != null) {
             workPolicy.setWorkHours(updateDto.getWorkHours());
         }
@@ -183,26 +177,14 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
         if (updateDto.getBreakStartTime() != null) {
             workPolicy.setBreakStartTime(updateDto.getBreakStartTime());
         }
+        if (updateDto.getBreakEndTime() != null) {
+            workPolicy.setBreakEndTime(updateDto.getBreakEndTime());
+        }
         if (updateDto.getAvgWorkTime() != null) {
             workPolicy.setAvgWorkTime(updateDto.getAvgWorkTime());
         }
         if (updateDto.getTotalRequiredMinutes() != null) {
             workPolicy.setTotalRequiredMinutes(updateDto.getTotalRequiredMinutes());
-        }
-        
-        // 휴가 목록 업데이트 (기존 휴가 삭제 후 새로 생성)
-        if (updateDto.getAnnualLeaves() != null) {
-            // 기존 휴가 목록 조회 후 삭제
-            List<AnnualLeaveResponseDto> existingLeaves = annualLeaveService.getAnnualLeavesByWorkPolicyId(id);
-            
-            for (AnnualLeaveResponseDto leaveDto : existingLeaves) {
-                annualLeaveService.deleteAnnualLeave(leaveDto.getId());
-            }
-            
-            // 새로운 휴가 목록 생성
-            for (AnnualLeaveRequestDto annualLeaveDto : updateDto.getAnnualLeaves()) {
-                annualLeaveService.createAnnualLeave(id, annualLeaveDto);
-            }
         }
         
         WorkPolicy updatedPolicy = workPolicyRepository.save(workPolicy);
@@ -214,10 +196,8 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
     @Override
     public void deleteWorkPolicy(Long id) {
         log.info("근무 정책 삭제 시작: ID={}", id);
-        
         WorkPolicy workPolicy = workPolicyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 근무 정책입니다: " + id));
-        
         workPolicyRepository.delete(workPolicy);
         log.info("근무 정책 삭제 완료: ID={}, 이름={}", id, workPolicy.getName());
     }
@@ -225,28 +205,20 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
     @Override
     public boolean checkLaborLawCompliance(WorkPolicyRequestDto requestDto) {
         log.info("노동법 준수 여부 확인 시작: {}", requestDto.getName());
-        
         WorkCycle workCycle = requestDto.getWorkCycle();
         Integer totalRequiredMinutes = requestDto.getTotalRequiredMinutes();
-        
         boolean isCompliant;
         if (workCycle == WorkCycle.ONE_MONTH) {
-            // 1개월 기준: 160시간 = 9600분
             isCompliant = totalRequiredMinutes <= 9600;
         } else {
-            // 주기준: 40시간 = 2400분
             isCompliant = totalRequiredMinutes <= 2400;
         }
-        
         log.info("노동법 준수 여부 확인 완료: {} ({}분 {}기준)", 
                 isCompliant, totalRequiredMinutes, workCycle);
-        
         return isCompliant;
     }
     
-    /**
-     * 시차 근무 설정 검증 (생성 시)
-     */
+    /** FLEXIBLE 검증 (생성 시) */
     private void validateFlexibleWorkSettings(WorkPolicyRequestDto requestDto) {
         if (requestDto.getType() == com.hermes.attendanceservice.entity.workpolicy.WorkType.FLEXIBLE) {
             if (requestDto.getStartTime() == null) {
@@ -262,17 +234,12 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
         }
     }
     
-    /**
-     * 시차 근무 설정 검증 (수정 시)
-     */
+    /** FLEXIBLE 검증 (수정 시) */
     private void validateFlexibleWorkSettingsForUpdate(WorkPolicy workPolicy, WorkPolicyUpdateDto updateDto) {
-        // 근무 타입이 시차 근무로 변경되거나, 이미 시차 근무인 경우 검증
         if (updateDto.getType() == com.hermes.attendanceservice.entity.workpolicy.WorkType.FLEXIBLE || 
             workPolicy.getType() == com.hermes.attendanceservice.entity.workpolicy.WorkType.FLEXIBLE) {
-            
             LocalTime startTime = updateDto.getStartTime() != null ? updateDto.getStartTime() : workPolicy.getStartTime();
             LocalTime startTimeEnd = updateDto.getStartTimeEnd() != null ? updateDto.getStartTimeEnd() : workPolicy.getStartTimeEnd();
-            
             if (startTime == null) {
                 throw new IllegalArgumentException("시차 근무에서는 출근 시작 시간(startTime)이 필수입니다.");
             }
@@ -285,7 +252,30 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
         }
     }
     
-    // DTO 변환메서드들
+    /** 휴게 시간 검증 및 계산 (생성) */
+    private void validateAndComputeBreakMinutes(WorkPolicyRequestDto requestDto) {
+        if (requestDto.getBreakStartTime() == null || requestDto.getBreakEndTime() == null) {
+            throw new IllegalArgumentException("휴게 시작/종료 시간은 모두 필수입니다.");
+        }
+        if (!requestDto.getBreakEndTime().isAfter(requestDto.getBreakStartTime())) {
+            throw new IllegalArgumentException("휴게 종료 시간은 시작 시간보다 이후여야 합니다.");
+        }
+    }
+    
+    /** 휴게 시간 검증 및 계산 (수정) */
+    private void validateAndComputeBreakMinutes(WorkPolicyUpdateDto updateDto, WorkPolicy current) {
+        LocalTime start = updateDto.getBreakStartTime() != null ? updateDto.getBreakStartTime() : current.getBreakStartTime();
+        LocalTime end = updateDto.getBreakEndTime() != null ? updateDto.getBreakEndTime() : current.getBreakEndTime();
+        if (start == null || end == null) {
+            return;
+        }
+        if (!end.isAfter(start)) {
+            throw new IllegalArgumentException("휴게 종료 시간은 시작 시간보다 이후여야 합니다.");
+        }
+        long minutes = Duration.between(start, end).toMinutes();
+        current.setBreakMinutes((int) minutes);
+    }
+    
     private WorkPolicyResponseDto convertToResponseDto(WorkPolicy workPolicy) {
         return WorkPolicyResponseDto.builder()
                 .id(workPolicy.getId())
@@ -298,11 +288,14 @@ public class WorkPolicyServiceImpl implements WorkPolicyService {
                 .weeklyWorkingDays(workPolicy.getWeeklyWorkingDays())
                 .startTime(workPolicy.getStartTime())
                 .startTimeEnd(workPolicy.getStartTimeEnd())
+                .endTime(workPolicy.getEndTime())
                 .workHours(workPolicy.getWorkHours())
                 .workMinutes(workPolicy.getWorkMinutes())
                 .coreTimeStart(workPolicy.getCoreTimeStart())
                 .coreTimeEnd(workPolicy.getCoreTimeEnd())
                 .breakStartTime(workPolicy.getBreakStartTime())
+                .breakEndTime(workPolicy.getBreakEndTime())
+                .breakMinutes(workPolicy.getBreakMinutes())
                 .avgWorkTime(workPolicy.getAvgWorkTime())
                 .totalRequiredMinutes(workPolicy.getTotalRequiredMinutes())
                 .annualLeaves(annualLeaveService.getAnnualLeavesByWorkPolicyId(workPolicy.getId()))

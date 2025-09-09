@@ -23,8 +23,9 @@ public class WorkPolicyDto {
     private List<String> workDays; // 근무 요일 리스트
     private List<String> holidayDays; // 휴일 요일 리스트 (SATURDAY, SUNDAY 등)
     private Integer weeklyWorkingDays;
-    private LocalTime startTime;
-    private LocalTime startTimeEnd;
+    private LocalTime startTime; // 근무 시작 시간
+    private LocalTime startTimeEnd; // 근무 시작 시간 종료  
+    private LocalTime endTime; // 근무 종료 시간
     private Integer workHours;
     private Integer workMinutes;
     private LocalTime coreTimeStart;
