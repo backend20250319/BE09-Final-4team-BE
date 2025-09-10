@@ -259,17 +259,17 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "사용자 정보 조회 성공"),
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
-    public ResponseEntity<Map<String, Object>> getUserSimple(@PathVariable Long userId) {
+    public ResponseEntity<ApiResult<Map<String, Object>>> getUserSimple(@PathVariable Long userId) {
         log.info("간단한 사용자 정보 조회 요청: userId={}", userId);
         try {
             UserResponseDto userDto = userService.getUserById(userId);
             Map<String, Object> simpleUser = new HashMap<>();
             simpleUser.put("id", userDto.getId());
             simpleUser.put("workPolicyId", userDto.getWorkPolicyId());
-            return ResponseEntity.ok(simpleUser);
+            return ResponseEntity.ok(ApiResult.success("간단한 사용자 정보 조회 성공", simpleUser));
         } catch (Exception e) {
             log.error("간단한 사용자 정보 조회 실패: userId={}, error={}", userId, e.getMessage());
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(ApiResult.failure("사용자를 찾을 수 없습니다: " + e.getMessage()));
         }
     }
 

@@ -43,6 +43,11 @@ public class LeaveService {
         double totalDays = totalHours / WORK_HOURS_PER_DAY;
         int requestedDays = (int) Math.ceil(totalDays); // 올림 처리
         
+        // 2-1. 주말만 선택한 경우 예외 처리
+        if (totalHours == 0 || requestedDays == 0) {
+            throw new IllegalArgumentException("선택한 날짜에 근무일이 없습니다. 평일을 선택해주세요.");
+        }
+        
         // 3. 연차 잔액 확인 및 차감
         Integer remainingLeave = employeeLeaveBalanceService.getRemainingLeave(createDto.getEmployeeId(), createDto.getLeaveType());
         if (remainingLeave < requestedDays) {
@@ -138,13 +143,19 @@ public class LeaveService {
     }
     
     /**
-     * 총 휴가 시간 계산
+     * 총 휴가 시간 계산 (주말 제외)
      */
     private double calculateTotalHours(CreateLeaveRequestDto createDto) {
         long daysBetween = ChronoUnit.DAYS.between(createDto.getStartDate(), createDto.getEndDate()) + 1;
         
         if (daysBetween == 1) {
-            // 하루 휴가인 경우 시간 계산
+            // 하루 휴가인 경우 - 주말 체크
+            LocalDate singleDate = createDto.getStartDate();
+            if (isWeekend(singleDate)) {
+                return 0; // 주말은 휴가 시간으로 계산하지 않음
+            }
+            
+            // 시간 계산
             if (createDto.getStartTime() != null && createDto.getEndTime() != null) {
                 Duration duration = Duration.between(createDto.getStartTime(), createDto.getEndTime());
                 return duration.toHours() + (duration.toMinutes() % 60) / 60.0;
@@ -152,28 +163,41 @@ public class LeaveService {
                 return WORK_HOURS_PER_DAY;
             }
         } else {
-            // 여러 날 휴가인 경우
+            // 여러 날 휴가인 경우 - 주말 제외하고 계산
             double totalHours = 0;
             
             for (int i = 0; i < daysBetween; i++) {
                 LocalDate currentDate = createDto.getStartDate().plusDays(i);
                 
+                // 주말은 건너뛰기
+                if (isWeekend(currentDate)) {
+                    continue;
+                }
+                
                 if (i == 0 && createDto.getStartTime() != null) {
-                    // 첫날
+                    // 첫날 (주말이 아닌 경우만)
                     Duration duration = Duration.between(createDto.getStartTime(), WORK_END_TIME);
                     totalHours += duration.toHours() + (duration.toMinutes() % 60) / 60.0;
                 } else if (i == daysBetween - 1 && createDto.getEndTime() != null) {
-                    // 마지막날
+                    // 마지막날 (주말이 아닌 경우만)
                     Duration duration = Duration.between(WORK_START_TIME, createDto.getEndTime());
                     totalHours += duration.toHours() + (duration.toMinutes() % 60) / 60.0;
                 } else {
-                    // 중간 날들
+                    // 중간 날들 (주말이 아닌 경우만)
                     totalHours += WORK_HOURS_PER_DAY;
                 }
             }
             
             return totalHours;
         }
+    }
+    
+    /**
+     * 주말(토요일, 일요일) 여부 확인
+     */
+    private boolean isWeekend(LocalDate date) {
+        java.time.DayOfWeek dayOfWeek = date.getDayOfWeek();
+        return dayOfWeek == java.time.DayOfWeek.SATURDAY || dayOfWeek == java.time.DayOfWeek.SUNDAY;
     }
     
     /**

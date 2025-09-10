@@ -17,7 +17,7 @@ public class SecurityConfig extends BaseSecurityConfig {
         AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth
     ) {
         // BaseSecurityConfig에서 이미 /v3/api-docs/**와 /swagger-ui/**를 허용하므로
-        // attendance-service API들만 추가로 허용
-        auth.requestMatchers("/api/**").permitAll();       // attendance-service API들
+        // attendance-service API들은 인증된 사용자만 접근 가능
+        auth.requestMatchers("/api/**").authenticated();       // attendance-service API들
     }
 }

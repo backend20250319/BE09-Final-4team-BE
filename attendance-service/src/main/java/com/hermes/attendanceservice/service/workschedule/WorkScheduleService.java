@@ -23,10 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import com.hermes.attendanceservice.dto.workpolicy.WorkPolicyResponseDto;
@@ -173,20 +175,19 @@ public class WorkScheduleService {
             
             if (workPolicyId == null) {
                 log.warn("User {} has no work policy assigned (could not resolve workPolicyId)", userId);
-                return UserWorkPolicyDto.builder()
-                        .workPolicyId(null)
-                        .workPolicy(null)
-                        .build();
+                throw new RuntimeException("사용자에게 근무정책이 할당되지 않았습니다. 관리자에게 문의하세요.");
             }
             
             // 3. 근무 정책 정보 조회 (WorkPolicyService 사용)
             WorkPolicyResponseDto workPolicyResponse = workPolicyService.getWorkPolicyById(workPolicyId);
             
-            // 4. WorkPolicyResponseDto를 WorkPolicyDto로 변환
-            WorkPolicyDto workPolicy = null;
-            if (workPolicyResponse != null) {
-                workPolicy = convertToWorkPolicyDto(workPolicyResponse);
+            if (workPolicyResponse == null) {
+                log.warn("Work policy not found for workPolicyId: {}", workPolicyId);
+                throw new RuntimeException("근무정책을 찾을 수 없습니다 (ID: " + workPolicyId + "). 관리자에게 문의하세요.");
             }
+            
+            // 4. WorkPolicyResponseDto를 WorkPolicyDto로 변환
+            WorkPolicyDto workPolicy = convertToWorkPolicyDto(workPolicyResponse);
             
             return UserWorkPolicyDto.builder()
                     .workPolicyId(workPolicyId)
@@ -419,28 +420,57 @@ public class WorkScheduleService {
             
             WorkPolicyDto workPolicy = userWorkPolicy.getWorkPolicy();
             
-            // 2. 기존 고정 스케줄 삭제 (해당 기간)
-            deleteExistingFixedSchedules(userId, startDate, endDate);
+            // 2. 기존 모든 스케줄 삭제 (해당 기간)
+            deleteExistingSchedules(userId, startDate, endDate);
             
-            // 3. 근무일 스케줄 생성
-            List<Schedule> workSchedules = createWorkDaySchedules(userId, workPolicy, userWorkPolicy.getWorkPolicyId(), startDate, endDate);
-            
-            // 4. 휴식 시간 스케줄 생성
-            List<Schedule> breakSchedules = createBreakTimeSchedules(userId, workPolicy, userWorkPolicy.getWorkPolicyId(), startDate, endDate);
-            
-            // 5. 휴일 스케줄 생성
-            List<Schedule> holidaySchedules = createHolidaySchedules(userId, workPolicy, userWorkPolicy.getWorkPolicyId(), startDate, endDate);
-            
-            // 6. 모든 스케줄 저장
+            // 3. 근무 타입별 스케줄 생성
             List<Schedule> allSchedules = new ArrayList<>();
+            
+            // 근무 타입에 따른 분기 처리
+            switch (workPolicy.getType()) {
+                case "FLEXIBLE":
+                    // 선택근무: 코어타임 스케줄만 생성
+                    List<Schedule> coreTimeSchedules = createCoreTimeSchedules(userId, workPolicy, userWorkPolicy.getWorkPolicyId(), startDate, endDate);
+                    allSchedules.addAll(coreTimeSchedules);
+                    log.info("선택근무 타입: 코어타임 스케줄 {} 개 생성", coreTimeSchedules.size());
+                    break;
+                    
+                case "SHIFT":
+                    // 교대근무: 근무시간 + 휴게시간 블록 (자유 이동 가능)
+                    List<Schedule> shiftWorkSchedules = createShiftWorkSchedules(userId, workPolicy, userWorkPolicy.getWorkPolicyId(), startDate, endDate);
+                    List<Schedule> shiftBreakSchedules = createShiftBreakSchedules(userId, workPolicy, userWorkPolicy.getWorkPolicyId(), startDate, endDate);
+                    allSchedules.addAll(shiftWorkSchedules);
+                    allSchedules.addAll(shiftBreakSchedules);
+                    log.info("교대근무 타입: 근무 {} 개, 휴게 {} 개 스케줄 생성", shiftWorkSchedules.size(), shiftBreakSchedules.size());
+                    break;
+                    
+                case "STAGGERED":
+                    // 시차근무: 근무시간 + 휴게시간 블록 (startTime-startTimeEnd 범위 내에서만 이동)
+                    List<Schedule> staggeredWorkSchedules = createStaggeredWorkSchedules(userId, workPolicy, userWorkPolicy.getWorkPolicyId(), startDate, endDate);
+                    List<Schedule> staggeredBreakSchedules = createStaggeredBreakSchedules(userId, workPolicy, userWorkPolicy.getWorkPolicyId(), startDate, endDate);
+                    allSchedules.addAll(staggeredWorkSchedules);
+                    allSchedules.addAll(staggeredBreakSchedules);
+                    log.info("시차근무 타입: 근무 {} 개, 휴게 {} 개 스케줄 생성", staggeredWorkSchedules.size(), staggeredBreakSchedules.size());
+                    break;
+                    
+                default:
+                    // 기본 근무 타입 (FIXED 등): 기존 로직 유지
+                    List<Schedule> workSchedules = createWorkDaySchedules(userId, workPolicy, userWorkPolicy.getWorkPolicyId(), startDate, endDate);
+                    List<Schedule> breakSchedules = createBreakTimeSchedules(userId, workPolicy, userWorkPolicy.getWorkPolicyId(), startDate, endDate);
             allSchedules.addAll(workSchedules);
             allSchedules.addAll(breakSchedules);
+                    log.info("기본 근무 타입: 근무 {} 개, 휴게 {} 개 스케줄 생성", workSchedules.size(), breakSchedules.size());
+                    break;
+            }
+            
+            // 4. 휴일 스케줄 생성 (모든 타입 공통)
+            List<Schedule> holidaySchedules = createHolidaySchedules(userId, workPolicy, userWorkPolicy.getWorkPolicyId(), startDate, endDate);
             allSchedules.addAll(holidaySchedules);
             
             List<Schedule> savedSchedules = scheduleRepository.saveAll(allSchedules);
             
-            log.info("Created {} fixed schedules for userId: {} from {} to {}", 
-                    savedSchedules.size(), userId, startDate, endDate);
+            log.info("Created {} fixed schedules for userId: {} from {} to {} (Work Type: {})", 
+                    savedSchedules.size(), userId, startDate, endDate, workPolicy.getType());
             
             return savedSchedules.stream()
                     .map(this::convertToResponseDto)
@@ -448,7 +478,7 @@ public class WorkScheduleService {
                     
         } catch (Exception e) {
             log.error("Error creating fixed schedules for userId: {} from {} to {}", userId, startDate, endDate, e);
-            throw new RuntimeException("Failed to create fixed schedules", e);
+            throw new RuntimeException("Fixed schedule creation failed", e);
         }
     }
 
@@ -472,31 +502,64 @@ public class WorkScheduleService {
             log.info("Applying work policy to schedule for userId: {}, workPolicyId: {}, period: {} to {}", 
                     userId, workPolicyId, startDate, endDate);
             
-            // 2. 기존 고정 스케줄 삭제 (해당 기간)
-            deleteExistingFixedSchedules(userId, startDate, endDate);
+            // 2. 기존 모든 스케줄 삭제 (해당 기간)
+            deleteExistingSchedules(userId, startDate, endDate);
             
-            // 3. 근무일 스케줄 생성 (출근시간, 퇴근시간, 근무시간)
-            List<Schedule> workSchedules = createWorkDaySchedules(userId, workPolicy, workPolicyId, startDate, endDate);
-            
-            // 4. 휴식 시간 스케줄 생성 (휴게시간)
-            List<Schedule> breakSchedules = createBreakTimeSchedules(userId, workPolicy, workPolicyId, startDate, endDate);
-            
-            // 5. 코어 타임 스케줄 생성 (선택 근무인 경우)
-            List<Schedule> coreTimeSchedules = createCoreTimeSchedules(userId, workPolicy, workPolicyId, startDate, endDate);
-            
-            // 6. 시차 근무 출근 가능 시간대 스케줄 생성 (시차 근무인 경우)
-            List<Schedule> flexibleSchedules = createFlexibleWorkTimeSchedules(userId, workPolicy, workPolicyId, startDate, endDate);
-            
-            // 7. 휴일 스케줄 생성 (휴일)
-            List<Schedule> holidaySchedules = createHolidaySchedules(userId, workPolicy, workPolicyId, startDate, endDate);
-            
-            // 8. 모든 스케줄 저장
+            // 3. 근무 타입별 스케줄 생성
             List<Schedule> allSchedules = new ArrayList<>();
-            allSchedules.addAll(workSchedules);
-            allSchedules.addAll(breakSchedules);
-            allSchedules.addAll(coreTimeSchedules);
-            allSchedules.addAll(flexibleSchedules);
+            
+            if ("FLEXIBLE".equals(workPolicy.getType())) {
+                // 시차 근무: startTime과 startTimeEnd 사이 랜덤 위치에 근무 블록 생성 + 휴게시간
+                log.debug("Creating flexible work schedules for FLEXIBLE work policy: userId={}", userId);
+                List<Schedule> flexibleWorkSchedules = createFlexibleWorkSchedules(userId, workPolicy, workPolicyId, startDate, endDate);
+                List<Schedule> flexibleBreakSchedules = createFlexibleBreakTimeSchedules(userId, workPolicy, workPolicyId, startDate, endDate);
+                
+                allSchedules.addAll(flexibleWorkSchedules);
+                allSchedules.addAll(flexibleBreakSchedules);
+                log.debug("Created {} flexible work schedules and {} break schedules for FLEXIBLE work", 
+                        flexibleWorkSchedules.size(), flexibleBreakSchedules.size());
+            } else if ("OPTIONAL".equals(workPolicy.getType())) {
+                // 선택 근무: 코어타임만 생성
+                log.debug("Creating core time schedules for OPTIONAL work policy: userId={}", userId);
+                List<Schedule> coreTimeSchedules = createCoreTimeSchedules(userId, workPolicy, workPolicyId, startDate, endDate);
+                allSchedules.addAll(coreTimeSchedules);
+                log.debug("Created {} core time schedules for OPTIONAL work", coreTimeSchedules.size());
+            } else if ("SHIFT".equals(workPolicy.getType())) {
+                // 교대근무: 랜덤 위치 근무 스케줄과 가운데 휴게시간 생성
+                log.debug("Creating shift work schedules for SHIFT work policy: userId={}", userId);
+                List<Schedule> workSchedules = createShiftWorkSchedules(userId, workPolicy, workPolicyId, startDate, endDate);
+                List<Schedule> shiftBreakSchedules = createShiftBreakTimeSchedules(userId, workPolicy, workPolicyId, startDate, endDate);
+                
+                allSchedules.addAll(workSchedules);
+                allSchedules.addAll(shiftBreakSchedules);
+                log.debug("Created {} work schedules and {} break schedules for SHIFT work", 
+                        workSchedules.size(), shiftBreakSchedules.size());
+            } else {
+                // 기타 근무 타입: 기존 로직 유지
+                log.debug("Creating work day schedules for userId: {}", userId);
+                List<Schedule> workSchedules = createWorkDaySchedules(userId, workPolicy, workPolicyId, startDate, endDate);
+                log.debug("Created {} work day schedules", workSchedules.size());
+                
+                log.debug("Creating break time schedules for userId: {}", userId);
+                List<Schedule> breakSchedules = createBreakTimeSchedules(userId, workPolicy, workPolicyId, startDate, endDate);
+                log.debug("Created {} break time schedules", breakSchedules.size());
+                
+                log.debug("Creating flexible work time schedules for userId: {}", userId);
+                List<Schedule> flexibleSchedules = createFlexibleWorkTimeSchedules(userId, workPolicy, workPolicyId, startDate, endDate);
+                log.debug("Created {} flexible work time schedules", flexibleSchedules.size());
+                
+                allSchedules.addAll(workSchedules);
+                allSchedules.addAll(breakSchedules);
+                allSchedules.addAll(flexibleSchedules);
+            }
+            
+            // 4. 휴일 스케줄 생성 (모든 타입 공통)
+            log.debug("Creating holiday schedules for userId: {}", userId);
+            List<Schedule> holidaySchedules = createHolidaySchedules(userId, workPolicy, workPolicyId, startDate, endDate);
+            log.debug("Created {} holiday schedules", holidaySchedules.size());
             allSchedules.addAll(holidaySchedules);
+            
+            // 5. 모든 스케줄 저장
             
             List<Schedule> savedSchedules = scheduleRepository.saveAll(allSchedules);
             
@@ -514,20 +577,17 @@ public class WorkScheduleService {
     }
     
     /**
-     * 기존 고정 스케줄 삭제
+     * 기존 모든 스케줄 삭제 (고정 스케줄 + 사용자 생성 스케줄)
      */
-    private void deleteExistingFixedSchedules(Long userId, LocalDate startDate, LocalDate endDate) {
-        List<Schedule> existingFixedSchedules = scheduleRepository.findByUserIdAndDateRange(userId, "ACTIVE", startDate, endDate)
-                .stream()
-                .filter(schedule -> schedule.getIsFixed())
-                .collect(Collectors.toList());
+    private void deleteExistingSchedules(Long userId, LocalDate startDate, LocalDate endDate) {
+        List<Schedule> existingSchedules = scheduleRepository.findByUserIdAndDateRange(userId, "ACTIVE", startDate, endDate);
         
-        for (Schedule schedule : existingFixedSchedules) {
+        for (Schedule schedule : existingSchedules) {
             schedule.cancel();
         }
-        scheduleRepository.saveAll(existingFixedSchedules);
+        scheduleRepository.saveAll(existingSchedules);
         
-        log.info("Deleted {} existing fixed schedules for userId: {}", existingFixedSchedules.size(), userId);
+        log.info("Deleted {} existing schedules (fixed + user-created) for userId: {}", existingSchedules.size(), userId);
     }
     
     /**
@@ -536,8 +596,19 @@ public class WorkScheduleService {
     private List<Schedule> createWorkDaySchedules(Long userId, WorkPolicyDto workPolicy, Long workPolicyId, LocalDate startDate, LocalDate endDate) {
         List<Schedule> workSchedules = new ArrayList<>();
         
+        log.debug("Creating work day schedules: userId={}, workPolicyId={}, startDate={}, endDate={}", 
+                userId, workPolicyId, startDate, endDate);
+        
         if (workPolicy.getWorkDays() == null || workPolicy.getWorkDays().isEmpty()) {
-            return workSchedules;
+            log.warn("No work days defined in work policy, using default Mon-Fri: userId={}, workPolicyId={}", userId, workPolicyId);
+            // 기본 근무 요일을 월~금으로 설정
+            workPolicy.setWorkDays(List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"));
+        }
+        
+        if (workPolicy.getStartTime() == null) {
+            log.warn("No start time defined in work policy, using default 09:00: userId={}, workPolicyId={}", userId, workPolicyId);
+            // 기본 출근 시간을 09:00으로 설정 (선택 근무가 아닌 경우에만)
+            workPolicy.setStartTime(LocalTime.of(9, 0));
         }
         
         LocalDate currentDate = startDate;
@@ -558,33 +629,268 @@ public class WorkScheduleService {
                     }
                 }
                 
-                Schedule workSchedule = Schedule.builder()
-                        .userId(userId)
-                        .title(ScheduleType.WORK.getDescription())
-                        .description(String.format("출근: %s, 퇴근: %s", startTime, endTime))
-                        .startDate(currentDate)
-                        .endDate(currentDate)
-                        .startTime(startTime)
-                        .endTime(endTime)
-                        .scheduleType(ScheduleType.WORK)
-                        .color("#007bff")
-                        .isAllDay(false)
-                        .isRecurring(false)
-                        .workPolicyId(workPolicyId)
-                        .priority(1)
-                        .isFixed(true)
-                        .isEditable(false)
-                        .fixedReason("WORK_POLICY")
-                        .status("ACTIVE")
-                        .build();
+                if (endTime == null) {
+                    log.warn("Could not determine end time, using default 8 hours: userId={}, date={}, startTime={}", 
+                            userId, currentDate, startTime);
+                    // 기본 8시간 근무로 설정
+                    endTime = startTime.plusHours(8);
+                }
                 
-                workSchedules.add(workSchedule);
+                try {
+                    Schedule workSchedule = Schedule.builder()
+                            .userId(userId)
+                            .title(ScheduleType.WORK.getDescription())
+                            .description(String.format("출근: %s, 퇴근: %s", startTime, endTime))
+                            .startDate(currentDate)
+                            .endDate(currentDate)
+                            .startTime(startTime)
+                            .endTime(endTime)
+                            .scheduleType(ScheduleType.WORK)
+                            .color("#007bff")
+                            .isAllDay(false)
+                            .isRecurring(false)
+                            .workPolicyId(workPolicyId)
+                            .priority(1)
+                            .isFixed(true)
+                            .isEditable(false)
+                            .fixedReason("WORK_POLICY")
+                            .status("ACTIVE")
+                            .build();
+                    
+                    workSchedules.add(workSchedule);
+                    log.debug("Created work schedule: userId={}, date={}, time={}~{}", 
+                            userId, currentDate, startTime, endTime);
+                } catch (Exception e) {
+                    log.error("Error creating work schedule: userId={}, date={}, startTime={}, endTime={}", 
+                            userId, currentDate, startTime, endTime, e);
+                    throw new RuntimeException("근무 스케줄 생성 중 오류가 발생했습니다: " + e.getMessage(), e);
+                }
             }
             
             currentDate = currentDate.plusDays(1);
         }
         
         return workSchedules;
+    }
+
+    /**
+     * 시차 근무 스케줄 생성 (startTime과 startTimeEnd 사이 랜덤 배치)
+     */
+    private List<Schedule> createFlexibleWorkSchedules(Long userId, WorkPolicyDto workPolicy, Long workPolicyId, LocalDate startDate, LocalDate endDate) {
+        List<Schedule> flexibleSchedules = new ArrayList<>();
+        
+        log.debug("Creating flexible work schedules: userId={}, workPolicyId={}, startDate={}, endDate={}", 
+                userId, workPolicyId, startDate, endDate);
+        
+        if (workPolicy.getWorkDays() == null || workPolicy.getWorkDays().isEmpty()) {
+            log.warn("No work days defined in work policy, using default Mon-Fri: userId={}, workPolicyId={}", userId, workPolicyId);
+            // 기본 근무 요일을 월~금으로 설정
+            workPolicy.setWorkDays(List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"));
+        }
+        
+        // 시차 근무 시간 범위 확인
+        LocalTime startTime = workPolicy.getStartTime();
+        LocalTime startTimeEnd = workPolicy.getStartTimeEnd();
+        
+        if (startTime == null || startTimeEnd == null) {
+            log.warn("시차 근무 시간 범위가 설정되지 않음. 기본값 사용: userId={}, workPolicyId={}", userId, workPolicyId);
+            startTime = LocalTime.of(7, 0);  // 기본 시작 가능 시간: 07:00
+            startTimeEnd = LocalTime.of(10, 0); // 기본 시작 마감 시간: 10:00
+        }
+        
+        // 근무 시간 설정
+        int workHours = 8; // 기본 8시간 근무
+        if (workPolicy.getWorkHours() != null) {
+            workHours = workPolicy.getWorkHours();
+        }
+        
+        LocalDate currentDate = startDate;
+        
+        while (!currentDate.isAfter(endDate)) {
+            String dayOfWeek = currentDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH).toUpperCase();
+            
+            if (workPolicy.getWorkDays().contains(dayOfWeek)) {
+                try {
+                    // 날짜별 일관된 랜덤 시드 사용 (휴게시간과 동일한 근무 시간 보장)
+                    Random dayRandom = new Random(currentDate.toEpochDay());
+                    
+                    // startTime과 startTimeEnd 사이에서 랜덤한 시작 시간 선택
+                    long startMinutes = startTime.toSecondOfDay() / 60;
+                    long endMinutes = startTimeEnd.toSecondOfDay() / 60;
+                    
+                    if (endMinutes <= startMinutes) {
+                        log.warn("시차 근무 시간 범위가 잘못됨: startTime={}, startTimeEnd={}. 기본 범위 사용", startTime, startTimeEnd);
+                        startMinutes = 7 * 60; // 07:00
+                        endMinutes = 10 * 60;  // 10:00
+                    }
+                    
+                    // 랜덤 시작 시간 계산
+                    long randomMinutes = startMinutes + dayRandom.nextLong(endMinutes - startMinutes + 1);
+                    LocalTime randomStartTime = LocalTime.ofSecondOfDay(randomMinutes * 60);
+                    
+                    // 종료 시간 계산
+                    LocalTime endTime = randomStartTime.plusHours(workHours);
+                    
+                    // 자정을 넘지 않도록 조정
+                    if (endTime.isAfter(LocalTime.of(23, 59))) {
+                        endTime = LocalTime.of(23, 59);
+                        randomStartTime = endTime.minusHours(workHours);
+                    }
+                    
+                    Schedule flexibleSchedule = Schedule.builder()
+                            .userId(userId)
+                            .title(ScheduleType.WORK.getDescription())
+                            .description(String.format("시차근무: %s ~ %s (자율 출근)", randomStartTime, endTime))
+                            .startDate(currentDate)
+                            .endDate(currentDate)
+                            .startTime(randomStartTime)
+                            .endTime(endTime)
+                            .scheduleType(ScheduleType.WORK)
+                            .color("#28a745")
+                            .isAllDay(false)
+                            .isRecurring(false)
+                            .workPolicyId(workPolicyId)
+                            .priority(1)
+                            .isFixed(true)
+                            .isEditable(true) // 시차근무는 시간 조정 가능
+                            .fixedReason("FLEXIBLE_WORK_TIME")
+                            .status("ACTIVE")
+                            .build();
+                    
+                    flexibleSchedules.add(flexibleSchedule);
+                    log.debug("시차근무 스케줄 생성: userId={}, date={}, time={}~{}", 
+                            userId, currentDate, randomStartTime, endTime);
+                    
+                } catch (Exception e) {
+                    log.error("시차근무 스케줄 생성 오류: userId={}, date={}", userId, currentDate, e);
+                    throw new RuntimeException("시차근무 스케줄 생성 중 오류가 발생했습니다: " + e.getMessage(), e);
+                }
+            }
+            
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        log.info("시차근무 스케줄 {} 개 생성 완료: userId={}", flexibleSchedules.size(), userId);
+        return flexibleSchedules;
+    }
+
+    /**
+     * 시차 근무 휴게시간 스케줄 생성 (각 근무 블록의 가운데에 배치)
+     */
+    private List<Schedule> createFlexibleBreakTimeSchedules(Long userId, WorkPolicyDto workPolicy, Long workPolicyId, LocalDate startDate, LocalDate endDate) {
+        List<Schedule> breakSchedules = new ArrayList<>();
+        
+        log.debug("Creating flexible break time schedules: userId={}, workPolicyId={}, startDate={}, endDate={}", 
+                userId, workPolicyId, startDate, endDate);
+        
+        if (workPolicy.getWorkDays() == null || workPolicy.getWorkDays().isEmpty()) {
+            log.warn("No work days defined in work policy: userId={}, workPolicyId={}", userId, workPolicyId);
+            return breakSchedules;
+        }
+        
+        // 시차 근무 시간 범위 확인
+        LocalTime startTime = workPolicy.getStartTime();
+        LocalTime startTimeEnd = workPolicy.getStartTimeEnd();
+        
+        if (startTime == null || startTimeEnd == null) {
+            log.warn("시차 근무 시간 범위가 설정되지 않음. 휴게시간 생성 불가: userId={}, workPolicyId={}", userId, workPolicyId);
+            return breakSchedules;
+        }
+        
+        // 근무 시간 설정
+        int workHours = 8; // 기본 8시간 근무
+        if (workPolicy.getWorkHours() != null) {
+            workHours = workPolicy.getWorkHours();
+        }
+        
+        // 휴게시간 설정 (기본값: 1시간)
+        int breakDurationMinutes = 60;
+        if (workPolicy.getBreakMinutes() != null && workPolicy.getBreakMinutes() > 0) {
+            breakDurationMinutes = workPolicy.getBreakMinutes();
+        }
+        
+        LocalDate currentDate = startDate;
+        Random random = new Random();
+        
+        while (!currentDate.isAfter(endDate)) {
+            String dayOfWeek = currentDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH).toUpperCase();
+            
+            if (workPolicy.getWorkDays().contains(dayOfWeek)) {
+                try {
+                    // 해당 날짜의 근무 시작 시간을 동일하게 계산 (랜덤 시드를 날짜 기반으로 설정)
+                    Random dayRandom = new Random(currentDate.toEpochDay());
+                    
+                    long startMinutes = startTime.toSecondOfDay() / 60;
+                    long endMinutes = startTimeEnd.toSecondOfDay() / 60;
+                    
+                    if (endMinutes <= startMinutes) {
+                        startMinutes = 7 * 60; // 07:00
+                        endMinutes = 10 * 60;  // 10:00
+                    }
+                    
+                    // 해당 날짜의 근무 시작 시간 계산 (createFlexibleWorkSchedules와 동일한 로직)
+                    long randomMinutes = startMinutes + dayRandom.nextLong(endMinutes - startMinutes + 1);
+                    LocalTime workStartTime = LocalTime.ofSecondOfDay(randomMinutes * 60);
+                    LocalTime workEndTime = workStartTime.plusHours(workHours);
+                    
+                    // 자정을 넘지 않도록 조정
+                    if (workEndTime.isAfter(LocalTime.of(23, 59))) {
+                        workEndTime = LocalTime.of(23, 59);
+                        workStartTime = workEndTime.minusHours(workHours);
+                    }
+                    
+                    // 근무 시간의 가운데에 휴게시간 배치
+                    long workMinutes = Duration.between(workStartTime, workEndTime).toMinutes();
+                    long halfWorkMinutes = workMinutes / 2;
+                    
+                    LocalTime breakStartTime = workStartTime.plusMinutes(halfWorkMinutes - (breakDurationMinutes / 2));
+                    LocalTime breakEndTime = breakStartTime.plusMinutes(breakDurationMinutes);
+                    
+                    // 휴게시간이 근무시간을 벗어나지 않도록 조정
+                    if (breakStartTime.isBefore(workStartTime)) {
+                        breakStartTime = workStartTime.plusMinutes(30);
+                        breakEndTime = breakStartTime.plusMinutes(breakDurationMinutes);
+                    }
+                    if (breakEndTime.isAfter(workEndTime)) {
+                        breakEndTime = workEndTime.minusMinutes(30);
+                        breakStartTime = breakEndTime.minusMinutes(breakDurationMinutes);
+                    }
+                    
+                    Schedule breakSchedule = Schedule.builder()
+                            .userId(userId)
+                            .title(ScheduleType.RESTTIME.getDescription())
+                            .description(String.format("시차근무 휴게시간: %s ~ %s", breakStartTime, breakEndTime))
+                            .startDate(currentDate)
+                            .endDate(currentDate)
+                            .startTime(breakStartTime)
+                            .endTime(breakEndTime)
+                            .scheduleType(ScheduleType.RESTTIME)
+                            .color("#ffc107")
+                            .isAllDay(false)
+                            .isRecurring(false)
+                            .workPolicyId(workPolicyId)
+                            .priority(2)
+                            .isFixed(true)
+                            .isEditable(false)
+                            .fixedReason("FLEXIBLE_BREAK_TIME")
+                            .status("ACTIVE")
+                            .build();
+                    
+                    breakSchedules.add(breakSchedule);
+                    log.debug("시차근무 휴게시간 생성: userId={}, date={}, breakTime={}~{}", 
+                            userId, currentDate, breakStartTime, breakEndTime);
+                    
+                } catch (Exception e) {
+                    log.error("시차근무 휴게시간 생성 오류: userId={}, date={}", userId, currentDate, e);
+                    throw new RuntimeException("시차근무 휴게시간 생성 중 오류가 발생했습니다: " + e.getMessage(), e);
+                }
+            }
+            
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        log.info("시차근무 휴게시간 {} 개 생성 완료: userId={}", breakSchedules.size(), userId);
+        return breakSchedules;
     }
     
     /**
@@ -632,6 +938,81 @@ public class WorkScheduleService {
                         .build();
                 
                 breakSchedules.add(breakSchedule);
+            }
+            
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        return breakSchedules;
+    }
+
+    /**
+     * 교대근무 휴게시간 스케줄 생성 (근무 시간 가운데에 휴게시간 배치)
+     */
+    private List<Schedule> createShiftBreakTimeSchedules(Long userId, WorkPolicyDto workPolicy, Long workPolicyId, LocalDate startDate, LocalDate endDate) {
+        List<Schedule> breakSchedules = new ArrayList<>();
+        
+        // 교대근무에서는 근무시간이 설정되어 있어야 휴게시간 계산 가능
+        if (workPolicy.getStartTime() == null || workPolicy.getEndTime() == null) {
+            log.debug("Start time or end time is null for SHIFT work. Cannot create break schedules. userId={}", userId);
+            return breakSchedules;
+        }
+        
+        LocalDate currentDate = startDate;
+        while (!currentDate.isAfter(endDate)) {
+            String dayOfWeek = currentDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH).toUpperCase();
+            
+            if (workPolicy.getWorkDays() != null && workPolicy.getWorkDays().contains(dayOfWeek)) {
+                LocalTime workStartTime = workPolicy.getStartTime();
+                LocalTime workEndTime = workPolicy.getEndTime();
+                
+                // 근무 시간의 가운데 시점 계산
+                long workMinutes = Duration.between(workStartTime, workEndTime).toMinutes();
+                long halfWorkMinutes = workMinutes / 2;
+                
+                // 휴게시간 설정 (기본값: 1시간)
+                int breakDurationMinutes = 60;
+                if (workPolicy.getBreakMinutes() != null && workPolicy.getBreakMinutes() > 0) {
+                    breakDurationMinutes = workPolicy.getBreakMinutes();
+                }
+                
+                // 휴게시간 시작: 근무 시간의 정확히 가운데에 배치
+                LocalTime breakStartTime = workStartTime.plusMinutes(halfWorkMinutes - (breakDurationMinutes / 2));
+                LocalTime breakEndTime = breakStartTime.plusMinutes(breakDurationMinutes);
+                
+                // 휴게시간이 근무시간을 벗어나지 않도록 조정
+                if (breakStartTime.isBefore(workStartTime)) {
+                    breakStartTime = workStartTime.plusMinutes(30); // 최소 30분 후
+                    breakEndTime = breakStartTime.plusMinutes(breakDurationMinutes);
+                }
+                if (breakEndTime.isAfter(workEndTime)) {
+                    breakEndTime = workEndTime.minusMinutes(30); // 최소 30분 전
+                    breakStartTime = breakEndTime.minusMinutes(breakDurationMinutes);
+                }
+                
+                Schedule breakSchedule = Schedule.builder()
+                        .userId(userId)
+                        .title(ScheduleType.RESTTIME.getDescription())
+                        .description(String.format("교대근무 휴게시간: %s ~ %s", breakStartTime, breakEndTime))
+                        .startDate(currentDate)
+                        .endDate(currentDate)
+                        .startTime(breakStartTime)
+                        .endTime(breakEndTime)
+                        .scheduleType(ScheduleType.RESTTIME)
+                        .color("#ffc107")
+                        .isAllDay(false)
+                        .isRecurring(false)
+                        .workPolicyId(workPolicyId)
+                        .priority(2)
+                        .isFixed(true)
+                        .isEditable(false)
+                        .fixedReason("SHIFT_BREAK_TIME")
+                        .status("ACTIVE")
+                        .build();
+                
+                breakSchedules.add(breakSchedule);
+                log.debug("Created shift break schedule: userId={}, date={}, breakTime={}~{}", 
+                        userId, currentDate, breakStartTime, breakEndTime);
             }
             
             currentDate = currentDate.plusDays(1);
@@ -697,10 +1078,19 @@ public class WorkScheduleService {
     private List<Schedule> createCoreTimeSchedules(Long userId, WorkPolicyDto workPolicy, Long workPolicyId, LocalDate startDate, LocalDate endDate) {
         List<Schedule> coreTimeSchedules = new ArrayList<>();
         
+        // OPTIONAL 타입에서만 코어타임 생성 (FLEXIBLE은 시차근무이므로 코어타임 없음)
+        if (!"OPTIONAL".equals(workPolicy.getType())) {
+            log.debug("OPTIONAL 타입이 아니므로 코어타임 생성하지 않음. workType: {}, userId: {}, workPolicyId: {}", 
+                    workPolicy.getType(), userId, workPolicyId);
+            return coreTimeSchedules;
+        }
+        
         // 코어타임 시작/종료 시간이 설정되어 있어야 함
         if (workPolicy.getCoreTimeStart() == null || workPolicy.getCoreTimeEnd() == null) {
-            log.debug("코어타임이 설정되지 않음. userId: {}, workPolicyId: {}", userId, workPolicyId);
-            return coreTimeSchedules;
+            // 선택 근무(OPTIONAL)의 경우 기본 코어타임 설정 (10:00 ~ 15:00)
+            log.warn("코어타임이 설정되지 않음. 기본 코어타임(10:00-15:00) 사용. userId: {}, workPolicyId: {}", userId, workPolicyId);
+            workPolicy.setCoreTimeStart(LocalTime.of(10, 0));
+            workPolicy.setCoreTimeEnd(LocalTime.of(15, 0));
         }
         
         LocalDate currentDate = startDate;
@@ -802,6 +1192,278 @@ public class WorkScheduleService {
         }
         
         return flexibleSchedules;
+    }
+    
+    /**
+     * 교대근무 타입 근무 스케줄 생성 (자유 이동 가능)
+     */
+    private List<Schedule> createShiftWorkSchedules(Long userId, WorkPolicyDto workPolicy, Long workPolicyId, LocalDate startDate, LocalDate endDate) {
+        List<Schedule> shiftWorkSchedules = new ArrayList<>();
+        
+        if (workPolicy.getWorkDays() == null || workPolicy.getWorkDays().isEmpty()) {
+            log.warn("No work days defined in work policy, using default Mon-Fri: userId={}, workPolicyId={}", userId, workPolicyId);
+            // 기본 근무 요일을 월~금으로 설정
+            workPolicy.setWorkDays(List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"));
+        }
+        
+        // 교대근무 기본 설정
+        LocalTime baseStartTime = LocalTime.of(9, 0); // 기본 시작 시간
+        int workHours = 8; // 기본 근무 시간
+        
+        if (workPolicy.getStartTime() != null) {
+            baseStartTime = workPolicy.getStartTime();
+        }
+        if (workPolicy.getWorkHours() != null) {
+            workHours = workPolicy.getWorkHours();
+        }
+        
+        LocalDate currentDate = startDate;
+        Random random = new Random();
+        
+        while (!currentDate.isAfter(endDate)) {
+            String dayOfWeek = currentDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH).toUpperCase();
+            
+            if (workPolicy.getWorkDays().contains(dayOfWeek)) {
+                try {
+                    // 랜덤 시작 시간 계산 (기본 시간 ±3시간 범위)
+                    int randomHourOffset = random.nextInt(7) - 3; // -3 ~ +3 시간
+                    int randomMinuteOffset = random.nextInt(121) - 60; // -60 ~ +60 분
+                    
+                    LocalTime startTime = baseStartTime.plusHours(randomHourOffset).plusMinutes(randomMinuteOffset);
+                    
+                    // 시간 범위 제한 (06:00 ~ 22:00 사이)
+                    if (startTime.isBefore(LocalTime.of(6, 0))) {
+                        startTime = LocalTime.of(6, 0);
+                    }
+                    if (startTime.isAfter(LocalTime.of(22, 0))) {
+                        startTime = LocalTime.of(22, 0);
+                    }
+                    
+                    // 종료 시간 계산
+                    LocalTime endTime = startTime.plusHours(workHours);
+                    
+                    // 자정을 넘지 않도록 조정
+                    if (endTime.isAfter(LocalTime.of(23, 59))) {
+                        endTime = LocalTime.of(23, 59);
+                        startTime = endTime.minusHours(workHours);
+                    }
+                    
+                    Schedule shiftWorkSchedule = Schedule.builder()
+                            .userId(userId)
+                            .title(ScheduleType.WORK.getDescription())
+                            .description(String.format("교대근무: %s ~ %s (랜덤 배치)", startTime, endTime))
+                            .startDate(currentDate)
+                            .endDate(currentDate)
+                            .startTime(startTime)
+                            .endTime(endTime)
+                            .scheduleType(ScheduleType.WORK)
+                            .color("#007bff")
+                            .isAllDay(false)
+                            .isRecurring(false)
+                            .workPolicyId(workPolicyId)
+                            .priority(1)
+                            .isFixed(true)
+                            .isEditable(true) // 교대근무는 자유 이동 가능
+                            .fixedReason("SHIFT_WORK_RANDOM")
+                            .status("ACTIVE")
+                            .build();
+                    
+                    shiftWorkSchedules.add(shiftWorkSchedule);
+                    log.debug("교대근무 랜덤 스케줄 생성: userId={}, date={}, time={}~{}", 
+                            userId, currentDate, startTime, endTime);
+                    
+                    // 휴게시간 계산을 위해 workPolicy 업데이트 (각 날짜별로 다른 근무시간 적용)
+                    workPolicy.setStartTime(startTime);
+                    workPolicy.setEndTime(endTime);
+                    
+                } catch (Exception e) {
+                    log.error("교대근무 랜덤 스케줄 생성 오류: userId={}, date={}", userId, currentDate, e);
+                    throw new RuntimeException("교대근무 스케줄 생성 중 오류가 발생했습니다: " + e.getMessage(), e);
+                }
+            }
+            
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        log.info("교대근무 랜덤 스케줄 {} 개 생성 완료: userId={}", shiftWorkSchedules.size(), userId);
+        return shiftWorkSchedules;
+    }
+    
+    /**
+     * 교대근무 타입 휴게시간 스케줄 생성 (자유 이동 가능)
+     */
+    private List<Schedule> createShiftBreakSchedules(Long userId, WorkPolicyDto workPolicy, Long workPolicyId, LocalDate startDate, LocalDate endDate) {
+        List<Schedule> shiftBreakSchedules = new ArrayList<>();
+        
+        // 휴게시간이 설정되지 않은 경우 스케줄 생성하지 않음
+        if (workPolicy.getBreakStartTime() == null || workPolicy.getBreakMinutes() == null) {
+            log.debug("휴게시간이 설정되지 않음. userId: {}, workPolicyId: {}", userId, workPolicyId);
+            return shiftBreakSchedules;
+        }
+        
+        LocalTime breakEndTime = workPolicy.getBreakStartTime().plusMinutes(workPolicy.getBreakMinutes());
+        
+        LocalDate currentDate = startDate;
+        while (!currentDate.isAfter(endDate)) {
+            String dayOfWeek = currentDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH).toUpperCase();
+            
+            if (workPolicy.getWorkDays() != null && workPolicy.getWorkDays().contains(dayOfWeek)) {
+                Schedule shiftBreakSchedule = Schedule.builder()
+                        .userId(userId)
+                        .title(ScheduleType.RESTTIME.getDescription())
+                        .description(String.format("교대근무 휴게시간: %s ~ %s (자유 이동 가능)", 
+                                workPolicy.getBreakStartTime(), breakEndTime))
+                        .startDate(currentDate)
+                        .endDate(currentDate)
+                        .startTime(workPolicy.getBreakStartTime())
+                        .endTime(breakEndTime)
+                        .scheduleType(ScheduleType.RESTTIME)
+                        .color("#ffc107")
+                        .isAllDay(false)
+                        .isRecurring(false)
+                        .workPolicyId(workPolicyId)
+                        .priority(2)
+                        .isFixed(true)
+                        .isEditable(true) // 교대근무는 자유 이동 가능
+                        .fixedReason("SHIFT_BREAK")
+                        .status("ACTIVE")
+                        .build();
+                
+                shiftBreakSchedules.add(shiftBreakSchedule);
+                
+                log.debug("교대근무 휴게시간 스케줄 생성: userId={}, date={}, time={}~{}", 
+                        userId, currentDate, workPolicy.getBreakStartTime(), breakEndTime);
+            }
+            
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        log.info("교대근무 휴게시간 스케줄 {} 개 생성 완료: userId={}", shiftBreakSchedules.size(), userId);
+        return shiftBreakSchedules;
+    }
+    
+    /**
+     * 시차근무 타입 근무 스케줄 생성 (startTime-startTimeEnd 범위 내에서만 이동 가능)
+     */
+    private List<Schedule> createStaggeredWorkSchedules(Long userId, WorkPolicyDto workPolicy, Long workPolicyId, LocalDate startDate, LocalDate endDate) {
+        List<Schedule> staggeredWorkSchedules = new ArrayList<>();
+        
+        if (workPolicy.getWorkDays() == null || workPolicy.getWorkDays().isEmpty()) {
+            return staggeredWorkSchedules;
+        }
+        
+        // 시차근무는 startTime과 startTimeEnd가 필수
+        if (workPolicy.getStartTime() == null || workPolicy.getStartTimeEnd() == null) {
+            log.warn("시차근무이지만 출근 가능 시간대가 설정되지 않음. userId: {}, workPolicyId: {}", userId, workPolicyId);
+            return staggeredWorkSchedules;
+        }
+        
+        LocalDate currentDate = startDate;
+        while (!currentDate.isAfter(endDate)) {
+            String dayOfWeek = currentDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH).toUpperCase();
+            
+            if (workPolicy.getWorkDays().contains(dayOfWeek)) {
+                // 시차근무 기본 출근 시간 (startTime 사용)
+                LocalTime startTime = workPolicy.getStartTime();
+                
+                // 퇴근 시간: 정책 endTime 우선 사용, 없으면 근무시간으로 계산
+                LocalTime endTime = workPolicy.getEndTime();
+                if (endTime == null && startTime != null) {
+                    if (workPolicy.getWorkHours() != null && workPolicy.getWorkMinutes() != null) {
+                        endTime = startTime.plusHours(workPolicy.getWorkHours()).plusMinutes(workPolicy.getWorkMinutes());
+                    } else {
+                        endTime = startTime.plusHours(8); // 기본 8시간 근무
+                    }
+                }
+                
+                Schedule staggeredWorkSchedule = Schedule.builder()
+                        .userId(userId)
+                        .title(ScheduleType.WORK.getDescription())
+                        .description(String.format("시차근무: %s ~ %s (출근시간 조정가능: %s~%s)", 
+                                startTime, endTime, workPolicy.getStartTime(), workPolicy.getStartTimeEnd()))
+                        .startDate(currentDate)
+                        .endDate(currentDate)
+                        .startTime(startTime)
+                        .endTime(endTime)
+                        .scheduleType(ScheduleType.WORK)
+                        .color("#17a2b8")
+                        .isAllDay(false)
+                        .isRecurring(false)
+                        .workPolicyId(workPolicyId)
+                        .priority(1)
+                        .isFixed(true)
+                        .isEditable(true) // 시차근무는 제한된 범위 내에서 이동 가능
+                        .fixedReason("STAGGERED_WORK")
+                        .status("ACTIVE")
+                        .notes(String.format("출근시간 조정 가능 범위: %s ~ %s", 
+                                workPolicy.getStartTime(), workPolicy.getStartTimeEnd()))
+                        .build();
+                
+                staggeredWorkSchedules.add(staggeredWorkSchedule);
+                
+                log.debug("시차근무 스케줄 생성: userId={}, date={}, time={}~{}, 조정가능범위={}~{}", 
+                        userId, currentDate, startTime, endTime, 
+                        workPolicy.getStartTime(), workPolicy.getStartTimeEnd());
+            }
+            
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        log.info("시차근무 스케줄 {} 개 생성 완료: userId={}", staggeredWorkSchedules.size(), userId);
+        return staggeredWorkSchedules;
+    }
+    
+    /**
+     * 시차근무 타입 휴게시간 스케줄 생성
+     */
+    private List<Schedule> createStaggeredBreakSchedules(Long userId, WorkPolicyDto workPolicy, Long workPolicyId, LocalDate startDate, LocalDate endDate) {
+        List<Schedule> staggeredBreakSchedules = new ArrayList<>();
+        
+        // 휴게시간이 설정되지 않은 경우 스케줄 생성하지 않음
+        if (workPolicy.getBreakStartTime() == null || workPolicy.getBreakMinutes() == null) {
+            log.debug("휴게시간이 설정되지 않음. userId: {}, workPolicyId: {}", userId, workPolicyId);
+            return staggeredBreakSchedules;
+        }
+        
+        LocalTime breakEndTime = workPolicy.getBreakStartTime().plusMinutes(workPolicy.getBreakMinutes());
+        
+        LocalDate currentDate = startDate;
+        while (!currentDate.isAfter(endDate)) {
+            String dayOfWeek = currentDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH).toUpperCase();
+            
+            if (workPolicy.getWorkDays() != null && workPolicy.getWorkDays().contains(dayOfWeek)) {
+                Schedule staggeredBreakSchedule = Schedule.builder()
+                        .userId(userId)
+                        .title(ScheduleType.RESTTIME.getDescription())
+                        .description(String.format("시차근무 휴게시간: %s ~ %s", 
+                                workPolicy.getBreakStartTime(), breakEndTime))
+                        .startDate(currentDate)
+                        .endDate(currentDate)
+                        .startTime(workPolicy.getBreakStartTime())
+                        .endTime(breakEndTime)
+                        .scheduleType(ScheduleType.RESTTIME)
+                        .color("#fd7e14")
+                        .isAllDay(false)
+                        .isRecurring(false)
+                        .workPolicyId(workPolicyId)
+                        .priority(2)
+                        .isFixed(true)
+                        .isEditable(true) // 시차근무 휴게시간도 이동 가능
+                        .fixedReason("STAGGERED_BREAK")
+                        .status("ACTIVE")
+                        .build();
+                
+                staggeredBreakSchedules.add(staggeredBreakSchedule);
+                
+                log.debug("시차근무 휴게시간 스케줄 생성: userId={}, date={}, time={}~{}", 
+                        userId, currentDate, workPolicy.getBreakStartTime(), breakEndTime);
+            }
+            
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        log.info("시차근무 휴게시간 스케줄 {} 개 생성 완료: userId={}", staggeredBreakSchedules.size(), userId);
+        return staggeredBreakSchedules;
     }
     
     /**
@@ -929,38 +1591,48 @@ public class WorkScheduleService {
      * WorkPolicyResponseDto를 WorkPolicyDto로 변환
      */
     private WorkPolicyDto convertToWorkPolicyDto(WorkPolicyResponseDto responseDto) {
-        return WorkPolicyDto.builder()
-                .id(responseDto.getId())
-                .name(responseDto.getName())
-                .type(responseDto.getType().toString())
-                .workCycle(responseDto.getWorkCycle() != null ? responseDto.getWorkCycle().toString() : null)
-                .startDayOfWeek(responseDto.getStartDayOfWeek() != null ? responseDto.getStartDayOfWeek().toString() : null)
-                .workCycleStartDay(responseDto.getWorkCycleStartDay())
-                .workDays(responseDto.getWorkDays() != null ? 
-                    responseDto.getWorkDays().stream()
-                        .map(StartDayOfWeek::toString)
-                        .collect(java.util.stream.Collectors.toList()) : null)
-                .holidayDays(responseDto.getHolidayDays() != null ? 
-                    responseDto.getHolidayDays().stream()
-                        .map(StartDayOfWeek::toString)
-                        .collect(java.util.stream.Collectors.toList()) : null)
-                .weeklyWorkingDays(responseDto.getWeeklyWorkingDays())
-                .startTime(responseDto.getStartTime())
-                .startTimeEnd(responseDto.getStartTimeEnd())
-                .endTime(responseDto.getEndTime())
-                .workHours(responseDto.getWorkHours())
-                .workMinutes(responseDto.getWorkMinutes())
-                .coreTimeStart(responseDto.getCoreTimeStart())
-                .coreTimeEnd(responseDto.getCoreTimeEnd())
-                .breakStartTime(responseDto.getBreakStartTime())
-                .breakEndTime(responseDto.getBreakEndTime())
-                .breakMinutes(responseDto.getBreakMinutes())
-                .avgWorkTime(responseDto.getAvgWorkTime())
-                .totalRequiredMinutes(responseDto.getTotalRequiredMinutes())
-                .holidays(responseDto.getHolidays())
-                .isHolidayFixed(responseDto.getIsHolidayFixed())
-                .isBreakFixed(responseDto.getIsBreakFixed())
-                .build();
+        try {
+            log.debug("Converting WorkPolicyResponseDto to WorkPolicyDto: id={}, name={}, type={}", 
+                    responseDto.getId(), responseDto.getName(), responseDto.getType());
+            
+            return WorkPolicyDto.builder()
+                    .id(responseDto.getId())
+                    .name(responseDto.getName())
+                    .type(responseDto.getType() != null ? responseDto.getType().toString() : null)
+                    .workCycle(responseDto.getWorkCycle() != null ? responseDto.getWorkCycle().toString() : null)
+                    .startDayOfWeek(responseDto.getStartDayOfWeek() != null ? responseDto.getStartDayOfWeek().toString() : null)
+                    .workCycleStartDay(responseDto.getWorkCycleStartDay())
+                    .workDays(responseDto.getWorkDays() != null ? 
+                        responseDto.getWorkDays().stream()
+                            .filter(java.util.Objects::nonNull)
+                            .map(StartDayOfWeek::toString)
+                            .collect(java.util.stream.Collectors.toList()) : null)
+                    .holidayDays(responseDto.getHolidayDays() != null ? 
+                        responseDto.getHolidayDays().stream()
+                            .filter(java.util.Objects::nonNull)
+                            .map(StartDayOfWeek::toString)
+                            .collect(java.util.stream.Collectors.toList()) : null)
+                    .weeklyWorkingDays(responseDto.getWeeklyWorkingDays())
+                    .startTime(responseDto.getStartTime())
+                    .startTimeEnd(responseDto.getStartTimeEnd())
+                    .endTime(responseDto.getEndTime())
+                    .workHours(responseDto.getWorkHours())
+                    .workMinutes(responseDto.getWorkMinutes())
+                    .coreTimeStart(responseDto.getCoreTimeStart())
+                    .coreTimeEnd(responseDto.getCoreTimeEnd())
+                    .breakStartTime(responseDto.getBreakStartTime())
+                    .breakEndTime(responseDto.getBreakEndTime())
+                    .breakMinutes(responseDto.getBreakMinutes())
+                    .avgWorkTime(responseDto.getAvgWorkTime())
+                    .totalRequiredMinutes(responseDto.getTotalRequiredMinutes())
+                    .holidays(responseDto.getHolidays())
+                    .isHolidayFixed(responseDto.getIsHolidayFixed())
+                    .isBreakFixed(responseDto.getIsBreakFixed())
+                    .build();
+        } catch (Exception e) {
+            log.error("Error converting WorkPolicyResponseDto to WorkPolicyDto: {}", responseDto, e);
+            throw new RuntimeException("근무정책 데이터 변환 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
     }
     
     /**
