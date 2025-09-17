@@ -23,11 +23,6 @@ public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver
                 return null;
             }
 
-            if (TenantContext.isNonTenant()) {
-                log.debug("NonTenant context detected, returning null");
-                return null;
-            }
-
             String tenantId = TenantContext.getCurrentTenantId();
             log.debug("Resolved tenant identifier: {}", tenantId);
             return tenantId;

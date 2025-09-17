@@ -22,30 +22,9 @@ class TenantContextTest {
 
         // then
         assertEquals(tenantId, TenantContext.getCurrentTenantId());
-        assertFalse(TenantContext.isNonTenant());
         assertTrue(TenantContext.hasTenantContext());
     }
 
-    @Test
-    void NonTenant_설정_및_확인() {
-        // when
-        TenantContext.setNonTenant();
-
-        // then
-        assertTrue(TenantContext.isNonTenant());
-        assertTrue(TenantContext.hasTenantContext());
-    }
-
-    @Test
-    void NonTenant_컨텍스트에서_테넌트ID_조회시_예외_발생() {
-        // given
-        TenantContext.setNonTenant();
-
-        // when & then
-        assertThrows(IllegalStateException.class, () -> {
-            TenantContext.getCurrentTenantId();
-        });
-    }
 
     @Test
     void 컨텍스트_미설정시_테넌트ID_조회시_예외_발생() {
@@ -71,20 +50,6 @@ class TenantContextTest {
         assertEquals(result, actualResult);
     }
 
-    @Test
-    void executeWithNonTenant_테스트() {
-        // given
-        String result = "test_result";
-
-        // when
-        String actualResult = TenantContext.executeWithNonTenant(() -> {
-            assertTrue(TenantContext.isNonTenant());
-            return result;
-        });
-
-        // then
-        assertEquals(result, actualResult);
-    }
 
     @Test
     void 컨텍스트_정리_테스트() {
@@ -96,7 +61,6 @@ class TenantContextTest {
 
         // then
         assertFalse(TenantContext.hasTenantContext());
-        assertFalse(TenantContext.isNonTenant());
     }
 
     @Test

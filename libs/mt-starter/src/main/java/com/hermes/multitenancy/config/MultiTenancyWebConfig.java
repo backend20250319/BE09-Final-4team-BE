@@ -19,15 +19,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class MultiTenancyWebConfig implements WebMvcConfigurer {
 
     private final TenantContextInterceptor tenantContextInterceptor;
-    private final MultiTenancyProperties properties;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        log.info("Registering TenantContextInterceptor with exclude paths: {}",
-                properties.getSecurity().getExcludePaths());
-
         registry.addInterceptor(tenantContextInterceptor)
-                .addPathPatterns("/**")
-                .excludePathPatterns(properties.getSecurity().getExcludePaths());
+                .addPathPatterns("/**");
     }
 }

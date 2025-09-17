@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 public class TenantContext {
 
     private static final ThreadLocal<String> tenantIdHolder = new ThreadLocal<>();
-    private static final ThreadLocal<Boolean> isNonTenantHolder = new ThreadLocal<>();
 
     /**
      * 현재 스레드에 테넌트 ID 설정
@@ -23,27 +22,12 @@ public class TenantContext {
 
         log.debug("Setting tenant context: {}", tenantId);
         tenantIdHolder.set(tenantId);
-        isNonTenantHolder.set(false);
-    }
-
-    /**
-     * 현재 스레드에 NonTenant 컨텍스트 설정
-     */
-    public static void setNonTenant() {
-        log.debug("Setting non-tenant context");
-        tenantIdHolder.remove();
-        isNonTenantHolder.set(true);
     }
 
     /**
      * 현재 테넌트 ID 반환
-     * NonTenant 컨텍스트인 경우 예외 발생
      */
     public static String getCurrentTenantId() {
-        if (isNonTenant()) {
-            throw new IllegalStateException("NonTenant 컨텍스트에서는 tenantId를 사용할 수 없습니다");
-        }
-
         String tenantId = tenantIdHolder.get();
         if (tenantId == null) {
             throw new IllegalStateException("테넌트 컨텍스트가 설정되지 않았습니다");
@@ -53,17 +37,10 @@ public class TenantContext {
     }
 
     /**
-     * 현재 컨텍스트가 NonTenant인지 확인
-     */
-    public static boolean isNonTenant() {
-        return Boolean.TRUE.equals(isNonTenantHolder.get());
-    }
-
-    /**
      * 테넌트 컨텍스트가 설정되어 있는지 확인
      */
     public static boolean hasTenantContext() {
-        return isNonTenant() || tenantIdHolder.get() != null;
+        return tenantIdHolder.get() != null;
     }
 
     /**
@@ -72,7 +49,6 @@ public class TenantContext {
     public static void clear() {
         log.debug("Clearing tenant context");
         tenantIdHolder.remove();
-        isNonTenantHolder.remove();
     }
 
     /**
@@ -80,7 +56,6 @@ public class TenantContext {
      */
     public static <T> T executeWithTenant(String tenantId, TenantOperation<T> operation) {
         String previousTenantId = tenantIdHolder.get();
-        Boolean previousIsNonTenant = isNonTenantHolder.get();
 
         try {
             setTenantId(tenantId);
@@ -88,29 +63,6 @@ public class TenantContext {
         } finally {
             if (previousTenantId != null) {
                 setTenantId(previousTenantId);
-            } else if (Boolean.TRUE.equals(previousIsNonTenant)) {
-                setNonTenant();
-            } else {
-                clear();
-            }
-        }
-    }
-
-    /**
-     * NonTenant 설정과 함께 작업 실행
-     */
-    public static <T> T executeWithNonTenant(TenantOperation<T> operation) {
-        String previousTenantId = tenantIdHolder.get();
-        Boolean previousIsNonTenant = isNonTenantHolder.get();
-
-        try {
-            setNonTenant();
-            return operation.execute();
-        } finally {
-            if (previousTenantId != null) {
-                setTenantId(previousTenantId);
-            } else if (Boolean.TRUE.equals(previousIsNonTenant)) {
-                setNonTenant();
             } else {
                 clear();
             }

@@ -64,34 +64,30 @@ public abstract class AbstractTenantEventListener {
         log.info("[{}] Tenant Event Received: Type={}, TenantId={}, SchemaName={}", 
                 serviceName, event.getEventType(), event.getTenantId(), event.getSchemaName());
 
-        // NonTenant 컨텍스트에서 스키마 작업 수행
-        TenantContext.executeWithNonTenant(() -> {
-            try {
-                switch (event.getEventType()) {
-                    case TENANT_CREATED:
-                        handleTenantCreated(event);
-                        break;
-                    case TENANT_DELETED:
-                        handleTenantDeleted(event);
-                        break;
-                    case TENANT_UPDATED:
-                        handleTenantUpdated(event);
-                        break;
-                    case TENANT_STATUS_CHANGED:
-                        handleTenantStatusChanged(event);
-                        break;
-                    default:
-                        log.warn("[{}] Unhandled Tenant Event Type: {}", serviceName, event.getEventType());
-                }
-            } catch (Exception e) {
-                log.error("[{}] Error processing tenant event for tenantId {}: {}", 
-                        serviceName, event.getTenantId(), e.getMessage(), e);
-                
-                // 예외를 다시 던져서 RabbitMQ가 재시도하거나 DLQ로 보낼 수 있도록 함
-                throw new RuntimeException("Failed to process tenant event in " + serviceName, e);
+        try {
+            switch (event.getEventType()) {
+                case TENANT_CREATED:
+                    handleTenantCreated(event);
+                    break;
+                case TENANT_DELETED:
+                    handleTenantDeleted(event);
+                    break;
+                case TENANT_UPDATED:
+                    handleTenantUpdated(event);
+                    break;
+                case TENANT_STATUS_CHANGED:
+                    handleTenantStatusChanged(event);
+                    break;
+                default:
+                    log.warn("[{}] Unhandled Tenant Event Type: {}", serviceName, event.getEventType());
             }
-            return null;
-        });
+        } catch (Exception e) {
+            log.error("[{}] Error processing tenant event for tenantId {}: {}",
+                    serviceName, event.getTenantId(), e.getMessage(), e);
+
+            // 예외를 다시 던져서 RabbitMQ가 재시도하거나 DLQ로 보낼 수 있도록 함
+            throw new RuntimeException("Failed to process tenant event in " + serviceName, e);
+        }
     }
 
 

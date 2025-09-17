@@ -165,59 +165,6 @@ public class MyService {
 }
 ```
 
-### @NonTenant 어노테이션 사용
-
-특정 API에서 테넌트 격리를 적용하지 않으려면 `@NonTenant` 어노테이션을 사용하세요. 이 어노테이션이 적용된 컨트롤러 메소드나 클래스는 데이터베이스 기본 설정(public 스키마)을 사용합니다.
-
-#### 메소드 레벨 적용
-
-```java
-@RestController
-@RequestMapping("/api")
-public class PublicController {
-
-    @NonTenant
-    @GetMapping("/health")
-    public ResponseEntity<String> health() {
-        return ResponseEntity.ok("OK");
-    }
-
-    @GetMapping("/tenant-data")  // 테넌트별 데이터 접근
-    public ResponseEntity<List<Data>> getTenantData() {
-        // 현재 테넌트의 스키마에서 데이터 조회
-        return ResponseEntity.ok(dataService.findAll());
-    }
-}
-```
-
-#### 클래스 레벨 적용
-
-```java
-@NonTenant
-@RestController
-@RequestMapping("/system")
-public class SystemController {
-
-    @GetMapping("/health")
-    public ResponseEntity<String> health() {
-        return ResponseEntity.ok("OK");
-    }
-
-    @GetMapping("/metrics")
-    public ResponseEntity<Map<String, Object>> metrics() {
-        // 모든 메소드가 public 스키마 사용
-        return ResponseEntity.ok(metricsService.getSystemMetrics());
-    }
-}
-```
-
-#### 우선순위
-
-어노테이션 적용 우선순위는 다음과 같습니다:
-1. **메소드 레벨** `@NonTenant` (최우선)
-2. **클래스 레벨** `@NonTenant`
-3. **기본 동작**: 테넌트별 스키마 라우팅
-
 #### 일반적인 사용 사례
 
 - **시스템 헬스체크**: `/health`, `/metrics`
