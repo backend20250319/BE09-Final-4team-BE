@@ -43,13 +43,11 @@ public class SchemaBasedConnectionProvider implements MultiTenantConnectionProvi
         Connection connection = dataSource.getConnection();
 
         try {
-            if (tenantId != null) {
+            if (!tenantId.isEmpty()) {
                 String schemaName = TenantUtils.generateSchemaName(tenantId);
                 setSchema(connection, schemaName);
+                log.debug("Connection configured for tenant '{}' with schema '{}'", tenantId, schemaName);
             }
-
-            log.debug("Successfully configured connection for tenant: {} (schema: {})",
-                tenantId, tenantId != null ? TenantUtils.generateSchemaName(tenantId) : "none");
 
             return connection;
 

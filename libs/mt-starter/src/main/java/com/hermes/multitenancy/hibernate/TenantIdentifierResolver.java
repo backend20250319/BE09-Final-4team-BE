@@ -14,13 +14,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver<String> {
 
-
     @Override
     public String resolveCurrentTenantIdentifier() {
         try {
             if (!TenantContext.hasTenantContext()) {
-                log.debug("No tenant context found, returning null");
-                return null;
+                log.debug("No tenant context found");
+                return "";
             }
 
             String tenantId = TenantContext.getCurrentTenantId();
@@ -28,8 +27,8 @@ public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver
             return tenantId;
 
         } catch (Exception e) {
-            log.warn("Failed to resolve tenant identifier, falling back to null", e);
-            return null;
+            log.warn("Failed to resolve tenant identifier", e);
+            return "";
         }
     }
 
