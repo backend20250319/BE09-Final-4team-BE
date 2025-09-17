@@ -33,7 +33,7 @@ dependencies {
     implementation project(':libs:api-common')
     implementation project(':libs:auth-starter')
     implementation project(':libs:events')
-    // implementation project(':libs:mt-starter')
+    implementation project(':libs:mt-starter')
     
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.11'
     

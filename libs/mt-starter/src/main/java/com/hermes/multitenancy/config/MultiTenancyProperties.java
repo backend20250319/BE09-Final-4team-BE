@@ -23,10 +23,6 @@ public class MultiTenancyProperties {
      */
     private String defaultTenantId = "default";
 
-    /**
-     * 기본 스키마명
-     */
-    private String defaultSchemaName = "public";
 
     /**
      * 엔티티 스캔 패키지 목록
@@ -57,6 +53,11 @@ public class MultiTenancyProperties {
      * 스키마 관리 설정
      */
     private SchemaConfig schema = new SchemaConfig();
+
+    /**
+     * 보안 설정
+     */
+    private SecurityConfig security = new SecurityConfig();
 
     @Data
     public static class CacheConfig {
@@ -161,5 +162,48 @@ public class MultiTenancyProperties {
         if (!repositoryPackages.contains(packageName)) {
             repositoryPackages.add(packageName);
         }
+    }
+
+    @Data
+    public static class SecurityConfig {
+        /**
+         * Tenant 정보가 없을 때의 처리 전략
+         */
+        private FallbackStrategy strategy = FallbackStrategy.FAIL_FAST;
+
+        /**
+         * 인터셉터에서 제외할 경로 목록
+         */
+        private List<String> excludePaths = List.of(
+            "/actuator/**",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/favicon.ico"
+        );
+
+        /**
+         * 로깅 활성화 여부
+         */
+        private boolean enableSecurityLogging = true;
+    }
+
+    /**
+     * Tenant fallback 전략
+     */
+    public enum FallbackStrategy {
+        /**
+         * Tenant 정보가 없으면 즉시 예외 발생 (권장)
+         */
+        FAIL_FAST,
+
+        /**
+         * 기본 테넌트로 허용하고 로그 남김
+         */
+        LOG_AND_ALLOW,
+
+        /**
+         * 기본 테넌트로 조용히 허용 (비권장)
+         */
+        ALLOW_DEFAULT
     }
 }

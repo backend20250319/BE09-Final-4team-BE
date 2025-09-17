@@ -84,17 +84,6 @@ public class Tenant {
     }
 
     /**
-     * 스키마명을 동적으로 생성하여 반환
-     * TenantUtils.generateSchemaName() 로직을 인라인화
-     */
-    public String getSchemaName() {
-        if (tenantId == null || tenantId.isEmpty() || "default".equals(tenantId)) {
-            return "public";
-        }
-        return "tenant_" + tenantId;
-    }
-
-    /**
      * 테넌트 상태 enum
      */
     public enum TenantStatus {

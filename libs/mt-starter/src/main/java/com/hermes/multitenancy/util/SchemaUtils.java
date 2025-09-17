@@ -70,8 +70,8 @@ public class SchemaUtils {
      * 스키마 삭제
      */
     public boolean dropSchema(String schemaName) {
-        if (TenantContext.DEFAULT_SCHEMA_NAME.equals(schemaName)) {
-            log.error("Cannot drop default schema: {}", schemaName);
+        if (schemaName == null || schemaName.trim().isEmpty() || "public".equals(schemaName)) {
+            log.error("Cannot drop system schema: {}", schemaName);
             return false;
         }
 

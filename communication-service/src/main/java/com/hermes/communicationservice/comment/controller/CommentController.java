@@ -22,7 +22,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/")
+@RequestMapping("/api")
 @Tag(name = "댓글 관리", description = "공지사항 댓글 생성, 조회, 삭제 API")
 public class CommentController {
 

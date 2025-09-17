@@ -39,7 +39,7 @@ Hermes 멀티테넌시 시스템의 테넌트 관리 서비스입니다.
 ### 1. 테넌트 생성
 
 ```bash
-curl -X POST http://localhost:8083/tenant-api/api/v1/tenants \
+curl -X POST http://localhost:8083/api/v1/tenants \
   -H "Content-Type: application/json" \
   -d '{
     "tenantId": "company1",
@@ -53,19 +53,19 @@ curl -X POST http://localhost:8083/tenant-api/api/v1/tenants \
 ### 2. 테넌트 조회
 
 ```bash
-curl -X GET http://localhost:8083/tenant-api/api/v1/tenants/company1
+curl -X GET http://localhost:8083/api/v1/tenants/company1
 ```
 
 ### 3. 테넌트 목록 조회
 
 ```bash
-curl -X GET "http://localhost:8083/tenant-api/api/v1/tenants?page=0&size=10&sort=createdAt,desc"
+curl -X GET "http://localhost:8083/api/v1/tenants?page=0&size=10&sort=createdAt,desc"
 ```
 
 ### 4. 스키마 정보 조회
 
 ```bash
-curl -X GET http://localhost:8083/tenant-api/api/v1/schemas/company1
+curl -X GET http://localhost:8083/api/v1/schemas/company1
 ```
 
 ## 설정
@@ -76,8 +76,6 @@ curl -X GET http://localhost:8083/tenant-api/api/v1/schemas/company1
 # application.yml
 server:
   port: 8083
-  servlet:
-    context-path: /tenant-api
 
 spring:
   application:
@@ -154,7 +152,7 @@ GRANT ALL PRIVILEGES ON DATABASE hermes_db TO hermes_user;
 
 ### 3. API 문서 확인
 
-브라우저에서 `http://localhost:8083/tenant-api/swagger-ui.html` 접속
+브라우저에서 `http://localhost:8083/swagger-ui.html` 접속
 
 ## 테스트
 
@@ -179,9 +177,9 @@ GRANT ALL PRIVILEGES ON DATABASE hermes_db TO hermes_user;
 
 Actuator 엔드포인트를 통해 서비스 상태를 모니터링할 수 있습니다:
 
-- `/tenant-api/actuator/health`: 헬스 체크
-- `/tenant-api/actuator/metrics`: 메트릭
-- `/tenant-api/actuator/info`: 애플리케이션 정보
+- `/actuator/health`: 헬스 체크
+- `/actuator/metrics`: 메트릭
+- `/actuator/info`: 애플리케이션 정보
 
 ## 주의사항
 

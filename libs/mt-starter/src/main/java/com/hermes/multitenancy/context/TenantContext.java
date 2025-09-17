@@ -1,6 +1,5 @@
 package com.hermes.multitenancy.context;
 
-import com.hermes.multitenancy.dto.TenantInfo;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -10,51 +9,61 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TenantContext {
 
-    private static final ThreadLocal<TenantInfo> tenantHolder = new ThreadLocal<>();
-    
-    /**
-     * 기본 테넌트 ID (테넌트 정보가 없을 때 사용)
-     */
-    public static final String DEFAULT_TENANT_ID = "default";
-    public static final String DEFAULT_SCHEMA_NAME = "public";
+    private static final ThreadLocal<String> tenantIdHolder = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> isNonTenantHolder = new ThreadLocal<>();
 
     /**
-     * 현재 스레드의 테넌트 정보 설정
+     * 현재 스레드에 테넌트 ID 설정
      */
-    public static void setTenant(TenantInfo tenantInfo) {
-        if (tenantInfo == null) {
-            log.warn("Attempting to set null tenant info");
+    public static void setTenantId(String tenantId) {
+        if (tenantId == null || tenantId.trim().isEmpty()) {
+            log.warn("Attempting to set null or empty tenant ID");
             return;
         }
-        
-        log.debug("Setting tenant context: {}", tenantInfo.getTenantId());
-        tenantHolder.set(tenantInfo);
+
+        log.debug("Setting tenant context: {}", tenantId);
+        tenantIdHolder.set(tenantId);
+        isNonTenantHolder.set(false);
     }
 
     /**
-     * 현재 스레드의 테넌트 정보 반환
+     * 현재 스레드에 NonTenant 컨텍스트 설정
      */
-    public static TenantInfo getTenant() {
-        TenantInfo tenant = tenantHolder.get();
-        if (tenant == null) {
-            log.debug("No tenant context found, returning default");
-            return getDefaultTenant();
-        }
-        return tenant;
+    public static void setNonTenant() {
+        log.debug("Setting non-tenant context");
+        tenantIdHolder.remove();
+        isNonTenantHolder.set(true);
     }
 
     /**
      * 현재 테넌트 ID 반환
+     * NonTenant 컨텍스트인 경우 예외 발생
      */
     public static String getCurrentTenantId() {
-        return getTenant().getTenantId();
+        if (isNonTenant()) {
+            throw new IllegalStateException("NonTenant 컨텍스트에서는 tenantId를 사용할 수 없습니다");
+        }
+
+        String tenantId = tenantIdHolder.get();
+        if (tenantId == null) {
+            throw new IllegalStateException("테넌트 컨텍스트가 설정되지 않았습니다");
+        }
+
+        return tenantId;
     }
 
     /**
-     * 현재 테넌트의 스키마명 반환
+     * 현재 컨텍스트가 NonTenant인지 확인
      */
-    public static String getCurrentSchemaName() {
-        return getTenant().getSchemaName();
+    public static boolean isNonTenant() {
+        return Boolean.TRUE.equals(isNonTenantHolder.get());
+    }
+
+    /**
+     * 테넌트 컨텍스트가 설정되어 있는지 확인
+     */
+    public static boolean hasTenantContext() {
+        return isNonTenant() || tenantIdHolder.get() != null;
     }
 
     /**
@@ -62,34 +71,46 @@ public class TenantContext {
      */
     public static void clear() {
         log.debug("Clearing tenant context");
-        tenantHolder.remove();
-    }
-
-    /**
-     * 테넌트 정보가 설정되어 있는지 확인
-     */
-    public static boolean hasTenant() {
-        return tenantHolder.get() != null;
-    }
-
-    /**
-     * 기본 테넌트 정보 반환
-     */
-    private static TenantInfo getDefaultTenant() {
-        return new TenantInfo(DEFAULT_TENANT_ID, DEFAULT_SCHEMA_NAME);
+        tenantIdHolder.remove();
+        isNonTenantHolder.remove();
     }
 
     /**
      * 테넌트 설정과 함께 작업 실행
      */
-    public static <T> T executeWithTenant(TenantInfo tenantInfo, TenantOperation<T> operation) {
-        TenantInfo previousTenant = tenantHolder.get();
+    public static <T> T executeWithTenant(String tenantId, TenantOperation<T> operation) {
+        String previousTenantId = tenantIdHolder.get();
+        Boolean previousIsNonTenant = isNonTenantHolder.get();
+
         try {
-            setTenant(tenantInfo);
+            setTenantId(tenantId);
             return operation.execute();
         } finally {
-            if (previousTenant != null) {
-                setTenant(previousTenant);
+            if (previousTenantId != null) {
+                setTenantId(previousTenantId);
+            } else if (Boolean.TRUE.equals(previousIsNonTenant)) {
+                setNonTenant();
+            } else {
+                clear();
+            }
+        }
+    }
+
+    /**
+     * NonTenant 설정과 함께 작업 실행
+     */
+    public static <T> T executeWithNonTenant(TenantOperation<T> operation) {
+        String previousTenantId = tenantIdHolder.get();
+        Boolean previousIsNonTenant = isNonTenantHolder.get();
+
+        try {
+            setNonTenant();
+            return operation.execute();
+        } finally {
+            if (previousTenantId != null) {
+                setTenantId(previousTenantId);
+            } else if (Boolean.TRUE.equals(previousIsNonTenant)) {
+                setNonTenant();
             } else {
                 clear();
             }

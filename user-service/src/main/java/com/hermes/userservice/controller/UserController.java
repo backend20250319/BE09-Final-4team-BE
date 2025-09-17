@@ -37,7 +37,7 @@ import com.hermes.userservice.service.VacationService;
 
 @Slf4j
 @RestController
-@RequestMapping("api/users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 @Tag(name = "사용자 관리 API", description = "사용자 정보 조회, 생성, 수정, 삭제 및 조직 동기화 기능 제공")
 public class UserController {

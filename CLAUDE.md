@@ -169,6 +169,18 @@ hermes:
 ### Usage Pattern
 Standard JPA entities and repositories work automatically
 
+### Non-Tenant APIs
+Use `@NonTenant` to skip tenant isolation for public APIs:
+
+```java
+@RestController
+public class PublicController {
+    @NonTenant
+    @GetMapping("/health")
+    public String health() { return "OK"; }
+}
+```
+
 **📋 For detailed configuration options, events, and advanced usage, see [`libs/mt-starter/README.md`](libs/mt-starter/README.md)**
 
 ## Notification System

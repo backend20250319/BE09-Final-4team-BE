@@ -1,7 +1,6 @@
 package com.hermes.multitenancy.messaging;
 
 import com.hermes.multitenancy.context.TenantContext;
-import com.hermes.multitenancy.dto.TenantInfo;
 import com.hermes.events.tenant.TenantEvent;
 import com.hermes.multitenancy.config.RabbitMQProperties;
 import lombok.RequiredArgsConstructor;
@@ -65,8 +64,8 @@ public abstract class AbstractTenantEventListener {
         log.info("[{}] Tenant Event Received: Type={}, TenantId={}, SchemaName={}", 
                 serviceName, event.getEventType(), event.getTenantId(), event.getSchemaName());
 
-        // 시스템 테넌트 컨텍스트에서 스키마 작업 수행
-        TenantContext.executeWithTenant(getSystemTenantInfo(), () -> {
+        // NonTenant 컨텍스트에서 스키마 작업 수행
+        TenantContext.executeWithNonTenant(() -> {
             try {
                 switch (event.getEventType()) {
                     case TENANT_CREATED:
@@ -95,13 +94,6 @@ public abstract class AbstractTenantEventListener {
         });
     }
 
-    /**
-     * 시스템 테넌트 정보 반환
-     * 기본적으로 public 스키마를 사용하지만, 각 서비스에서 오버라이드 가능
-     */
-    protected TenantInfo getSystemTenantInfo() {
-        return new TenantInfo("system", "public");
-    }
 
     /**
      * 재시도 관련 설정 정보 반환

@@ -34,10 +34,6 @@ public class TenantResponse {
     @JsonProperty("description")
     private String description;
 
-    @Schema(description = "스키마명", example = "tenant_company1")
-    @JsonProperty("schemaName")
-    private String schemaName;
-
     @Schema(description = "테넌트 상태", example = "ACTIVE")
     @JsonProperty("status")
     private String status;
@@ -63,7 +59,6 @@ public class TenantResponse {
                 tenant.getTenantId(),
                 tenant.getName(),
                 tenant.getDescription(),
-                tenant.getSchemaName(),
                 tenant.getStatus().name(),
                 tenant.getAdminEmail(),
                 tenant.getCreatedAt(),

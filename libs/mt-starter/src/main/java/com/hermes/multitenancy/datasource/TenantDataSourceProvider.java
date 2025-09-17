@@ -41,14 +41,23 @@ public class TenantDataSourceProvider {
     @PostConstruct
     public void initDefaultDataSource() {
         log.info("Initializing default data source");
-        defaultDataSource = createDataSource(TenantContext.DEFAULT_SCHEMA_NAME);
-        dataSourceMap.put(TenantContext.DEFAULT_TENANT_ID, defaultDataSource);
+        defaultDataSource = createDataSource(null); // NonTenant용 (search_path 설정 안함)
+    }
+
+    /**
+     * NonTenant용 기본 DataSource 반환
+     */
+    public DataSource getDefaultDataSource() {
+        return defaultDataSource;
     }
 
     /**
      * 현재 테넌트의 DataSource 반환
      */
     public DataSource getCurrentDataSource() {
+        if (TenantContext.isNonTenant()) {
+            return getDefaultDataSource();
+        }
         String tenantId = TenantContext.getCurrentTenantId();
         return getDataSource(tenantId);
     }
@@ -86,8 +95,10 @@ public class TenantDataSourceProvider {
         config.setPassword(password);
         config.setDriverClassName(driverClassName);
         
-        // 연결 시 스키마 설정
-        config.setConnectionInitSql("SET search_path TO " + schemaName);
+        // 연결 시 스키마 설정 (schemaName이 null이면 기본 search_path 사용)
+        if (schemaName != null) {
+            config.setConnectionInitSql("SET search_path TO " + schemaName);
+        }
         
         // 연결 풀 설정
         config.setMaximumPoolSize(10);
@@ -97,7 +108,7 @@ public class TenantDataSourceProvider {
         config.setMaxLifetime(1800000);
         
         // 연결 풀 이름 설정
-        config.setPoolName("HikariPool-" + schemaName);
+        config.setPoolName("HikariPool-" + (schemaName != null ? schemaName : "default"));
 
         return new HikariDataSource(config);
     }

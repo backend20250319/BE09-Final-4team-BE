@@ -43,8 +43,8 @@ public class TenantUtils {
      * 테넌트 ID로부터 스키마명 생성
      */
     public static String generateSchemaName(String tenantId) {
-        if (tenantId == null || tenantId.isEmpty() || TenantContext.DEFAULT_TENANT_ID.equals(tenantId)) {
-            return TenantContext.DEFAULT_SCHEMA_NAME;
+        if (tenantId == null || tenantId.isEmpty()) {
+            return null; // NonTenant인 경우 스키마명 없음
         }
         return TENANT_SCHEMA_PREFIX + tenantId;
     }
