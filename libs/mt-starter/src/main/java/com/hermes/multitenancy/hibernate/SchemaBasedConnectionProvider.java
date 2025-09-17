@@ -100,13 +100,36 @@ public class SchemaBasedConnectionProvider implements MultiTenantConnectionProvi
 
     /**
      * Connection의 search_path 설정
+     * 현재 search_path를 조회하여 테넌트 스키마를 앞에 추가
      */
     private void setSchema(Connection connection, String schemaName) throws SQLException {
-        String sql = "SET search_path TO " + schemaName;
-        log.debug("Executing: {}", sql);
+        String currentSearchPath = getCurrentSearchPath(connection);
+        String newSearchPath = schemaName + ", " + currentSearchPath;
+        String sql = "SET search_path TO " + newSearchPath;
+        log.debug("Executing: {} (current: {})", sql, currentSearchPath);
 
         try (Statement statement = connection.createStatement()) {
             statement.execute(sql);
+        }
+    }
+
+    /**
+     * 현재 Connection의 search_path 조회
+     */
+    private String getCurrentSearchPath(Connection connection) throws SQLException {
+        String sql = "SHOW search_path";
+
+        try (Statement statement = connection.createStatement();
+             var resultSet = statement.executeQuery(sql)) {
+
+            if (resultSet.next()) {
+                String searchPath = resultSet.getString(1);
+                log.debug("Current search_path: {}", searchPath);
+                return searchPath;
+            }
+
+            // 기본값 반환 (일반적으로 "$user", public)
+            return "\"$user\", public";
         }
     }
 
