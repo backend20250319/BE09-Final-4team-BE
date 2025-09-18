@@ -2,6 +2,7 @@ package com.hermes.userservice.service;
 
 import com.hermes.auth.JwtProperties;
 import com.hermes.auth.enums.Role;
+import com.hermes.userservice.dto.RefreshTokenInfo;
 import com.hermes.userservice.exception.InvalidTokenException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -56,13 +57,16 @@ public class JwtTokenService {
     /**
      * 리프레시 토큰 생성
      */
-    public String createRefreshToken(Long userId) {
+    public String createRefreshToken(Long userId, String tenantId) {
         Instant now = Instant.now();
         Instant expiration = now.plus(getRefreshTokenTTL(), ChronoUnit.SECONDS);
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("type", "refresh");
+        if (tenantId != null) {
+            claims.put("tenantId", tenantId);
+        }
 
         return Jwts.builder()
                 .claims(claims)
@@ -117,9 +121,9 @@ public class JwtTokenService {
     }
 
     /**
-     * 리프레시 토큰을 검증하고 userId 추출
+     * 리프레시 토큰을 검증하고 userId, tenantId 추출
      */
-    public Long validateAndGetUserIdFromRefreshToken(String refreshToken) {
+    public RefreshTokenInfo validateRefreshTokenAndExtractInfo(String refreshToken) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(getSigningKey())
@@ -133,7 +137,10 @@ public class JwtTokenService {
                 throw new InvalidTokenException("리프레시 토큰이 아닙니다.");
             }
 
-            return claims.get("userId", Long.class);
+            Long userId = claims.get("userId", Long.class);
+            String tenantId = claims.get("tenantId", String.class);
+
+            return new RefreshTokenInfo(userId, tenantId);
 
         } catch (JwtException e) {
             throw new InvalidTokenException("유효하지 않은 토큰", e);

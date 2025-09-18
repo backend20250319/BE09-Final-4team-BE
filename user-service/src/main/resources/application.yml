@@ -28,3 +28,11 @@ eureka:
     prefer-ip-address: true
     hostname: localhost
     instance-id: ${eureka.instance.hostname}:${spring.application.name}:${server.port}
+
+hermes:
+  multitenancy:
+    enabled: true
+    schema:
+      auto-create: true
+    rabbitmq:
+      enabled: true
