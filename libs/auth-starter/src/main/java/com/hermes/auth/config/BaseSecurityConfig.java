@@ -82,7 +82,12 @@ public abstract class BaseSecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecret());
+        String secret = jwtProperties.getSecret();
+        if (secret == null || secret.trim().isEmpty()) {
+            throw new IllegalStateException("JWT secret이 설정되지 않았습니다. application.yml에서 jwt.secret을 확인하세요.");
+        }
+
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
         SecretKey secretKey = Keys.hmacShaKeyFor(keyBytes);
         return NimbusJwtDecoder.withSecretKey(secretKey).build();
     }
