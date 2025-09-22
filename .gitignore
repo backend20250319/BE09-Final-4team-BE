@@ -6,6 +6,7 @@ build/
 !**/src/test/**/build/
 
 # 민감 정보 및 인증서 무시
+.env
 **/application-secret.yml
 
 #  로그 무시
