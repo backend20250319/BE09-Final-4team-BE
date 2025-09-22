@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Slf4j
 @Service
@@ -20,7 +20,7 @@ public class TokenCleanupService {
     @Transactional
     public void cleanupExpiredTokens() {
         try {
-            LocalDateTime now = LocalDateTime.now();
+            Instant now = Instant.now();
             log.info("만료된 토큰 정리 시작: {}", now);
             
             long expiredCount = refreshTokenRepository.findExpiredTokens(now).size();
@@ -40,7 +40,7 @@ public class TokenCleanupService {
     @Transactional
     public void cleanupExpiredTokensByUserId(Long userId) {
         try {
-            LocalDateTime now = LocalDateTime.now();
+            Instant now = Instant.now();
             refreshTokenRepository.deleteExpiredTokensByUserId(userId, now);
             log.debug("사용자 {}의 만료된 토큰 정리 완료", userId);
         } catch (Exception e) {
